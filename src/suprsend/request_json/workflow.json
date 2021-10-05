@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://github.com/suprsend/suprsend-py-sdk/request_json/workflow.json",
+  "title": "workflow_request",
+  "description": "Json schema for workflow request",
+  "$comment": "Json schema for workflow request",
+  "type": "object",
+  "properties": {
+    "name":     {
+      "type": "string",
+      "description": "name of workflow"
+    },
+    "template": {
+      "type": "string",
+      "description": "slug of Template"
+    },
+    "notification_category": {
+      "type": "string",
+      "description": "slug of Notification category"
+    },
+    "delay": {
+      "type": ["string", "integer"],
+      "minimum": 0,
+      "description": "If string: format [XX]d[XX]h[XX]m[XX]s e.g 1d2h30m10s(for 1day 2hours 30minutes 10sec). If integer: value in number of seconds"
+    },
+    "trigger_at": {
+      "type": "string",
+      "description": "timestamp in ISO-8601 format. e.g 2021-08-27T20:14:51.643Z"
+    },
+    "priority_algorithm": {"type":  "boolean"},
+    "users": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/user_setting"},
+      "description": ""
+    },
+    "data": {
+      "type": "object",
+      "description": "variables to be used in workflow. e.g replacing templates variables."
+    }
+  },
+  "required": ["name", "template", "notification_category", "users", "data"],
+  "definitions": {
+    "user_setting": {
+      "type": "object",
+      "properties": {
+        "distinct_id": { "type": "string" },
+        "$email": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$sms": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$androidpush": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$iospush": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$whatsapp": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$webpush": {
+          "oneOf": [
+            {"type": "object"},
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$inbox": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        },
+        "$messenger": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "uniqueItems": true,
+                "maxItems": 10,
+                "minItems": 1
+              }
+            }
+          ]
+        }
+      },
+      "required": [ "distinct_id" ],
+      "additionalProperties": false
+    }
+  }
+}
