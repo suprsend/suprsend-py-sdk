@@ -18,7 +18,7 @@ def _get_schema(schema_name: str):
 
 
 def __load_json_schema(schema_name: str) -> dict:
-    file_path = "request_json/{}.json".format(schema_name)
+    file_path = "suprsend/request_json/{}.json".format(schema_name)
     with open(file_path) as f:
         s = json.load(f)
         return s

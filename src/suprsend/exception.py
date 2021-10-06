@@ -21,7 +21,6 @@ class SuprsendAuthenticationError(SuprsendError):
     """
     Invalid auth
     """
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.status_code = 401
@@ -34,7 +33,6 @@ class SuprsendAuthorizationError(SuprsendError):
     """
     client does not have authorization to access API.
     """
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.status_code = 403
@@ -50,3 +48,21 @@ class SuprsendMissingSchema(SuprsendError):
         self.error_type = "SuprsendMissingSchema"
         if self.message is None:
             self.message = "Missing JSON schema"
+
+
+class SuprsendInvalidSchema(SuprsendError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.status_code = 500
+        self.error_type = "SuprsendInvalidSchema"
+        if self.message is None:
+            self.message = "Invalid JSON schema"
+
+
+class SuprsendValidationError(SuprsendError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.status_code = 400
+        self.error_type = "SuprsendValidationError"
+        if self.message is None:
+            self.message = "validation error"

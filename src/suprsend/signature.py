@@ -5,9 +5,9 @@ import json
 from urllib.parse import urlparse
 
 
-def create_request_signature(url, http_verb, content, headers, secret):
+def get_request_signature(url, http_verb, content, headers, secret):
     if http_verb == "GET":  # POST/GET/PUT
-        content_md5 = ""
+        content_txt, content_md5 = "", ""
     else:
         content_txt = json.dumps(content)
         content_md5 = hashlib.md5(content_txt.encode()).hexdigest()
@@ -21,12 +21,13 @@ def create_request_signature(url, http_verb, content, headers, secret):
         headers["Date"],
         request_uri
     )
+    # print("string_to_sign", string_to_sign)
     # ----- HMAC-SHA-256
-    sig_hexdigest = hmac.HMAC(secret.encode(), msg=string_to_sign.encode(), digestmod=hashlib.sha256).hexdigest()
+    sig_hexdigest = hmac.HMAC(secret.encode(), msg=string_to_sign.encode(), digestmod=hashlib.sha256).digest()
     # -----
-    sig_b64bytes = base64.b64encode(sig_hexdigest.encode())
+    sig_b64bytes = base64.b64encode(sig_hexdigest)
     sig = sig_b64bytes.decode()  # decode('utf-8'/'ascii')
-    return sig
+    return content_txt, sig
 
 
 def get_uri(url):
