@@ -19,7 +19,7 @@ supr_client = Suprsend("env_key", "env_secret")
 ```
 
 Example Below shows a sample request for triggering a workflow.
-it triggers a notification to a user with id: `distinct_id`,
+It triggers a notification to a user with id: `distinct_id`,
 email: `user@example.com` & androidpush-token: `__android_push_token__`
 using template `purchase-made` and notification_category `system`
 
@@ -48,4 +48,25 @@ workflow_body = {
 # Trigger workflow
 supr_client.trigger_workflow(workflow_body)
 
+```
+
+### Build and upload
+Setup a python3 virtualenv `venv_sdk` for building this lib.
+```bash
+virtualenv -p python3 venv_sdk
+source venv_sdk/bin/activate
+python3 -m pip install --upgrade build
+python3 -m pip install --upgrade twine
+```
+Build package
+```bash
+python3 -m build
+# On test.pypi.org
+python3 -m twine upload --repository testpypi dist/*
+# On pypi.org
+python3 -m twine upload dist/*
+```
+Installing newly uploaded package 
+```bash
+python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps suprsend-py-sdk
 ```
