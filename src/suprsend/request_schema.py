@@ -1,3 +1,4 @@
+import os
 import json
 from .exception import SuprsendMissingSchema
 
@@ -18,7 +19,10 @@ def _get_schema(schema_name: str):
 
 
 def __load_json_schema(schema_name: str) -> dict:
-    file_path = "suprsend/request_json/{}.json".format(schema_name)
+    here = os.path.dirname(os.path.abspath(__file__))
+    rel_path = "request_json/{}.json".format(schema_name)
+    file_path = os.path.join(here, rel_path)
+    # file_path = "suprsend/request_json/{}.json".format(schema_name)
     with open(file_path) as f:
         s = json.load(f)
         return s
