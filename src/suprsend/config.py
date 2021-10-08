@@ -12,10 +12,10 @@ class Suprsend:
         workflow_body = {...}
         response = supr_client.trigger_workflow(workflow_body)
     """
-    def __init__(self, env_key: str, env_secret: str, post_url: str = None, debug: bool = False, **kwargs):
+    def __init__(self, env_key: str, env_secret: str, base_url: str = None, debug: bool = False, **kwargs):
         self.env_key = env_key
         self.env_secret = env_secret
-        self.base_url = self.__get_url(post_url, kwargs)
+        self.base_url = self.__get_url(base_url, kwargs)
         # include cryptographic signature
         self.auth_enabled = (kwargs.get('auth_enabled') is not False)
         self.include_signature_param = (kwargs.get('include_signature_param') is not False)
@@ -28,21 +28,21 @@ class Suprsend:
     DEFAULT_URL = "https://hub.suprsend.com/"
     DEFAULT_UAT_URL = "https://collector-staging.suprsend.workers.dev/"
 
-    def __get_url(self, post_url, kwargs):
+    def __get_url(self, base_url, kwargs):
         # ---- strip
-        if post_url:
-            post_url = post_url.strip()
+        if base_url:
+            base_url = base_url.strip()
         # ---- if url not passed, set url based on server env
-        if not post_url:
+        if not base_url:
             if kwargs.get("is_uat", False):
-                post_url = self.DEFAULT_UAT_URL
+                base_url = self.DEFAULT_UAT_URL
             else:
-                post_url = self.DEFAULT_URL
+                base_url = self.DEFAULT_URL
         # ---- check url ends with /
-        post_url = post_url.strip()
-        if post_url[len(post_url) - 1] != "/":
-            post_url = post_url + "/"
-        return post_url
+        base_url = base_url.strip()
+        if base_url[len(base_url) - 1] != "/":
+            base_url = base_url + "/"
+        return base_url
 
     def __validate(self):
         if not self.env_key:
