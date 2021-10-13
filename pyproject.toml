@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "setuptools>=57",
-    "wheel>=0.36",
+    "setuptools",
+    "wheel",
     "jsonschema",
     "requests",
 ]

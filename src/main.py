@@ -3,7 +3,7 @@ from suprsend import Suprsend
 
 def test_request():
     extra_params = {
-        "is_uat": True, "auth_enabled": True,
+        "is_uat": False, "auth_enabled": True,
         "include_signature_param": True
     }
     supr_client = Suprsend("__env_key__", "__env_secret__", debug=False, **extra_params)
@@ -20,6 +20,14 @@ def test_request():
             }
         ],
         "data": {
+            "event": {
+                "location": {
+                    "city": 'mumbai'
+                },
+                "city": 'mumbai',
+                "amount": "$10",
+                "product_name": "Product A"
+            },
             "template": {
                 "first_name": "User",
                 "spend_amount": "$10"

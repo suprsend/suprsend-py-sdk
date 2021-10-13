@@ -5,12 +5,12 @@ with `Suprsend` platform.
 We're working towards creating SDK in other languages as well.
 
 ### Suprsend SDKs available in following languages
-* python3 (`suprsend-py-sdk`)
+* python3 >= 3.7 (`suprsend-py-sdk`)
 
 ### Installation
 `suprsend-py-sdk` is available on PyPI. You can install using pip.
 ```bash
-$ pip install suprsend-py-sdk
+$ pip cache purge && pip install suprsend-py-sdk
 ```
 
 

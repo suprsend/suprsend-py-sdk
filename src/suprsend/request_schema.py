@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Dict
 from .exception import SuprsendMissingSchema
 
 
@@ -18,7 +19,7 @@ def _get_schema(schema_name: str):
     return schema_body
 
 
-def __load_json_schema(schema_name: str) -> dict:
+def __load_json_schema(schema_name: str) -> Dict:
     here = os.path.dirname(os.path.abspath(__file__))
     rel_path = "request_json/{}.json".format(schema_name)
     file_path = os.path.join(here, rel_path)

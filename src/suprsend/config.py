@@ -1,3 +1,4 @@
+from typing import List, Dict
 from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
@@ -52,7 +53,7 @@ class Suprsend:
         if not self.base_url:
             raise SuprsendConfigError("Missing base_url")
 
-    def trigger_workflow(self, data: dict) -> dict:
+    def trigger_workflow(self, data: Dict) -> Dict:
         """
         :param data:
         :return: {
