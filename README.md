@@ -45,11 +45,53 @@ workflow_body = {
         "template": {
             "first_name": "User",
             "spend_amount": "$10"
-        }
+        },
+        "$attachments": [
+            {
+                "filename": "billing.pdf",
+                "contentType": "application/pdf",
+                "data": "Q29uZ3JhdHVsYXRpb25zLCB5b3UgY2FuIGJhc2U2NCBkZWNvZGUh",
+            }
+        ],
     }
 }
 
 # Trigger workflow
 supr_client.trigger_workflow(workflow_body)
 
+```
+### Add attachments
+Structure of an attachment
+```json
+// attachment-structure
+{
+    "filename": "billing.pdf",
+    "contentType": "application/pdf",
+    "data": "Q29uZ3JhdHVsYXRpb25zLCB5b3UgY2FuIGJhc2U2NCBkZWNvZGUh",
+}
+```
+Where
+* `filename` - name of file.
+* `contentType` - MIME-type of file content.
+* `data` - base64-encoded content of file.
+
+To add one or more Attachments to a Notification (viz. Email, Whatsapp),
+add an attachment-structure for each of the attachment-files
+to `data->"$attachments"` as shown below.
+
+```python
+# this snippet can be used to create attachment-structure given a file_path.
+file_path = "/home/user/billing.pdf"
+
+resp = supr_client.get_attachment_json_for_file(file_path)
+# if some error occurs while reading content, the call returns success=False
+if resp["success"]:
+   attachment = resp["attachment"]
+   # add the attachment to workflow_body->data->$attachments
+   if workflow_body["data"].get("$attachments") is None:
+      workflow_body["data"]["$attachments"] = []
+   workflow_body["data"]["$attachments"].append(attachment)
+else:
+    # Handle as per requirement.
+    pass
 ```
