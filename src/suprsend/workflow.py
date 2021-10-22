@@ -3,6 +3,8 @@ import requests
 import jsonschema
 from urllib.parse import quote_plus
 import json
+from typing import Dict
+
 from .exception import SuprsendValidationError, SuprsendInvalidSchema
 from .request_schema import _get_schema
 from .signature import get_request_signature
@@ -13,7 +15,7 @@ HEADER_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
 class WorkflowTrigger:
-    def __init__(self, config, data):
+    def __init__(self, config, data: Dict):
         self.config = config
         self.data = data
         self.url = self.__get_url()
@@ -34,6 +36,7 @@ class WorkflowTrigger:
         return {
             "Content-Type": "application/json",
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
+            "User-Agent": self.config.user_agent,
         }
 
     def execute_workflow(self):
@@ -58,6 +61,12 @@ class WorkflowTrigger:
         }
 
     def validate_data(self):
+        # --- In case data is not provided, set it to empty dict
+        if self.data.get("data") is None:
+            self.data["data"] = {}
+        if not isinstance(self.data["data"], dict):
+            raise ValueError("data must be a dictionary")
+        # --------------------------------
         schema = _get_schema('workflow')
         try:
             # jsonschema.validate(instance, schema, cls=None, *args, **kwargs)

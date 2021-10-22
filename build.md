@@ -6,6 +6,10 @@ source venv_sdk/bin/activate
 python3 -m pip install --upgrade build
 python3 -m pip install --upgrade twine
 ```
+Test locally
+```sh
+pip install -e .
+```
 Build package
 ```bash
 python3 -m build
