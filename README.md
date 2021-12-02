@@ -12,6 +12,14 @@ We're working towards creating SDK in other languages as well.
 ```bash
 pip cache purge && pip install suprsend-py-sdk
 ```
+This SDK depends on a system package called `libmagic`. You can install it as follows:
+```bash
+# On debian based systems
+sudo apt install libmagic
+
+# If you are using macOS
+brew install libmagic
+```
 
 ### Usage
 Initialize the Suprsend SDK
@@ -45,20 +53,35 @@ workflow_body = {
             "first_name": "User",
             "spend_amount": "$10"
         },
-        "$attachments": [
-            {
-                "filename": "billing.pdf",
-                "contentType": "application/pdf",
-                "data": "Q29uZ3JhdHVsYXRpb25zLCB5b3UgY2FuIGJhc2U2NCBkZWNvZGUh",
-            }
-        ],
     }
 }
 
 # Trigger workflow
-supr_client.trigger_workflow(workflow_body)
+response = supr_client.trigger_workflow(workflow_body)
 
 ```
+When you call `supr_client.trigger_workflow`, the SDK internally makes an HTTP call to SuprSend
+Platform to register this request, and you'll immediately receive a response indicating
+the acceptance status.
+
+Note: The actual processing/execution of workflow happens asynchronously.
+
+```python
+# If the call succeeds, response will looks like:
+{
+    "success": True,
+    "status": 201,
+    "message": "Message received",
+}
+
+# In case the call fails. You will receive a response with success=False
+{
+    "success": False,
+    "status": 400,
+    "message": "error message",
+}
+```
+
 ### Add attachments
 
 To add one or more Attachments to a Notification (viz. Email, Whatsapp),
