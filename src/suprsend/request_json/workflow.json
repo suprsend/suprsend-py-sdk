@@ -31,7 +31,9 @@
     "users": {
       "type": "array",
       "items": { "$ref": "#/definitions/user_setting"},
-      "description": "user object to run workflow for"
+      "minItems": 1,
+      "maxItems": 100,
+      "description": "user object to run workflow for. At least 1 user is required"
     },
     "data": {
       "type": "object",
@@ -42,7 +44,27 @@
   "definitions": {
     "non_empty_string": {
       "type": "string",
-      "minLength": 1
+      "minLength": 2
+    },
+    "mobile_number_pattern": {
+      "type": "string", "minLength": 8,
+      "pattern": "^\\+[0-9\\s]+",
+      "message": {
+        "required": "Either a mobile-number or an array of mobile-numbers. e.g [\"41446681800\"]",
+        "pattern": "number must start with + and must contain country code. e.g. +41446681800"
+      }
+    },
+    "email_pattern": {
+      "type": "string",
+      "format": "email",
+      "pattern": "^\\S+@\\S+\\.\\S+$",
+      "description": "email of an user",
+      "minLength": 6,
+      "maxLength": 127,
+      "message": {
+        "required": "",
+        "pattern": "value in email format required. e.g. user@example.com"
+      }
     },
     "user_setting": {
       "type": "object",
@@ -50,25 +72,25 @@
         "distinct_id": { "$ref": "#/definitions/non_empty_string" },
         "$email": {
           "oneOf": [
-            {"$ref": "#/definitions/non_empty_string"},
+            {"$ref": "#/definitions/email_pattern"},
             {
               "type": "array",
               "uniqueItems": true,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/non_empty_string" }
+              "items": { "$ref": "#/definitions/email_pattern" }
             }
           ]
         },
         "$sms": {
           "oneOf": [
-            {"$ref": "#/definitions/non_empty_string"},
+            {"$ref": "#/definitions/mobile_number_pattern"},
             {
               "type": "array",
               "uniqueItems": true,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/non_empty_string" }
+              "items": { "$ref": "#/definitions/mobile_number_pattern" }
             }
           ]
         },
@@ -98,13 +120,13 @@
         },
         "$whatsapp": {
           "oneOf": [
-            {"$ref": "#/definitions/non_empty_string"},
+            {"$ref": "#/definitions/mobile_number_pattern"},
             {
               "type": "array",
               "uniqueItems": true,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/non_empty_string" }
+              "items": { "$ref": "#/definitions/mobile_number_pattern" }
             }
           ]
         },
