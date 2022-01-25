@@ -27,14 +27,14 @@ class WorkflowTrigger:
                 url_template = url_template + "?verify=true"
             else:
                 url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url, self.config.env_key)
+        url_formatted = url_template.format(self.config.base_url, self.config.workspace_key)
         # ---
         # self.url = quote_plus(url_formatted)
         return url_formatted
 
     def __get_headers(self):
         return {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json; charset=utf-8",
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
             "User-Agent": self.config.user_agent,
         }
@@ -44,13 +44,13 @@ class WorkflowTrigger:
         # Based on whether signature is required or not, add Authorization header
         if self.config.auth_enabled:
             # Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.url, 'POST', self.data, headers, self.config.env_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.env_key, sig)
+            content_txt, sig = get_request_signature(self.url, 'POST', self.data, headers, self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         else:
-            content_txt = json.dumps(self.data)
+            content_txt = json.dumps(self.data, ensure_ascii=False)
         # -----
         resp = requests.post(self.url,
-                             data=content_txt,
+                             data=content_txt.encode('utf-8'),
                              headers=headers)
 
         success = resp.status_code // 100 == 2

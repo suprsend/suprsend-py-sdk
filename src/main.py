@@ -6,7 +6,7 @@ def test_request():
         "is_uat": False, "auth_enabled": True,
         "include_signature_param": True
     }
-    supr_client = Suprsend("__env_key__", "__env_secret__", debug=False, **extra_params)
+    supr_client = Suprsend("__workspace_key__", "__workspace_secret__", debug=False, **extra_params)
     workflow_body = {
         "name": "Purchase Workflow",
         "template": "purchase-made",

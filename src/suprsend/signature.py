@@ -10,7 +10,7 @@ def get_request_signature(url: str, http_verb: str, content: Dict, headers: Dict
     if http_verb == "GET":  # POST/GET/PUT
         content_txt, content_md5 = "", ""
     else:
-        content_txt = json.dumps(content)
+        content_txt = json.dumps(content, ensure_ascii=False)
         content_md5 = hashlib.md5(content_txt.encode()).hexdigest()
     # ----
     request_uri = get_uri(url)

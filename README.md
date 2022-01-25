@@ -6,6 +6,8 @@ We're working towards creating SDK in other languages as well.
 
 ### Suprsend SDKs available in following languages
 * python3 >= 3.7 (`suprsend-py-sdk`)
+* node (`suprsend-node-sdk`)
+* java (`suprsend-java-sdk`)
 
 ### Installation
 `suprsend-py-sdk` is available on PyPI. You can install using pip.
@@ -26,7 +28,7 @@ Initialize the Suprsend SDK
 ```python3
 from suprsend import Suprsend
 # Initialize SDK
-supr_client = Suprsend("env_key", "env_secret")
+supr_client = Suprsend("workspace_key", "workspace_secret")
 ```
 
 Following example shows a sample request for triggering a workflow.

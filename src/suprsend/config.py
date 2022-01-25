@@ -14,14 +14,14 @@ class Suprsend:
     """
     Entry point of SDK. Follow below Steps:
     1. create instance
-        supr_client = Suprsend("__env_key__", "__env_secret__")
+        supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
     2. Trigger required method
         workflow_body = {...}
         response = supr_client.trigger_workflow(workflow_body)
     """
-    def __init__(self, env_key: str, env_secret: str, base_url: str = None, debug: bool = False, **kwargs):
-        self.env_key = env_key
-        self.env_secret = env_secret
+    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False, **kwargs):
+        self.workspace_key = workspace_key
+        self.workspace_secret = workspace_secret
         #
         self.sdk_version = __version__
         self.user_agent = "suprsend/{};python/{}".format(self.sdk_version, platform.python_version())
@@ -56,10 +56,10 @@ class Suprsend:
         return base_url
 
     def __validate(self):
-        if not self.env_key:
-            raise SuprsendConfigError("Missing env_key")
-        if not self.env_secret:
-            raise SuprsendConfigError("Missing env_secret")
+        if not self.workspace_key:
+            raise SuprsendConfigError("Missing workspace_key")
+        if not self.workspace_secret:
+            raise SuprsendConfigError("Missing workspace_secret")
         if not self.base_url:
             raise SuprsendConfigError("Missing base_url")
 
@@ -103,7 +103,7 @@ class Suprsend:
             "message": "message",
         }
         :except:
-            - SuprsendConfigError (if proper value for env_key and env_secret not set
+            - SuprsendConfigError (if proper value for workspace_key and workspace_secret not set
             - SuprsendValidationError (if post-data is invalid.)
         """
         wt = WorkflowTrigger(self, data)
