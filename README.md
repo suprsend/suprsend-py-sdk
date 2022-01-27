@@ -50,11 +50,16 @@ workflow_body = {
             "$androidpush": ["__android_push_token__"],
         }
     ],
+    # data can be any json / serializable python-dictionary
     "data": {
-        "template": {
-            "first_name": "User",
-            "spend_amount": "$10"
-        },
+        "first_name": "User",
+        "spend_amount": "$10",
+        "nested_key_example": {
+            "nested_key1": "some_value_1",
+            "nested_key2": {
+              "nested_key3": "some_value_3",
+            },
+        }
     }
 }
 
