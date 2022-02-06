@@ -5,9 +5,11 @@ import magic
 
 from typing import List, Dict
 from .version import __version__
+from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
+from .batch import BatchFactory
 
 
 class Suprsend:
@@ -26,29 +28,31 @@ class Suprsend:
         self.sdk_version = __version__
         self.user_agent = "suprsend/{};python/{}".format(self.sdk_version, platform.python_version())
         #
-        self.base_url = self.__get_url(base_url, kwargs)
+        is_uat = kwargs.get("is_uat", False)
+        self.base_url = self.__get_url(base_url, is_uat)
         # include cryptographic signature
         self.auth_enabled = (kwargs.get('auth_enabled') is not False)
         self.include_signature_param = (kwargs.get('include_signature_param') is not False)
         # ---
         self.__validate()
         # --- set logging level for http request
-        req_log_level = 1 if debug else 0
-        set_logging(req_log_level)
+        self.req_log_level = 1 if debug else 0
+        set_logging(self.req_log_level)
+        # -- instantiate batch
+        self._batch = BatchFactory(self)
 
-    DEFAULT_URL = "https://hub.suprsend.com/"
-    DEFAULT_UAT_URL = "https://collector-staging.suprsend.workers.dev/"
+    @property
+    def batch(self):
+        return self._batch
 
-    def __get_url(self, base_url, kwargs):
+    @staticmethod
+    def __get_url(base_url, is_uat):
         # ---- strip
         if base_url:
             base_url = base_url.strip()
         # ---- if url not passed, set url based on server env
         if not base_url:
-            if kwargs.get("is_uat", False):
-                base_url = self.DEFAULT_UAT_URL
-            else:
-                base_url = self.DEFAULT_URL
+            base_url = DEFAULT_UAT_URL if is_uat else DEFAULT_URL
         # ---- check url ends with /
         base_url = base_url.strip()
         if base_url[len(base_url) - 1] != "/":

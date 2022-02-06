@@ -1,17 +1,11 @@
 from datetime import datetime, timezone
 import requests
-import jsonschema
-from urllib.parse import quote_plus
 import json
 from typing import Dict
 
-from .exception import SuprsendValidationError, SuprsendInvalidSchema
-from .request_schema import _get_schema
+from .constants import (HEADER_DATE_FMT, BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE)
+from .utils import (get_apparent_body_size, validate_workflow_body_schema)
 from .signature import get_request_signature
-
-
-# In TZ Format: "%a, %d %b %Y %H:%M:%S %Z"
-HEADER_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
 
 
 class WorkflowTrigger:
@@ -49,30 +43,31 @@ class WorkflowTrigger:
         else:
             content_txt = json.dumps(self.data, ensure_ascii=False)
         # -----
-        resp = requests.post(self.url,
-                             data=content_txt.encode('utf-8'),
-                             headers=headers)
-
-        success = resp.status_code // 100 == 2
-        return {
-            "success": success,
-            "status": resp.status_code,
-            "message": resp.text,
-        }
+        try:
+            resp = requests.post(self.url,
+                                 data=content_txt.encode('utf-8'),
+                                 headers=headers)
+        except Exception as ex:
+            error_str = ex.__str__()
+            return {
+                "success": False,
+                "status": 500,
+                "message": error_str,
+            }
+        else:
+            success = resp.status_code // 100 == 2
+            return {
+                "success": success,
+                "status": resp.status_code,
+                "message": resp.text,
+            }
 
     def validate_data(self):
-        # --- In case data is not provided, set it to empty dict
-        if self.data.get("data") is None:
-            self.data["data"] = {}
-        if not isinstance(self.data["data"], dict):
-            raise ValueError("data must be a dictionary")
-        # --------------------------------
-        schema = _get_schema('workflow')
-        try:
-            # jsonschema.validate(instance, schema, cls=None, *args, **kwargs)
-            jsonschema.validate(self.data, schema)
-        except jsonschema.exceptions.SchemaError as se:
-            raise SuprsendInvalidSchema(se.message)
-        except jsonschema.exceptions.ValidationError as ve:
-            raise SuprsendValidationError(ve.message)
+        self.data = validate_workflow_body_schema(self.data)
+        # ---- Check body size
+        apparent_size = get_apparent_body_size(self.data)
+        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
+            raise ValueError(f"workflow body (discounting attachment if any) too big - {apparent_size} Bytes, "
+                             f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+        # ----
         return self.data

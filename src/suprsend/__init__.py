@@ -10,4 +10,5 @@ from .version import __version__
 __author__ = 'SuprSend Developers'
 __credits__ = 'SuprSend'
 
-from .config import Suprsend  # noqa
+from .sdkinstance import Suprsend  # noqa
+from .batch import BatchResponse  # noqa
