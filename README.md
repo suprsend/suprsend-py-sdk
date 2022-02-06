@@ -1,10 +1,10 @@
 # suprsend-py-sdk
 This package can be included in a python3 project to easily integrate
-with `Suprsend` platform.
+with `SuprSend` platform.
 
 We're working towards creating SDK in other languages as well.
 
-### Suprsend SDKs available in following languages
+### SuprSend SDKs available in following languages
 * python3 >= 3.7 (`suprsend-py-sdk`)
 * node (`suprsend-node-sdk`)
 * java (`suprsend-java-sdk`)
@@ -24,7 +24,7 @@ brew install libmagic
 ```
 
 ### Usage
-Initialize the Suprsend SDK
+Initialize the SuprSend SDK
 ```python3
 from suprsend import Suprsend
 # Initialize SDK
@@ -114,3 +114,33 @@ Where
 * `filename` - name of file.
 * `contentType` - MIME-type of file content.
 * `data` - base64-encoded content of file.
+
+### Limitation
+* a single workflow body size must not exceed 200KB (200 * 1024 bytes). While calculating size, attachments are ignored
+* if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
+
+### Request-Batching
+You can batch multiple workflow requests in one call. Use `batch_instance.append(...)` on batch-instance
+to add however-many-records to call in batch.
+```python3
+batch_ins = supr_client.batch.new()
+
+workflow_body1 = {...}  # must be a proper workflow request json/dict
+workflow_body2 = {...}  # must be a proper workflow request json/dict
+
+# --- use .append on batch instance to add one or more records
+batch_ins.append(workflow_body1)
+batch_ins.append(workflow_body2)
+# OR
+batch_ins.append(workflow_body1, workflow_body2)
+
+# -------
+response = batch_ins.trigger()
+
+print(response)
+```
+* There isn't any limit on number-of-records that can be added to batch-instance.
+* On calling `batch_ins.trigger()` the SDK internally makes one-or-more Callable-chunks.
+* each callable-chunk contains a subset of records, the subset calculation is based on each record's bytes-size
+  and max allowed chunk-size and chunk-length.
+* for each callable-chunk SDK makes an HTTP call to SuprSend To register the request.

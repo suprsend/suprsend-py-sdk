@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 from urllib.parse import urlparse
 
 
-def get_request_signature(url: str, http_verb: str, content: Dict, headers: Dict, secret: str) -> Tuple[str, str]:
+def get_request_signature(url: str, http_verb: str, content, headers: Dict, secret: str) -> Tuple[str, str]:
     if http_verb == "GET":  # POST/GET/PUT
         content_txt, content_md5 = "", ""
     else:
