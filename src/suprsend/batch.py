@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 import requests
 import json
 import copy
-import threading
 
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,

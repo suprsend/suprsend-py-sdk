@@ -142,5 +142,5 @@ print(response)
 * There isn't any limit on number-of-records that can be added to batch-instance.
 * On calling `batch_ins.trigger()` the SDK internally makes one-or-more Callable-chunks.
 * each callable-chunk contains a subset of records, the subset calculation is based on each record's bytes-size
-  and max allowed chunk-size and chunk-length.
+  and max allowed chunk-size and chunk-length etc.
 * for each callable-chunk SDK makes an HTTP call to SuprSend To register the request.

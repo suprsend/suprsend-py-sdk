@@ -9,7 +9,7 @@ from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
-from .batch import BatchFactory, BatchWorkflowTrigger
+from .batch import BatchFactory
 
 
 class Suprsend:
