@@ -77,14 +77,14 @@ Note: The actual processing/execution of workflow happens asynchronously.
 # If the call succeeds, response will looks like:
 {
     "success": True,
-    "status": 201,
+    "status": 202,
     "message": "Message received",
 }
 
 # In case the call fails. You will receive a response with success=False
 {
     "success": False,
-    "status": 400,
+    "status": 400/500,
     "message": "error message",
 }
 ```
@@ -144,3 +144,126 @@ print(response)
 * each callable-chunk contains a subset of records, the subset calculation is based on each record's bytes-size
   and max allowed chunk-size and chunk-length etc.
 * for each callable-chunk SDK makes an HTTP call to SuprSend To register the request.
+
+### Set channels in User Profile
+If you regularly trigger a workflow for users on some pre-decided channels,
+then instead of adding user-channel-details in each workflow request, you can set those channel-details in user
+profile once, and after that, in workflow trigger request you only need to pass the distinct_id of the user.
+All associated channels in User profile will automatically get picked up when executing the workflow.
+
+You can set user channel details viz. email, sms, whatsapp, androidpush etc (using `user.append` method) as shown in the example below.
+
+```python3
+distinct_id = "__uniq_user_id__"  # Unique id of user in your application
+# Instantiate User profile
+user = supr_client.user.new(distinct_id=distinct_id)
+# append channel properties
+user.append({
+  "$email": "user@example.com",
+  "$sms": "+919999999999",
+  "$whatsapp": "+919999999999",
+  "$androidpush": "__fcm_androidpush_token__"
+})
+# save
+response = user.save()
+print(response)
+
+```
+
+```python
+# Response structure
+{
+    "success": True, # if true, request was accepted.
+    "status": "success",
+    "status_code": 202, # http status code
+    "message": "OK",
+}
+
+{
+    "success": False, # error will be present in message
+    "status": "fail",
+    "status_code": 500, # http status code
+    "message": "error message",
+}
+
+```
+
+If you want to remove some channel details, use `user.remove` method.
+
+```python
+distinct_id = "__uniq_user_id__"  # Unique id of user in your application
+# Instantiate User profile
+user = supr_client.user.new(distinct_id=distinct_id)
+
+# remove whatsapp channel
+user.remove({
+  "$whatsapp": "+919999999999",
+})
+# save
+response = user.save()
+print(response)
+
+```
+There are helper methods available to add/remove channel details.
+```python
+# Add channel helper methods
+user.add_email("user@example.com")
+user.add_sms("+919999999999")
+user.add_whatsapp("+919999999999")
+
+user.add_androidpush("__android_push_fcm_token__") # by default, token is assumed to be fcm-token
+# You can set the optional provider value [fcm/xiaomi/oppo] if its not a fcm-token
+user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
+
+user.add_iospush("__iospush_token__")
+
+# save
+response = user.save()
+print(response)
+
+
+# Remove channel helper methods
+user.remove_email("user@example.com")
+user.remove_sms("+919999999999")
+user.remove_whatsapp("+919999999999")
+user.remove_androidpush("__android_push_fcm_token__")
+user.remove_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
+user.remove_iospush("__iospush_token__")
+# save
+response = user.save()
+print(response)
+```
+Note: After calling `append`/`remove`/`add_*`/`remove_*` methods, don't forget to call `user.save()`.
+
+Once channels details are set at User profile, you only have to mention the user's distinct_id
+while triggering workflow. Associated channels will automatically be picked up from user-profile e.g.
+
+```python3
+# Prepare Workflow body
+workflow_body = {
+    "name": "Purchase Workflow",
+    "template": "purchase-made",
+    "notification_category": "system",
+    "delay": "15m",
+    "users": [
+        {
+            "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
+        }
+    ],
+    # data can be any json / serializable python-dictionary
+    "data": {
+        "first_name": "User",
+        "spend_amount": "$10",
+        "nested_key_example": {
+            "nested_key1": "some_value_1",
+            "nested_key2": {
+              "nested_key3": "some_value_3",
+            },
+        }
+    }
+}
+
+# Trigger workflow
+response = supr_client.trigger_workflow(workflow_body)
+
+```
