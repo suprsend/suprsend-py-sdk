@@ -50,7 +50,7 @@
       "type": "string", "minLength": 8,
       "pattern": "^\\+[0-9\\s]+",
       "message": {
-        "required": "Either a mobile-number or an array of mobile-numbers. e.g [\"41446681800\"]",
+        "required": "Either a mobile-number or an array of mobile-numbers. e.g [\"+41446681800\"]",
         "pattern": "number must start with + and must contain country code. e.g. +41446681800"
       }
     },

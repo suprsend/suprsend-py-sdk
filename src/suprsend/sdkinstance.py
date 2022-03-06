@@ -10,6 +10,7 @@ from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
 from .batch import BatchFactory
+from .identity import IdentityFactory
 
 
 class Suprsend:
@@ -40,10 +41,15 @@ class Suprsend:
         set_logging(self.req_log_level)
         # -- instantiate batch
         self._batch = BatchFactory(self)
+        self._user = IdentityFactory(self)
 
     @property
     def batch(self):
         return self._batch
+
+    @property
+    def user(self):
+        return self._user
 
     @staticmethod
     def __get_url(base_url, is_uat):
