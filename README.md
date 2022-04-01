@@ -267,3 +267,41 @@ workflow_body = {
 response = supr_client.trigger_workflow(workflow_body)
 
 ```
+
+### Track and Send Event
+You can track and send events to SuprSend platform by using `supr_client.track` method.
+Event: `event_name`, tracked wrt a user: `distinct_id`, with associated attributes: `properties`
+
+```python3
+# Method signature:
+def track(distinct_id: str, event_name: str, properties: Dict = None) -> Dict
+```
+
+```python3
+# Example
+distinct_id = "__uniq_user_id__" # Mandatory, Unique id of user in your application
+event_name = "__event_name__"   # Mandatory, name of the event you're tracking
+properties = {...} # Optional, default=None, a dict representing event-attributes
+
+response = supr_client.track(distinct_id, event_name, properties=properties)
+print(response)
+
+```
+
+```python
+# Response structure
+{
+    "success": True, # if true, request was accepted.
+    "status": "success",
+    "status_code": 202, # http status code
+    "message": "OK",
+}
+
+{
+    "success": False, # error will be present in message
+    "status": "fail",
+    "status_code": 500, # http status code
+    "message": "error message",
+}
+
+```
