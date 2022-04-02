@@ -42,7 +42,7 @@ workflow_body = {
     "name": "Purchase Workflow",
     "template": "purchase-made",
     "notification_category": "system",
-    "delay": "15m",
+    "delay": "15m",  # Check duration format below
     "users": [
         {
             "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
@@ -50,6 +50,11 @@ workflow_body = {
             "$androidpush": ["__android_push_token__"],
         }
     ],
+    # delivery instruction. how should notifications be sent, and whats the success metric
+    "delivery": {
+        "smart": False,
+        "success": "seen"
+    },
     # data can be any json / serializable python-dictionary
     "data": {
         "first_name": "User",
@@ -77,15 +82,79 @@ Note: The actual processing/execution of workflow happens asynchronously.
 # If the call succeeds, response will looks like:
 {
     "success": True,
-    "status": 202,
+    "status": "success",
+    "status_code": 202,
     "message": "Message received",
 }
 
 # In case the call fails. You will receive a response with success=False
 {
     "success": False,
-    "status": 400/500,
+    "status": "fail",
+    "status_code": 400/500,
     "message": "error message",
+}
+```
+#### Duration Format
+format for specifying duration: `[xx]d[xx]h[xx]m[xx]s`
+Where
+* `d` stands for days. value boundary: 0 <= `d`
+* `h` stands for hours. value boundary: 0 <= `h` <= 23
+* `m` stands for minutes. value boundary: 0 <= `m` <= 59
+* `s` stands for seconds. value boundary: 0 <= `s` <= 59
+
+Examples:
+* 2 days, 3 hours, 12 mins, 23 seconds -> 2d3h12m23s or 02d03h12m23s
+* 48 hours -> 2d
+* 30 hours -> 1d6h
+* 300 seconds -> 5m
+* 320 seconds -> 5m20s
+* 60 seconds -> 1m
+
+#### Delivery instruction
+All delivery options:
+```python
+delivery = {
+    "smart": True/False,
+    "success": "seen/interaction/<some-user-defined-success-event>",
+    "time_to_live": "<TTL duration>",
+    "mandatory_channels": [] # list of mandatory channels e.g ["email"]
+}
+```
+Where
+* `smart` (boolean) - whether to optimize for number of notifications sent?
+  - Possible values: `True` / `False`
+  - Default value: False
+  - If False, then notifications are sent on all channels at once.
+  - If True, then notifications are sent one-by-one (on regular interval controlled by `time_to_live`)
+    on each channel until given `success`-metric is achieved.
+
+* `success` - what is your measurement of success for this notification?
+  - Possible values: `seen` / `interaction` / `<some-user-defined-success-event>`
+  - Default value: seen
+  - If `seen`: If notification on any of the channels is seen by user, consider it a success.
+  - If `interaction`: If notification on any of the channels is clicked/interacted by the user, consider it a success.
+  - If `<some-user-defined-success-event>`: If certain event is done by user within the event-window (1 day), consider it a success.
+    - currently, event-window is not configurable. default set to `1d` (1 day).
+      success-event must happen within this event-window since notification was sent.
+
+* `time_to_live` - What's your buffer-window for sending notification.
+  - applicable when `smart`=True, otherwise ignored
+  - Default value: `1h` (1 hour)
+  - notification on each channel will be sent some calculated time [`time_to_live / (number_of_channels - 1))`] apart.
+  - Process will continue until all channels are exhausted or `success` metric is achieved, whichever occurs first.
+
+* `mandatory_channels` - Channels on which notification has to be sent immediately.
+  - applicable when `smart`=True, otherwise ignored
+  - Default value: [] (empty list)
+  - possible channels: `email, sms, whatsapp, androidpush, iospush` etc.
+
+
+If delivery instruction is not provided, then default value is
+```python3
+{
+    "smart": False,
+    "success": "seen"
 }
 ```
 
@@ -119,7 +188,7 @@ Where
 * a single workflow body size must not exceed 200KB (200 * 1024 bytes). While calculating size, attachments are ignored
 * if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
 
-### Request-Batching
+### Batching Workflow Requests
 You can batch multiple workflow requests in one call. Use `batch_instance.append(...)` on batch-instance
 to add however-many-records to call in batch.
 ```python3
@@ -270,7 +339,7 @@ response = supr_client.trigger_workflow(workflow_body)
 
 ### Track and Send Event
 You can track and send events to SuprSend platform by using `supr_client.track` method.
-Event: `event_name`, tracked wrt a user: `distinct_id`, with associated attributes: `properties`
+Event: `event_name`, tracked wrt a user: `distinct_id`, with event-attributes: `properties`
 
 ```python3
 # Method signature:
