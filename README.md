@@ -33,7 +33,7 @@ supr_client = Suprsend("workspace_key", "workspace_secret")
 
 Following example shows a sample request for triggering a workflow.
 It triggers a notification to a user with id: `distinct_id`,
-email: `user@example.com` & androidpush-token: `__android_push_token__`
+email: `user@example.com` & androidpush(fcm-token): `__android_push_fcm_token__`
 using template `purchase-made` and notification_category `system`
 
 ```python3
@@ -141,10 +141,12 @@ Where
 * `time_to_live` - What's your buffer-window for sending notification.
   - applicable when `smart`=True, otherwise ignored
   - Default value: `1h` (1 hour)
-  - notification on each channel will be sent some calculated time [`time_to_live / (number_of_channels - 1))`] apart.
+  - notification on each channel will be sent with time-interval of [`time_to_live / (number_of_channels - 1))`] apart.
+  - channels are tried in low-to-high notification-cost order based on `Notification Cost` mentioned in Vendor Config.
+    If cost is not mentioned, it is considered zero for order-calculation purpose.
   - Process will continue until all channels are exhausted or `success` metric is achieved, whichever occurs first.
 
-* `mandatory_channels` - Channels on which notification has to be sent immediately.
+* `mandatory_channels` - Channels on which notification has to be sent immediately (irrespective of notification-cost).
   - applicable when `smart`=True, otherwise ignored
   - Default value: [] (empty list)
   - possible channels: `email, sms, whatsapp, androidpush, iospush` etc.
@@ -188,11 +190,11 @@ Where
 * a single workflow body size must not exceed 200KB (200 * 1024 bytes). While calculating size, attachments are ignored
 * if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
 
-### Batching Workflow Requests
+### Batching Workflow Requests [_coming-soon..._]
 You can batch multiple workflow requests in one call. Use `batch_instance.append(...)` on batch-instance
 to add however-many-records to call in batch.
 ```python3
-batch_ins = supr_client.batch.new()
+batch_ins = supr_client.workflow_batch.new()
 
 workflow_body1 = {...}  # must be a proper workflow request json/dict
 workflow_body2 = {...}  # must be a proper workflow request json/dict
@@ -218,7 +220,7 @@ print(response)
 If you regularly trigger a workflow for users on some pre-decided channels,
 then instead of adding user-channel-details in each workflow request, you can set those channel-details in user
 profile once, and after that, in workflow trigger request you only need to pass the distinct_id of the user.
-All associated channels in User profile will automatically get picked up when executing the workflow.
+All associated channels in User profile will be automatically picked when executing the workflow.
 
 You can set user channel details viz. email, sms, whatsapp, androidpush etc (using `user.append` method) as shown in the example below.
 

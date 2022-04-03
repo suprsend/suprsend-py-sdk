@@ -14,7 +14,7 @@ from .signature import get_request_signature
 from .utils import (get_apparent_body_size, validate_workflow_body_schema, )
 
 
-class BatchFactory:
+class WorkflowBatchFactory:
 
     def __init__(self, config):
         self.config = config
@@ -23,7 +23,7 @@ class BatchFactory:
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-        batch_ins = supr_client.batch.new()
+        batch_ins = supr_client.workflow_batch.new()
 
         # append one by one
         for i in range(0, 10):
@@ -39,7 +39,7 @@ class BatchFactory:
 
         :return:
         """
-        return BatchWorkflowTrigger(self.config)
+        return WorkflowBatch(self.config)
 
 
 class BatchResponse:
@@ -80,7 +80,7 @@ class _BatchChunk:
     _max_records_in_chunk = MAX_RECORDS_IN_BATCH
 
     def __init__(self, config):
-        self.__config = config
+        self.config = config
         self.__chunk = []
         self.__url = self.__get_url()
         #
@@ -90,19 +90,19 @@ class _BatchChunk:
 
     def __get_url(self):
         url_template = "{}{}/trigger/"
-        if self.__config.include_signature_param:
-            if self.__config.auth_enabled:
+        if self.config.include_signature_param:
+            if self.config.auth_enabled:
                 url_template = url_template + "?verify=true"
             else:
                 url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.__config.base_url, self.__config.workspace_key)
+        url_formatted = url_template.format(self.config.base_url, self.config.workspace_key)
         return url_formatted
 
     def __get_headers(self):
         return {
             "Content-Type": "application/json; charset=utf-8",
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-            "User-Agent": self.__config.user_agent,
+            "User-Agent": self.config.user_agent,
         }
 
     def __add_body_to_chunk(self, body, body_size):
@@ -150,11 +150,11 @@ class _BatchChunk:
     def trigger(self):
         headers = self.__get_headers()
         # Based on whether signature is required or not, add Authorization header
-        if self.__config.auth_enabled:
+        if self.config.auth_enabled:
             # Signature and Authorization-header
             content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
-                                                     self.__config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.__config.workspace_key, sig)
+                                                     self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         else:
             content_txt = json.dumps(self.__chunk, ensure_ascii=False)
         # -----
@@ -200,9 +200,9 @@ class _BatchChunk:
                 }
 
 
-class BatchWorkflowTrigger:
+class WorkflowBatch:
     def __init__(self, config):
-        self.__config = config
+        self.config = config
         self.__pending_records = []
         self.chunks = []
         self.response = BatchResponse()
@@ -214,7 +214,7 @@ class BatchWorkflowTrigger:
             validate_workflow_body_schema(b)
 
     def __chunkify(self, start_idx=0):
-        curr_chunk = _BatchChunk(self.__config)
+        curr_chunk = _BatchChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, body in enumerate(self.__pending_records[start_idx:]):
             is_added = curr_chunk.try_to_add_into_chunk(body)
@@ -239,7 +239,7 @@ class BatchWorkflowTrigger:
         self.__validate_body()
         self.__chunkify()
         for c_idx, ch in enumerate(self.chunks):
-            if self.__config.req_log_level > 0:
+            if self.config.req_log_level > 0:
                 print(f"DEBUG: triggering api call for chunk: {c_idx}")
             # do api call
             ch.trigger()

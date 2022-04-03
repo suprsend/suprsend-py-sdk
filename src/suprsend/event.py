@@ -19,25 +19,25 @@ RESERVED_EVENT_NAMES = [
 
 class EventCollector:
     def __init__(self, config):
-        self.__config = config
+        self.config = config
         self.__url = self.__get_url()
         self.__headers = self.__common_headers()
         self.__supr_props = self.__super_properties()
 
     def __get_url(self):
         url_template = "{}event/"
-        if self.__config.include_signature_param:
-            if self.__config.auth_enabled:
+        if self.config.include_signature_param:
+            if self.config.auth_enabled:
                 url_template = url_template + "?verify=true"
             else:
                 url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.__config.base_url)
+        url_formatted = url_template.format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
         return {
             "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.__config.user_agent,
+            "User-Agent": self.config.user_agent,
         }
 
     def __dynamic_headers(self):
@@ -47,7 +47,7 @@ class EventCollector:
 
     def __super_properties(self):
         return {
-            "$ss_sdk_version": self.__config.user_agent
+            "$ss_sdk_version": self.config.user_agent
         }
 
     def __check_event_prefix(self, event_name: str):
@@ -75,7 +75,7 @@ class EventCollector:
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
             "event": event_name,
-            "env": self.__config.workspace_key,
+            "env": self.config.workspace_key,
             "distinct_id": distinct_id,
             "properties": properties
         }
@@ -86,11 +86,11 @@ class EventCollector:
         try:
             headers = {**self.__headers, **self.__dynamic_headers()}
             # Based on whether signature is required or not, add Authorization header
-            if self.__config.auth_enabled:
+            if self.config.auth_enabled:
                 # Signature and Authorization-header
                 content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
-                                                         self.__config.workspace_secret)
-                headers["Authorization"] = "{}:{}".format(self.__config.workspace_key, sig)
+                                                         self.config.workspace_secret)
+                headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
             else:
                 content_txt = json.dumps(event, ensure_ascii=False)
             # -----

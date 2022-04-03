@@ -9,8 +9,8 @@ from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
-from .batch import BatchFactory
-from .identity import IdentityFactory
+from .workflow_batch import WorkflowBatchFactory
+from .identity import UserIdentityFactory
 from .event import EventCollector
 
 
@@ -43,12 +43,12 @@ class Suprsend:
         #
         self._eventcollector = EventCollector(self)
         # -- instantiate batch
-        self._batch = BatchFactory(self)
-        self._user = IdentityFactory(self)
+        self._workflow_batch = WorkflowBatchFactory(self)
+        self._user = UserIdentityFactory(self)
 
     @property
-    def batch(self):
-        return self._batch
+    def workflow_batch(self):
+        return self._workflow_batch
 
     @property
     def user(self):
