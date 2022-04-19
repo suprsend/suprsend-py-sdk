@@ -46,3 +46,19 @@ def validate_workflow_body_schema(data: Dict) -> Dict:
     except jsonschema.exceptions.ValidationError as ve:
         raise SuprsendValidationError(ve.message)
     return data
+
+
+def validate_track_event_schema(data: Dict) -> Dict:
+    # --- In case props is not provided, set it to empty dict
+    if data.get("properties") is None:
+        data["properties"] = {}
+    # --------------------------------
+    schema = _get_schema('event')
+    try:
+        # jsonschema.validate(instance, schema, cls=None, *args, **kwargs)
+        jsonschema.validate(data, schema)
+    except jsonschema.exceptions.SchemaError as se:
+        raise SuprsendInvalidSchema(se.message)
+    except jsonschema.exceptions.ValidationError as ve:
+        raise SuprsendValidationError(ve.message)
+    return data

@@ -9,18 +9,19 @@ from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
-from .batch import BatchFactory
-from .identity import IdentityFactory
+from .workflow_batch import WorkflowBatchFactory
+from .identity import UserIdentityFactory
+from .event import EventCollector
 
 
 class Suprsend:
     """
-    Entry point of SDK. Follow below Steps:
-    1. create instance
-        supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-    2. Trigger required method
-        workflow_body = {...}
-        response = supr_client.trigger_workflow(workflow_body)
+    - Basic instance
+     supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
+    - Instance with debug on
+     supr_client = Suprsend("__workspace_key__", "__workspace_secret__", debug=True)
+    - Instance with custom base-url
+     supr_client = Suprsend("__workspace_key__", "__workspace_secret__", base_url="https://example.com/", debug=False)
     """
     def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False, **kwargs):
         self.workspace_key = workspace_key
@@ -39,13 +40,15 @@ class Suprsend:
         # --- set logging level for http request
         self.req_log_level = 1 if debug else 0
         set_logging(self.req_log_level)
+        #
+        self._eventcollector = EventCollector(self)
         # -- instantiate batch
-        self._batch = BatchFactory(self)
-        self._user = IdentityFactory(self)
+        self._workflow_batch = WorkflowBatchFactory(self)
+        self._user = UserIdentityFactory(self)
 
     @property
-    def batch(self):
-        return self._batch
+    def workflow_batch(self):
+        return self._workflow_batch
 
     @property
     def user(self):
@@ -113,9 +116,25 @@ class Suprsend:
             "message": "message",
         }
         :except:
-            - SuprsendConfigError (if proper value for workspace_key and workspace_secret not set
             - SuprsendValidationError (if post-data is invalid.)
         """
         wt = WorkflowTrigger(self, data)
         wt.validate_data()
         return wt.execute_workflow()
+
+    def track(self, distinct_id: str, event_name: str, properties: Dict = None) -> Dict:
+        """
+        :param distinct_id:
+        :param event_name:
+        :param properties:
+        :return: {
+            "success": True,
+            "status": "success",
+            "status_code": resp.status_code,
+            "message": resp.text,
+        }
+        :except:
+            - SuprsendValidationError (if post-data is invalid.)
+            - ValueError
+        """
+        return self._eventcollector.collect(distinct_id, event_name, properties)

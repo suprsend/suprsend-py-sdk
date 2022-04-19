@@ -27,7 +27,11 @@
         "$ref": "#/definitions/non_empty_string",
         "description": "timestamp in ISO-8601 format. e.g 2021-08-27T20:14:51.643Z"
     },
-    "priority_algorithm": {"type":  "boolean"},
+    "delivery": {
+      "type": "object",
+      "$ref": "#/definitions/delivery_setting",
+      "description": "set parameters e.g smart (true/false), success metric, TTL, mandatory channels etc"
+    },
     "users": {
       "type": "array",
       "items": { "$ref": "#/definitions/user_setting"},
@@ -69,7 +73,11 @@
     "user_setting": {
       "type": "object",
       "properties": {
-        "distinct_id": { "$ref": "#/definitions/non_empty_string" },
+        "distinct_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "distinct_id: Id which uniquely identify a user in your app"
+        },
         "$email": {
           "oneOf": [
             {"$ref": "#/definitions/email_pattern"},
@@ -168,6 +176,37 @@
         }
       },
       "required": [ "distinct_id" ],
+      "additionalProperties": false
+    },
+    "delivery_setting": {
+      "type": "object",
+      "properties": {
+        "smart": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, notifications are sent to all channels at once. If true, notifications are sent one-by-one until success metric is satisfied"
+        },
+        "success": {
+          "type": "string",
+          "default": "seen",
+          "description": "possible values: seen/interaction/<user_defined_event>."
+        },
+        "time_to_live": {
+          "type": "string",
+          "default": "1h",
+          "description": "Used if smart=true. format [XX]d[XX]h[XX]m[XX]s e.g 1d2h30m10s(for 1day 2hours 30minutes 10sec)"
+        },
+        "mandatory_channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp"]
+          },
+          "minItems": 0,
+          "description": "e.g ['email', 'sms']. Used if smart=true, notification on these channels must be sent, independent of success metric outcome"
+        }
+      },
+      "required": [],
       "additionalProperties": false
     }
   }

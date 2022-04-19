@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://github.com/suprsend/suprsend-py-sdk/request_json/event.json",
+  "title": "track_event",
+  "description": "Json schema for Track event",
+  "$comment": "Json schema for Track event",
+  "type": "object",
+  "properties": {
+    "$insert_id": {
+      "type": "string",
+      "minLength": 36,
+      "description": "unique uuid generated per request"
+    },
+    "$time": {
+      "type": "integer",
+      "minimum": 1640995200000,
+      "description": "Timestamp: unix epoch in milliseconds"
+    },
+    "event": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Event Name to track"
+    },
+    "env": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Workspace key"
+    },
+    "distinct_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "distinct_id: Id which uniquely identify a user in your app"
+    },
+    "properties": {
+      "type": "object",
+      "description": "Properties related to event"
+    }
+  },
+  "required": ["$insert_id", "$time", "event", "env", "distinct_id", "properties"]
+}

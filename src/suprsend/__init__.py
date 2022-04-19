@@ -11,4 +11,4 @@ __author__ = 'SuprSend Developers'
 __credits__ = 'SuprSend'
 
 from .sdkinstance import Suprsend  # noqa
-from .batch import BatchResponse  # noqa
+from .workflow_batch import BatchResponse  # noqa
