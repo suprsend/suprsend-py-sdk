@@ -12,7 +12,7 @@ We're working towards creating SDK in other languages as well.
 ### Installation
 `suprsend-py-sdk` is available on PyPI. You can install using pip.
 ```bash
-pip cache purge && pip install suprsend-py-sdk
+pip install suprsend-py-sdk
 ```
 This SDK depends on a system package called `libmagic`. You can install it as follows:
 ```bash
@@ -42,7 +42,7 @@ workflow_body = {
     "name": "Purchase Workflow",
     "template": "purchase-made",
     "notification_category": "system",
-    "delay": "15m",  # Check duration format below
+    # "delay": "15m",  # Check duration format below
     "users": [
         {
             "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
@@ -70,7 +70,7 @@ workflow_body = {
 
 # Trigger workflow
 response = supr_client.trigger_workflow(workflow_body)
-
+print(response)
 ```
 When you call `supr_client.trigger_workflow`, the SDK internally makes an HTTP call to SuprSend
 Platform to register this request, and you'll immediately receive a response indicating
@@ -95,7 +95,7 @@ Note: The actual processing/execution of workflow happens asynchronously.
     "message": "error message",
 }
 ```
-#### Duration Format
+### Duration Format
 format for specifying duration: `[xx]d[xx]h[xx]m[xx]s`
 Where
 * `d` stands for days. value boundary: 0 <= `d`
@@ -104,14 +104,14 @@ Where
 * `s` stands for seconds. value boundary: 0 <= `s` <= 59
 
 Examples:
-* 2 days, 3 hours, 12 mins, 23 seconds -> 2d3h12m23s or 02d03h12m23s
+* 2 days, 3 hours, 12 minutes, 23 seconds -> 2d3h12m23s or 02d03h12m23s
 * 48 hours -> 2d
 * 30 hours -> 1d6h
 * 300 seconds -> 5m
 * 320 seconds -> 5m20s
 * 60 seconds -> 1m
 
-#### Delivery instruction
+### Delivery instruction
 All delivery options:
 ```python
 delivery = {
@@ -124,14 +124,14 @@ delivery = {
 Where
 * `smart` (boolean) - whether to optimize for number of notifications sent?
   - Possible values: `True` / `False`
-  - Default value: False
+  - Default value: `False`
   - If False, then notifications are sent on all channels at once.
   - If True, then notifications are sent one-by-one (on regular interval controlled by `time_to_live`)
     on each channel until given `success`-metric is achieved.
 
 * `success` - what is your measurement of success for this notification?
   - Possible values: `seen` / `interaction` / `<some-user-defined-success-event>`
-  - Default value: seen
+  - Default value: `seen`
   - If `seen`: If notification on any of the channels is seen by user, consider it a success.
   - If `interaction`: If notification on any of the channels is clicked/interacted by the user, consider it a success.
   - If `<some-user-defined-success-event>`: If certain event is done by user within the event-window (1 day), consider it a success.
@@ -141,9 +141,9 @@ Where
 * `time_to_live` - What's your buffer-window for sending notification.
   - applicable when `smart`=True, otherwise ignored
   - Default value: `1h` (1 hour)
-  - notification on each channel will be sent with time-interval of [`time_to_live / (number_of_channels - 1))`] apart.
-  - channels are tried in low-to-high notification-cost order based on `Notification Cost` mentioned in Vendor Config.
-    If cost is not mentioned, it is considered zero for order-calculation purpose.
+  - notification on each channel will be sent with time-interval of [`time_to_live / (number_of_valid_channels - 1))`] apart.
+  - Currently, channels are tried in low-to-high notification-cost order based on `Notification Cost` mentioned in Vendor Config.
+    If cost is not mentioned, it is considered `0` for order-calculation purpose.
   - Process will continue until all channels are exhausted or `success` metric is achieved, whichever occurs first.
 
 * `mandatory_channels` - Channels on which notification has to be sent immediately (irrespective of notification-cost).
@@ -163,7 +163,7 @@ If delivery instruction is not provided, then default value is
 ### Add attachments
 
 To add one or more Attachments to a Notification (viz. Email, Whatsapp),
-call `supr_client.add_attachment(...)` for each file.
+call `supr_client.add_attachment(...)` for each file with local-path.
 Ensure that file_path is proper, otherwise it will raise FileNotFoundError.
 ```python
 # this snippet can be used to add attachment to workflow_body.
@@ -222,25 +222,34 @@ then instead of adding user-channel-details in each workflow request, you can se
 profile once, and after that, in workflow trigger request you only need to pass the distinct_id of the user.
 All associated channels in User profile will be automatically picked when executing the workflow.
 
-You can set user channel details viz. email, sms, whatsapp, androidpush etc (using `user.append` method) as shown in the example below.
-
-```python3
+- First Instantiate a user object
+```python
 distinct_id = "__uniq_user_id__"  # Unique id of user in your application
 # Instantiate User profile
 user = supr_client.user.new(distinct_id=distinct_id)
-# append channel properties
-user.append({
-  "$email": "user@example.com",
-  "$sms": "+919999999999",
-  "$whatsapp": "+919999999999",
-  "$androidpush": "__fcm_androidpush_token__"
-})
-# save
+```
+- To add channel details to this user (viz. email, sms, whatsapp, androidpush, iospush etc)
+  use `user.add_*` method(s) as shown in the example below.
+```python
+# Add channel details to user-instance. Call relevant add_* methods
+
+user.add_email("user@example.com") # - To add Email
+
+user.add_sms("+919999999999") # - To add SMS
+
+user.add_whatsapp("+919999999999") # - To add Whatsapp
+
+user.add_androidpush("__android_push_fcm_token__") # - by default, token is assumed to be fcm-token
+
+# You can set the optional provider value [fcm/xiaomi/oppo] if its not a fcm-token
+user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
+
+user.add_iospush("__iospush_token__")
+
+# After setting the channel details on user-instance, call save()
 response = user.save()
 print(response)
-
 ```
-
 ```python
 # Response structure
 {
@@ -258,40 +267,10 @@ print(response)
 }
 
 ```
-
-If you want to remove some channel details, use `user.remove` method.
+- Similarly, If you want to remove certain channel details from user,
+you can call `user.remove_*` method as shown in the example below.
 
 ```python
-distinct_id = "__uniq_user_id__"  # Unique id of user in your application
-# Instantiate User profile
-user = supr_client.user.new(distinct_id=distinct_id)
-
-# remove whatsapp channel
-user.remove({
-  "$whatsapp": "+919999999999",
-})
-# save
-response = user.save()
-print(response)
-
-```
-There are helper methods available to add/remove channel details.
-```python
-# Add channel helper methods
-user.add_email("user@example.com")
-user.add_sms("+919999999999")
-user.add_whatsapp("+919999999999")
-
-user.add_androidpush("__android_push_fcm_token__") # by default, token is assumed to be fcm-token
-# You can set the optional provider value [fcm/xiaomi/oppo] if its not a fcm-token
-user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
-
-user.add_iospush("__iospush_token__")
-
-# save
-response = user.save()
-print(response)
-
 
 # Remove channel helper methods
 user.remove_email("user@example.com")
@@ -304,10 +283,14 @@ user.remove_iospush("__iospush_token__")
 response = user.save()
 print(response)
 ```
-Note: After calling `append`/`remove`/`add_*`/`remove_*` methods, don't forget to call `user.save()`.
+
+- Note: After calling `add_*`/`remove_*` methods, don't forget to call `user.save()`. On call of save(),
+SDK sends the request to SuprSend platform to update the User-Profile.
+
 
 Once channels details are set at User profile, you only have to mention the user's distinct_id
-while triggering workflow. Associated channels will automatically be picked up from user-profile e.g.
+while triggering workflow. Associated channels will automatically be picked up from user-profile
+while processing the workflow. In the example below, we are passing only distinct_id of the user:
 
 ```python3
 # Prepare Workflow body
@@ -315,7 +298,7 @@ workflow_body = {
     "name": "Purchase Workflow",
     "template": "purchase-made",
     "notification_category": "system",
-    "delay": "15m",
+    # "delay": "15m",
     "users": [
         {
             "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
@@ -336,7 +319,7 @@ workflow_body = {
 
 # Trigger workflow
 response = supr_client.trigger_workflow(workflow_body)
-
+print(response)
 ```
 
 ### Track and Send Event

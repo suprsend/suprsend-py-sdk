@@ -22,7 +22,7 @@ class EventCollector:
         self.config = config
         self.__url = self.__get_url()
         self.__headers = self.__common_headers()
-        self.__supr_props = self.__super_properties()
+        self.__super_props = self.__super_properties()
 
     def __get_url(self):
         url_template = "{}event/"
@@ -58,7 +58,7 @@ class EventCollector:
 
     def __validate_event_name(self, event_name: str) -> str:
         if not isinstance(event_name, (str,)):
-            return event_name
+            raise ValueError("event_name must be a string")
         event_name = event_name.strip()
         self.__check_event_prefix(event_name)
         return event_name
@@ -69,7 +69,7 @@ class EventCollector:
             properties = {}
         if not isinstance(properties, (dict,)):
             raise ValueError("properties must be a dictionary")
-        properties = {**properties, **self.__supr_props}
+        properties = {**properties, **self.__super_props}
         # -----
         event = {
             "$insert_id": str(uuid.uuid4()),

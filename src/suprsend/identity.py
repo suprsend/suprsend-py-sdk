@@ -28,7 +28,7 @@ class UserIdentity:
         self.config = config
         self.distinct_id = distinct_id
         self.__url = self.__get_url()
-        self.__supr_props = self.__super_properties()
+        self.__super_props = self.__super_properties()
         #
         self.__errors = []
         self.__info = []
@@ -68,11 +68,10 @@ class UserIdentity:
     def errors(self):
         return self.__errors
 
-    @property
     def events(self):
         all_events = self._events
         for e in all_events:
-            e["properties"] = self.__supr_props
+            e["properties"] = self.__super_props
         # --------------------
         # Add $identify event by default, if new properties get added
         if self._append_count > 0:
@@ -83,7 +82,7 @@ class UserIdentity:
                 "event": "$identify",
                 "properties": {
                     **{"$anon_id": self.distinct_id, "$identified_id": self.distinct_id,},
-                    **self.__supr_props
+                    **self.__super_props
                 },
             }
             all_events.append(user_identify_event)
@@ -103,7 +102,7 @@ class UserIdentity:
         try:
             self.__validate_body()
             headers = self.__get_headers()
-            events = self.events
+            events = self.events()
             # Based on whether signature is required or not, add Authorization header
             if self.config.auth_enabled:
                 # Signature and Authorization-header
