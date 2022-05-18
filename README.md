@@ -284,9 +284,30 @@ response = user.save()
 print(response)
 ```
 
-- Note: After calling `add_*`/`remove_*` methods, don't forget to call `user.save()`. On call of save(),
-SDK sends the request to SuprSend platform to update the User-Profile.
+- If you need to delete/unset all emails (or any other channel) of a user,
+  you can call `unset` method on the user instance.
+  The method accepts the channel key/s (a single key or list of keys)
+```python
+# --- To delete all emails associated with user
+user.unset("$email")
+response = user.save()
+print(response)
 
+# what value to pass to unset channels
+# for email:                $email
+# for whatsapp:             $whatsapp
+# for SMS:                  $sms
+# for androidpush tokens:   $androidpush
+# for iospush tokens:       $iospush
+# for webpush tokens:       $webpush
+
+# --- multiple channels can also be deleted in one call by passing argument as a list
+user.unset(["$email", "$sms", "$whatsapp"])
+user.save()
+```
+
+- Note: After calling `add_*`/`remove_*`/`unset` methods, don't forget to call `user.save()`. On call of save(),
+SDK sends the request to SuprSend platform to update the User-Profile.
 
 Once channels details are set at User profile, you only have to mention the user's distinct_id
 while triggering workflow. Associated channels will automatically be picked up from user-profile
