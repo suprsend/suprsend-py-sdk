@@ -70,6 +70,22 @@
         "pattern": "value in email format required. e.g. user@example.com"
       }
     },
+    "slack_setting": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "pattern": "^[uUwW][a-zA-Z0-9]+$",
+          "description": "slack member id of user",
+          "message": {
+            "required": "",
+            "pattern": "Slack Member id format: [U|W]XXXXXXXXX"
+          }
+        },
+        "email": {"$ref": "#/definitions/email_pattern"}
+      },
+      "additionalProperties": false
+    },
     "user_setting": {
       "type": "object",
       "properties": {
@@ -147,6 +163,18 @@
               "maxItems": 10,
               "minItems": 1,
               "items": {"type": "object", "minProperties": 1}
+            }
+          ]
+        },
+        "$slack": {
+          "oneOf": [
+            { "$ref": "#/definitions/slack_setting" },
+            {
+              "type": "array",
+              "uniqueItems": true,
+              "maxItems": 10,
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/slack_setting" }
             }
           ]
         },

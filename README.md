@@ -246,6 +246,9 @@ user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 
 user.add_iospush("__iospush_token__")
 
+user.add_slack_email("user@example.com")  # - To add Slack using email
+user.add_slack_userid("U03XXXXXXXX")  # - To add Slack if slack member_id is known
+
 # After setting the channel details on user-instance, call save()
 response = user.save()
 print(response)
@@ -279,6 +282,10 @@ user.remove_whatsapp("+919999999999")
 user.remove_androidpush("__android_push_fcm_token__")
 user.remove_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 user.remove_iospush("__iospush_token__")
+
+user.remove_slack_email("user@example.com")
+user.remove_slack_userid("U03XXXXXXXX")
+
 # save
 response = user.save()
 print(response)
@@ -300,6 +307,7 @@ print(response)
 # for androidpush tokens:   $androidpush
 # for iospush tokens:       $iospush
 # for webpush tokens:       $webpush
+# for slack:                $slack
 
 # --- multiple channels can also be deleted in one call by passing argument as a list
 user.unset(["$email", "$sms", "$whatsapp"])

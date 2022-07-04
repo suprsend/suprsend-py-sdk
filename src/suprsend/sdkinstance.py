@@ -10,7 +10,7 @@ from .exception import SuprsendConfigError
 from .workflow import WorkflowTrigger
 from .request_log import set_logging
 from .workflow_batch import WorkflowBatchFactory
-from .identity import UserIdentityFactory
+from .subscriber import SubscriberFactory
 from .event import EventCollector
 
 
@@ -44,7 +44,7 @@ class Suprsend:
         self._eventcollector = EventCollector(self)
         # -- instantiate batch
         self._workflow_batch = WorkflowBatchFactory(self)
-        self._user = UserIdentityFactory(self)
+        self._user = SubscriberFactory(self)
 
     @property
     def workflow_batch(self):

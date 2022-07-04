@@ -6,10 +6,10 @@ import requests
 
 from .constants import (HEADER_DATE_FMT, )
 from .signature import get_request_signature
-from .identity_helper import _IdentityEventInternalHelper
+from .subscriber_helper import _SubscriberInternalHelper
 
 
-class UserIdentityFactory:
+class SubscriberFactory:
     def __init__(self, config):
         self.config = config
 
@@ -20,10 +20,10 @@ class UserIdentityFactory:
         if not distinct_id:
             raise ValueError("distinct_id must be passed")
         # -----
-        return UserIdentity(self.config, distinct_id)
+        return Subscriber(self.config, distinct_id)
 
 
-class UserIdentity:
+class Subscriber:
     def __init__(self, config, distinct_id):
         self.config = config
         self.distinct_id = distinct_id
@@ -36,7 +36,7 @@ class UserIdentity:
         self._remove_count = 0
         self._unset_count = 0
         self._events = []
-        self._helper = _IdentityEventInternalHelper(distinct_id, config.workspace_key)
+        self._helper = _SubscriberInternalHelper(distinct_id, config.workspace_key)
 
     def __get_url(self):
         url_template = "{}event/"
@@ -359,4 +359,45 @@ class UserIdentity:
         """
         caller = "remove_webpush"
         self._helper._remove_webpush(value, provider, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    # ------------------------ Slack
+    def add_slack_email(self, value: str):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "add_slack_email"
+        self._helper._add_slack({"email": value}, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def remove_slack_email(self, value: str):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "remove_slack_email"
+        self._helper._remove_slack({"email": value}, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def add_slack_userid(self, value: str):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "add_slack_userid"
+        self._helper._add_slack({"user_id": value}, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def remove_slack_userid(self, value: str):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "remove_slack_userid"
+        self._helper._remove_slack({"user_id": value}, caller=caller)
         self._collect_event(discard_if_error=True)
