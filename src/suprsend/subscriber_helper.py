@@ -10,9 +10,10 @@ IDENT_KEY_ANDROIDPUSH="$androidpush"
 IDENT_KEY_IOSPUSH="$iospush"
 IDENT_KEY_WHATSAPP="$whatsapp"
 IDENT_KEY_WEBPUSH="$webpush"
+IDENT_KEY_SLACK="$slack"
 
 IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_KEY_IOSPUSH,
-                  IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH,]
+                  IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK]
 
 KEY_PUSHVENDOR = "$pushvendor"
 
@@ -41,7 +42,7 @@ email_regex_compiled = re.compile(EMAIL_REGEX)
 # ---------
 
 
-class _IdentityEventInternalHelper:
+class _SubscriberInternalHelper:
     """
     Internal helper class
     """
@@ -180,7 +181,10 @@ class _IdentityEventInternalHelper:
             if self.__dict_append.get(KEY_PUSHVENDOR):
                 kwargs[KEY_PUSHVENDOR] = self.__dict_append.get(KEY_PUSHVENDOR)
 
-    def __remove_identity(self, key, value, kwargs):
+        elif key == IDENT_KEY_SLACK:
+            self._add_slack(val, caller=caller)
+
+    def __remove_identity(self, key, value, kwargs, caller):
         if key == IDENT_KEY_EMAIL:
             self._remove_email(val, caller=caller)
 
@@ -204,6 +208,9 @@ class _IdentityEventInternalHelper:
             self._remove_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
             if self.__dict_remove.get(KEY_PUSHVENDOR):
                 kwargs[KEY_PUSHVENDOR] = self.__dict_remove.get(KEY_PUSHVENDOR)
+
+        elif key == IDENT_KEY_SLACK:
+            self._remove_slack(val, caller=caller)
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):
@@ -386,4 +393,53 @@ class _IdentityEventInternalHelper:
         self.__dict_remove[IDENT_KEY_WEBPUSH] = value
         self.__dict_remove[KEY_PUSHVENDOR] = provider
 
-    # ------------------------
+    # ------------------------ Slack
+
+    def __validate_slack_userid(self, userid, caller):
+        userid, is_valid = self.__check_ident_val_string(userid, caller)
+        if not is_valid:
+            return userid, False
+        userid = userid.upper()
+        if not (userid.startswith("U") or userid.startswith("W")):
+            self.__errors.append(f"[{caller}] invalid value {userid}. Slack user/member_id starts with a U or W")
+            return userid, False
+        # -------
+        return userid, True
+
+    def __check_slack_dict(self, value, caller):
+        msg = "value must be a valid dict/json with one of these keys: [email, user_id]"
+        if not (value and isinstance(value, (dict,))):
+            self.__errors.append(f"[{caller}] {msg}")
+            return value, False
+        user_id = value.get("user_id")
+        email = value.get("email")
+        if user_id and user_id.strip():
+            user_id = user_id.strip()
+            user_id, is_valid = self.__validate_slack_userid(user_id, caller)
+            if not is_valid:
+                return value, False
+            else:
+                return {"user_id": user_id}, True
+
+        elif email and email.strip():
+            email = email.strip()
+            email, is_valid = self.__validate_email(email, caller)
+            if not is_valid:
+                return value, False
+            else:
+                return {"email": email}, True
+        else:
+            self.__errors.append(f"[{caller}] {msg}")
+            return value, False
+
+    def _add_slack(self, value: str, caller: str):
+        value, is_valid = self.__check_slack_dict(value, caller)
+        if not is_valid:
+            return
+        self.__dict_append[IDENT_KEY_SLACK] = value
+
+    def _remove_slack(self, value: str, caller):
+        value, is_valid = self.__check_slack_dict(value, caller)
+        if not is_valid:
+            return
+        self.__dict_remove[IDENT_KEY_SLACK] = value
