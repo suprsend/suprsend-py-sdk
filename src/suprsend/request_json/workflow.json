@@ -228,7 +228,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp"]
+            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger"]
           },
           "minItems": 0,
           "description": "e.g ['email', 'sms']. Used if smart=true, notification on these channels must be sent, independent of success metric outcome"
