@@ -7,11 +7,13 @@ from typing import List, Dict
 from .version import __version__
 from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
-from .workflow import WorkflowTrigger
+from .attachment import get_attachment_json_for_file
+from .workflow import Workflow, _WorkflowTrigger
 from .request_log import set_logging
 from .workflow_batch import WorkflowBatchFactory
+from .event_batch import EventBatchFactory
 from .subscriber import SubscriberFactory
-from .event import EventCollector
+from .event import Event, EventCollector
 
 
 class Suprsend:
@@ -41,14 +43,21 @@ class Suprsend:
         self.req_log_level = 1 if debug else 0
         set_logging(self.req_log_level)
         #
+        self._workflow_trigger = _WorkflowTrigger(self)
         self._eventcollector = EventCollector(self)
         # -- instantiate batch
         self._workflow_batch = WorkflowBatchFactory(self)
+        self._event_batch = EventBatchFactory(self)
+        # --
         self._user = SubscriberFactory(self)
 
     @property
     def workflow_batch(self):
         return self._workflow_batch
+
+    @property
+    def event_batch(self):
+        return self._event_batch
 
     @property
     def user(self):
@@ -83,7 +92,7 @@ class Suprsend:
         if not isinstance(body, dict):
             raise ValueError("data must be a dictionary")
         # --------
-        attachment = self.__get_attachment_json_for_file(file_path)
+        attachment = get_attachment_json_for_file(file_path)
         # --- add the attachment to body->data->$attachments
         if body["data"].get("$attachments") is None:
             body["data"]["$attachments"] = []
@@ -91,36 +100,24 @@ class Suprsend:
         body["data"]["$attachments"].append(attachment)
         return body
 
-    def __get_attachment_json_for_file(self, file_path: str) -> Dict:
-        # Ensure that path is expanded and absolute
-        abs_path = os.path.abspath(os.path.expanduser(file_path))
-        # Get attachment json
-        with open(abs_path, "rb") as f:
-            file_name = os.path.basename(abs_path)
-            mime_type = magic.from_file(abs_path, mime=True)
-            # base64 encoded string
-            b64encoded = base64.b64encode(f.read())
-            b64data = b64encoded.decode()
-            return {
-                "filename": file_name,
-                "contentType": mime_type,
-                "data": b64data,
-            }
-
-    def trigger_workflow(self, data: Dict) -> Dict:
+    def trigger_workflow(self, data) -> Dict:
         """
         :param data:
         :return: {
             "success": true/false,
-            "status": 202/401/500,
+            "status": "success"/"fail",
             "message": "message",
+            "status_code": 202/401/500,
         }
         :except:
-            - SuprsendValidationError (if post-data is invalid.)
+            - SuprsendValidationError
         """
-        wt = WorkflowTrigger(self, data)
-        wt.validate_data()
-        return wt.execute_workflow()
+        if isinstance(data, Workflow):
+            wf_ins = data
+        else:
+            wf_ins = Workflow(data)
+        # -----
+        return self._workflow_trigger.trigger(wf_ins)
 
     def track(self, distinct_id: str, event_name: str, properties: Dict = None) -> Dict:
         """
@@ -137,4 +134,22 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
-        return self._eventcollector.collect(distinct_id, event_name, properties)
+        event = Event(distinct_id, event_name, properties)
+        return self._eventcollector.collect(event)
+
+    def track_event(self, event: Event) -> Dict:
+        """
+        :param event: suprsend.Event
+        :return: {
+            "success": True,
+            "status": "success",
+            "status_code": resp.status_code,
+            "message": resp.text,
+        }
+        :except:
+            - SuprsendValidationError (if post-data is invalid.)
+            - ValueError
+        """
+        if not isinstance(event, Event):
+            raise ValueError("argument must be an instance of suprsend.Event")
+        return self._eventcollector.collect(event)

@@ -4,15 +4,45 @@ import json
 from typing import Dict
 
 from .constants import (HEADER_DATE_FMT, BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE)
-from .utils import (get_apparent_body_size, validate_workflow_body_schema)
+from .utils import (get_apparent_workflow_body_size, validate_workflow_body_schema)
 from .signature import get_request_signature
+from .attachment import get_attachment_json_for_file
 
 
-class WorkflowTrigger:
-    def __init__(self, config, data: Dict):
+class Workflow:
+    def __init__(self, body):
+        if not isinstance(body, (dict,)):
+            raise ValueError("workflow body must be a json/dictionary")
+        self.body = body
+
+    def add_attachment(self, file_path: str):
+        if self.body.get("data") is None:
+            self.body["data"] = {}
+        if not isinstance(self.body, dict):
+            raise ValueError("data must be a dictionary")
+        # ---
+        attachment = get_attachment_json_for_file(file_path)
+        # --- add the attachment to body->data->$attachments
+        if self.body["data"].get("$attachments") is None:
+            self.body["data"]["$attachments"] = []
+        # -----
+        self.body["data"]["$attachments"].append(attachment)
+
+    def get_final_json(self, config, is_part_of_batch: bool=False):
+        self.body = validate_workflow_body_schema(self.body)
+        # ---- Check body size
+        apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_batch)
+        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
+            raise ValueError(f"workflow body (discounting attachment if any) too big - {apparent_size} Bytes, "
+                             f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+        # ----
+        return self.body, apparent_size
+
+
+class _WorkflowTrigger:
+    def __init__(self, config):
         self.config = config
         self.url = self.__get_url()
-        self.data = data
 
     def __get_url(self):
         url_template = "{}{}/trigger/"
@@ -31,16 +61,21 @@ class WorkflowTrigger:
             "User-Agent": self.config.user_agent,
         }
 
-    def execute_workflow(self) -> Dict:
+    def trigger(self, workflow: Workflow) -> Dict:
+        workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_batch=False)
+        return self.send(workflow_body)
+
+    def send(self, workflow_body: Dict) -> Dict:
         try:
             headers = self.__get_headers()
             # Based on whether signature is required or not, add Authorization header
             if self.config.auth_enabled:
                 # Signature and Authorization-header
-                content_txt, sig = get_request_signature(self.url, 'POST', self.data, headers, self.config.workspace_secret)
+                content_txt, sig = get_request_signature(self.url, 'POST', workflow_body,
+                                                         headers, self.config.workspace_secret)
                 headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
             else:
-                content_txt = json.dumps(self.data, ensure_ascii=False)
+                content_txt = json.dumps(workflow_body, ensure_ascii=False)
             # -----
             resp = requests.post(self.url,
                                  data=content_txt.encode('utf-8'),
@@ -69,13 +104,3 @@ class WorkflowTrigger:
                     "status_code": resp.status_code,
                     "message": resp.text,
                 }
-
-    def validate_data(self):
-        self.data = validate_workflow_body_schema(self.data)
-        # ---- Check body size
-        apparent_size = get_apparent_body_size(self.data)
-        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"workflow body (discounting attachment if any) too big - {apparent_size} Bytes, "
-                             f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
-        # ----
-        return self.data
