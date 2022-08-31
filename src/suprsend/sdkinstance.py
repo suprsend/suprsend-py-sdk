@@ -12,6 +12,7 @@ from .workflow import Workflow, _WorkflowTrigger
 from .request_log import set_logging
 from .workflow_batch import WorkflowBatchFactory
 from .event_batch import EventBatchFactory
+from .subscriber_batch import SubscriberBatchFactory
 from .subscriber import SubscriberFactory
 from .event import Event, EventCollector
 
@@ -48,6 +49,7 @@ class Suprsend:
         # -- instantiate batch
         self._workflow_batch = WorkflowBatchFactory(self)
         self._event_batch = EventBatchFactory(self)
+        self._user_batch = SubscriberBatchFactory(self)
         # --
         self._user = SubscriberFactory(self)
 
@@ -58,6 +60,10 @@ class Suprsend:
     @property
     def event_batch(self):
         return self._event_batch
+
+    @property
+    def user_batch(self):
+        return self._user_batch
 
     @property
     def user(self):

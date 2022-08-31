@@ -360,6 +360,29 @@ wf = Workflow(body=workflow_body)
 response = supr_client.trigger_workflow(wf)
 print(response)
 ```
+#### Batch Users
+You can batch multiple subscriber requests in one call. Use `user_batch.append(...)` on batch-instance
+to add however-many-records to call in batch.
+```python3
+batch_ins = supr_client.user_batch.new()
+# Prepare multiple users
+u1 = supr_client.user.new("distinct_id_1") # User 1
+u1.set_email("u1@example.com")
+
+u2 = supr_client.user.new("distinct_id_2") # User 2
+u2.set_email("u2@example.com")
+
+# --- use .append on batch instance to add one or more records
+batch_ins.append(u1)
+batch_ins.append(u2)
+# OR
+batch_ins.append(u1, u2)
+
+# -------
+response = batch_ins.save()
+print(response)
+
+```
 
 ### Track and Send Event
 You can track and send events to SuprSend platform by using `supr_client.track_event` method.

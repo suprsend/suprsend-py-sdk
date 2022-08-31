@@ -2,9 +2,9 @@
 DEFAULT_URL = "https://hub.suprsend.com/"
 DEFAULT_UAT_URL = "https://collector-staging.suprsend.workers.dev/"
 
-# a API call should not have apparent body size of more than 500KB
-BODY_MAX_APPARENT_SIZE_IN_BYTES = 500 * 1024  # 500 * 1024
-BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "500KB"
+# a API call should not have apparent body size of more than 800KB
+BODY_MAX_APPARENT_SIZE_IN_BYTES = 800 * 1024  # 800 * 1024
+BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "800KB"
 
 # in general url-size wont exceed 2048 chars or 2048 utf-8 bytes
 ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES = 2100
@@ -19,6 +19,12 @@ MAX_EVENTS_IN_BATCH = 100
 
 ALLOW_ATTACHMENTS_IN_BATCH = False
 ATTACHMENT_UPLOAD_ENABLED = False
+
+# -- single Identity event limit
+IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES = 2 * 1024
+IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "2KB"
+
+MAX_IDENTITY_EVENTS_IN_BATCH = 400
 
 # In TZ Format: "%a, %d %b %Y %H:%M:%S %Z"
 HEADER_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"

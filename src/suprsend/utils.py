@@ -102,6 +102,11 @@ def get_apparent_event_size(event: Dict, is_part_of_batch: bool) -> int:
     return apparent_size
 
 
+def get_apparent_identity_event_size(event: Dict) -> int:
+    body_size = len(json.dumps(event, ensure_ascii=False).encode('utf-8'))
+    return body_size
+
+
 def validate_workflow_body_schema(body: Dict) -> Dict:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
