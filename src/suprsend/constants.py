@@ -13,7 +13,7 @@ ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES = 2100
 WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES = 200
 
 # max workflow-records in one batch api call.
-MAX_WORKFLOWS_IN_BATCH = 10
+MAX_WORKFLOWS_IN_BATCH = 100
 # max event-records in one batch api call
 MAX_EVENTS_IN_BATCH = 100
 
