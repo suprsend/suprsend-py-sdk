@@ -37,6 +37,7 @@ email: `user@example.com` & androidpush(fcm-token): `__android_push_fcm_token__`
 using template `purchase-made` and notification_category `system`
 
 ```python3
+from suprsend import Workflow
 # Prepare Workflow body
 workflow_body = {
     "name": "Purchase Workflow",
@@ -67,9 +68,9 @@ workflow_body = {
         }
     }
 }
-
+wf = Workflow(body=workflow_body)
 # Trigger workflow
-response = supr_client.trigger_workflow(workflow_body)
+response = supr_client.trigger_workflow(wf)
 print(response)
 ```
 When you call `supr_client.trigger_workflow`, the SDK internally makes an HTTP call to SuprSend
@@ -162,17 +163,21 @@ If delivery instruction is not provided, then default value is
 
 ### Add attachments
 
-To add one or more Attachments to a Notification (viz. Email, Whatsapp),
-call `supr_client.add_attachment(...)` for each file with local-path.
+To add one or more Attachments to a Workflow/Notification (viz. Email),
+call `Workflow.add_attachment(file_path)` for each file with local-path.
 Ensure that file_path is proper, otherwise it will raise FileNotFoundError.
 ```python
-# this snippet can be used to add attachment to workflow_body.
+from suprsend import Workflow
+workflow_body = {...}
+wf_instance = Workflow(workflow_body)
+
+# this snippet can be used to add attachment to workflow.
 file_path = "/home/user/billing.pdf"
-supr_client.add_attachment(workflow_body, file_path)
+wf_instance.add_attachment(file_path)
 ```
 
 #### Attachment structure
-The `add_attachment(...)` call appends below structure to `data->'$attachments'`
+The `add_attachment(...)` call appends below structure to `workflow_body->data->'$attachments'`
 
 ```json
 {
@@ -190,20 +195,23 @@ Where
 * a single workflow body size must not exceed 200KB (200 * 1024 bytes). While calculating size, attachments are ignored
 * if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
 
-### Batching Workflow Requests [_coming-soon..._]
-You can batch multiple workflow requests in one call. Use `batch_instance.append(...)` on batch-instance
+### Batching Workflow Requests
+You can batch multiple workflow requests in one call. Use `workflow_batch.append(...)` on batch-instance
 to add however-many-records to call in batch.
 ```python3
+from suprsend import Workflow
+
 batch_ins = supr_client.workflow_batch.new()
 
-workflow_body1 = {...}  # must be a proper workflow request json/dict
-workflow_body2 = {...}  # must be a proper workflow request json/dict
+# one or more workflow instances
+workflow1 = Workflow(body={...}) # body must be a proper workflow request json/dict
+workflow2 = Workflow(body={...}) # body must be a proper workflow request json/dict
 
 # --- use .append on batch instance to add one or more records
-batch_ins.append(workflow_body1)
-batch_ins.append(workflow_body2)
+batch_ins.append(workflow1)
+batch_ins.append(workflow2)
 # OR
-batch_ins.append(workflow_body1, workflow_body2)
+batch_ins.append(workflow1, workflow2)
 
 # -------
 response = batch_ins.trigger()
@@ -211,7 +219,7 @@ response = batch_ins.trigger()
 print(response)
 ```
 * There isn't any limit on number-of-records that can be added to batch-instance.
-* On calling `batch_ins.trigger()` the SDK internally makes one-or-more Callable-chunks.
+* On calling `workflow_batch.trigger()` the SDK internally makes one-or-more Callable-chunks.
 * each callable-chunk contains a subset of records, the subset calculation is based on each record's bytes-size
   and max allowed chunk-size and chunk-length etc.
 * for each callable-chunk SDK makes an HTTP call to SuprSend To register the request.
@@ -322,6 +330,8 @@ while triggering workflow. Associated channels will automatically be picked up f
 while processing the workflow. In the example below, we are passing only distinct_id of the user:
 
 ```python3
+from suprsend import Workflow
+
 # Prepare Workflow body
 workflow_body = {
     "name": "Purchase Workflow",
@@ -345,30 +355,52 @@ workflow_body = {
         }
     }
 }
-
+wf = Workflow(body=workflow_body)
 # Trigger workflow
-response = supr_client.trigger_workflow(workflow_body)
+response = supr_client.trigger_workflow(wf)
 print(response)
+```
+#### Batch Users
+You can batch multiple subscriber requests in one call. Use `user_batch.append(...)` on batch-instance
+to add however-many-records to call in batch.
+```python3
+batch_ins = supr_client.user_batch.new()
+# Prepare multiple users
+u1 = supr_client.user.new("distinct_id_1") # User 1
+u1.set_email("u1@example.com")
+
+u2 = supr_client.user.new("distinct_id_2") # User 2
+u2.set_email("u2@example.com")
+
+# --- use .append on batch instance to add one or more records
+batch_ins.append(u1)
+batch_ins.append(u2)
+# OR
+batch_ins.append(u1, u2)
+
+# -------
+response = batch_ins.save()
+print(response)
+
 ```
 
 ### Track and Send Event
-You can track and send events to SuprSend platform by using `supr_client.track` method.
-Event: `event_name`, tracked wrt a user: `distinct_id`, with event-attributes: `properties`
+You can track and send events to SuprSend platform by using `supr_client.track_event` method.
+An event is composed of an `event_name`, tracked wrt a user: `distinct_id`, with event-attributes: `properties`
 
 ```python3
-# Method signature:
-def track(distinct_id: str, event_name: str, properties: Dict = None) -> Dict
-```
+from suprsend import Event
 
-```python3
 # Example
 distinct_id = "__uniq_user_id__" # Mandatory, Unique id of user in your application
 event_name = "__event_name__"   # Mandatory, name of the event you're tracking
-properties = {...} # Optional, default=None, a dict representing event-attributes
+properties = {} # Optional, default=None, a dict representing event-attributes
 
-response = supr_client.track(distinct_id, event_name, properties=properties)
+event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties)
+
+# Send event
+response = supr_client.track_event(event)
 print(response)
-
 ```
 
 ```python
@@ -386,5 +418,28 @@ print(response)
     "status_code": 500, # http status code
     "message": "error message",
 }
+
+```
+
+#### Batching events
+You can batch multiple events in one call. Use `event_batch.append(...)` on batch-instance
+to add however-many-records to call in batch.
+```python3
+from suprsend import Event
+
+batch_ins = supr_client.event_batch.new()
+# Example
+e1 = Event("distinct_id1", "event_name1", {"k1": "v1"}) # Event 1
+e2 = Event("distinct_id2", "event_name2", {"k2": "v2"}) # Event 2
+
+# --- use .append on batch instance to add one or more records
+batch_ins.append(e1)
+batch_ins.append(e2)
+# OR
+batch_ins.append(e1, e2)
+
+# -------
+response = batch_ins.trigger()
+print(response)
 
 ```

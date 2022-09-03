@@ -4,8 +4,13 @@ import time
 from datetime import datetime, timezone
 import requests
 
-from .constants import (HEADER_DATE_FMT, )
+from .constants import (
+    HEADER_DATE_FMT,
+    IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
+    IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+)
 from .signature import get_request_signature
+from .utils import (get_apparent_identity_event_size, )
 from .subscriber_helper import _SubscriberInternalHelper
 
 
@@ -69,41 +74,53 @@ class Subscriber:
         return self.__errors
 
     def events(self):
-        all_events = self._events
+        # Don't mutate the original array. Make a copy of _events
+        all_events = [*self._events]
         for e in all_events:
             e["properties"] = self.__super_props
         # --------------------
         # Add $identify event by default, if new properties get added
-        if self._append_count > 0:
+        if len(all_events) == 0 or self._append_count > 0:
             user_identify_event = {
                 "$insert_id": str(uuid.uuid4()),
                 "$time": int(time.time() * 1000),
                 "env": self.config.workspace_key,
                 "event": "$identify",
                 "properties": {
-                    **{"$anon_id": self.distinct_id, "$identified_id": self.distinct_id,},
+                    # Don't add $anon_id to properties,
+                    **{"$identified_id": self.distinct_id,},
                     **self.__super_props
                 },
             }
-            all_events.append(user_identify_event)
+            # Add $identify event at the 0th index, so that $identify runs before $append/$remove/$reset
+            all_events.insert(0, user_identify_event)
         # ---------
         return all_events
+
+    def validate_event_size(self, event_dict):
+        apparent_size = get_apparent_identity_event_size(event_dict)
+        if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
+            raise ValueError(f"User Event size too big - {apparent_size} Bytes, "
+                             f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+        # ----
+        return event_dict, apparent_size
 
     def __validate_body(self):
         if self.__info:
             print("WARNING:", "\n".join(self.__info))
         if self.__errors:
             raise ValueError("ERROR: " + "\n".join(self.__errors))
-        if not self._events:
-            raise ValueError("ERROR: no user properties have been edited. "
-                             "Use user.append/remove/unset method to update user properties")
 
     def save(self):
         try:
             self.__validate_body()
             headers = self.__get_headers()
             events = self.events()
-            # Based on whether signature is required or not, add Authorization header
+            # --- validate event size
+            for ev in events:
+                ev, size = self.validate_event_size(ev)
+
+            # --- Based on whether signature is required or not, add Authorization header
             if self.config.auth_enabled:
                 # Signature and Authorization-header
                 content_txt, sig = get_request_signature(self.__url, 'POST', events, headers,

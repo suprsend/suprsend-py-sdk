@@ -7,16 +7,15 @@ from typing import List, Dict
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
-    MAX_WORKFLOWS_IN_BATCH,
-    ALLOW_ATTACHMENTS_IN_BATCH,
+    MAX_IDENTITY_EVENTS_IN_BATCH,
     HEADER_DATE_FMT,
 )
 from .signature import get_request_signature
 from .batch_response import BatchResponse
-from .workflow import Workflow
+from .subscriber import Subscriber
 
 
-class WorkflowBatchFactory:
+class SubscriberBatchFactory:
 
     def __init__(self, config):
         self.config = config
@@ -25,29 +24,39 @@ class WorkflowBatchFactory:
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-        batch_ins = supr_client.workflow_batch.new()
+        batch_ins = supr_client.user_batch.new()
 
         # append one by one
         for i in range(0, 10):
-            w = Workflow(body) # Workflow instance
-            batch_ins.append(w)
+            # -- User instance
+            user = supr_client.user.new('distinct_id')  # create user instance
+            user.add_email("user1@example.com")
+            # -- add user to batch
+            batch_ins.append(user)
 
         # append many in one call
-        all_workflows = [W1, W2, ...] # multiple workflows
-        batch_ins.append(*all_workflows)
+        # -- 1
+        user1 = supr_client.user.new('distinct_id_1')
+        user1.add_email("user1@example.com")
+        # -- 2
+        user2 = supr_client.user.new('distinct_id_2')
+        user2.add_email("user2@example.com")
+        #
+        all_users = [user1, user2, ...] # multiple users
+        batch_ins.append(*all_users)
 
-        # call trigger
-        response = batch_ins.trigger()
+        # call save
+        response = batch_ins.save()
 
         :return:
         """
-        return WorkflowBatch(self.config)
+        return SubscriberBatch(self.config)
 
 
-class _WorkflowBatchChunk:
+class _SubscriberBatchBatchChunk:
     _chunk_apparent_size_in_bytes = BODY_MAX_APPARENT_SIZE_IN_BYTES
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
-    _max_records_in_chunk = MAX_WORKFLOWS_IN_BATCH
+    _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BATCH
 
     def __init__(self, config):
         self.config = config
@@ -60,13 +69,13 @@ class _WorkflowBatchChunk:
         self.response = None
 
     def __get_url(self):
-        url_template = "{}{}/trigger/"
+        url_template = "{}event/"
         if self.config.include_signature_param:
             if self.config.auth_enabled:
                 url_template = url_template + "?verify=true"
             else:
                 url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url, self.config.workspace_key)
+        url_formatted = url_template.format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
@@ -80,10 +89,10 @@ class _WorkflowBatchChunk:
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
         }
 
-    def __add_body_to_chunk(self, body, body_size):
-        # First add size, then body to reduce effects of race condition
-        self.__running_size += body_size
-        self.__chunk.append(body)
+    def __add_event_to_chunk(self, event, event_size):
+        # First add size, then event to reduce effects of race condition
+        self.__running_size += event_size
+        self.__chunk.append(event)
         self.__running_length += 1
 
     def __check_limit_reached(self):
@@ -93,31 +102,28 @@ class _WorkflowBatchChunk:
         else:
             return False
 
-    def try_to_add_into_chunk(self, body: Dict, body_size: int) -> bool:
+    def try_to_add_into_chunk(self, event: Dict, event_size: int) -> bool:
         """
-        returns whether passed body was able to get added to this chunk or not,
-        if true, body gets added to chunk
-        :param body:
+        returns whether passed event was able to get added to this chunk or not,
+        if true, event gets added to chunk
+        :param event:
         :return:
         :raises: ValueError
         """
-        if not body:
+        if not event:
             return True
         if self.__check_limit_reached():
             return False
         # ---
-        if body_size > self._chunk_apparent_size_in_bytes:
-            raise ValueError(f"workflow body (discounting attachment if any) too big - {apparent_size} Bytes, "
+        if event_size > self._chunk_apparent_size_in_bytes:
+            raise ValueError(f"Event too big - {event_size} Bytes, "
                              f"must not cross {self._chunk_apparent_size_in_bytes_readable}")
-        # if apparent_size of body crosses limit
-        if self.__running_size + body_size > self._chunk_apparent_size_in_bytes:
+        # if apparent_size of event crosses limit
+        if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
 
-        if not ALLOW_ATTACHMENTS_IN_BATCH:
-            body["data"].pop("$attachments", None)
-
-        # Add workflow to chunk
-        self.__add_body_to_chunk(body, body_size)
+        # Add Event to chunk
+        self.__add_event_to_chunk(event, event_size)
         return True
 
     def trigger(self):
@@ -173,23 +179,25 @@ class _WorkflowBatchChunk:
                 }
 
 
-class WorkflowBatch:
+class SubscriberBatch:
     def __init__(self, config):
         self.config = config
-        self.__workflows = []
+        self.__subscribers = []
         self.__pending_records = []
         self.chunks = []
         self.response = BatchResponse()
 
-    def __validate_workflows(self):
-        if not self.__workflows:
-            raise ValueError("workflow list is empty in batch request")
-        for wf in self.__workflows:
-            wf_body, body_size = wf.get_final_json(self.config, is_part_of_batch=True)
-            self.__pending_records.append((wf_body, body_size))
+    def __validate_subscriber_events(self):
+        if not self.__subscribers:
+            raise ValueError("users list is empty in batch request")
+        for sub in self.__subscribers:
+            ev_arr = sub.events()
+            for ev in ev_arr:
+                ev_json, body_size = sub.validate_event_size(ev)
+                self.__pending_records.append((ev_json, body_size))
 
     def __chunkify(self, start_idx=0):
-        curr_chunk = _WorkflowBatchChunk(self.config)
+        curr_chunk = _SubscriberBatchBatchChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
             is_added = curr_chunk.try_to_add_into_chunk(rec[0], rec[1])
@@ -199,19 +207,22 @@ class WorkflowBatch:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *workflows):
-        if not workflows:
-            raise ValueError("workflow list empty. must pass one or more valid workflow instances")
-        for wf in workflows:
-            if not wf:
+    def append(self, *subscribers):
+        if not subscribers:
+            raise ValueError("users list empty. must pass one or more users")
+        for sub in subscribers:
+            if not sub:
                 raise ValueError("null/empty batch element")
-            if not isinstance(wf, Workflow):
-                raise ValueError("batch element must be an instance of suprsend.Workflow")
-            wf_copy = copy.deepcopy(wf)
-            self.__workflows.append(wf_copy)
+            if not isinstance(sub, Subscriber):
+                raise ValueError("batch element must be an instance of suprsend.Subscriber")
+            sub_copy = copy.deepcopy(sub)
+            self.__subscribers.append(sub_copy)
 
     def trigger(self):
-        self.__validate_workflows()
+        return self.save()
+
+    def save(self):
+        self.__validate_subscriber_events()
         self.__chunkify()
         for c_idx, ch in enumerate(self.chunks):
             if self.config.req_log_level > 0:

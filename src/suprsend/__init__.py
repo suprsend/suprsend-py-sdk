@@ -10,5 +10,7 @@ from .version import __version__
 __author__ = 'SuprSend Developers'
 __credits__ = 'SuprSend'
 
-from .sdkinstance import Suprsend  # noqa
-from .workflow_batch import BatchResponse  # noqa
+from .sdkinstance import Suprsend           # noqa
+from .batch_response import BatchResponse   # noqa
+from .event import Event                    # noqa
+from .workflow import Workflow              # noqa
