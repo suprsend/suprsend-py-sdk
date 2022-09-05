@@ -86,6 +86,32 @@
       },
       "additionalProperties": false
     },
+    "androidpush_settings": {
+      "type": "object",
+      "properties": {
+        "token":      {"type": "string", "minLength": 1, "description": "androidpush token"},
+        "provider":   {
+          "type": "string", "enum": ["fcm", "xiaomi", "oppo"],
+          "description": "androidpush token provider(fcm/xiaomi)"
+        },
+        "device_id":  {"type": ["string", "null"]}
+      },
+      "required": ["token", "provider"],
+      "additionalProperties": false
+    },
+    "iospush_settings": {
+      "type": "object",
+      "properties": {
+        "token":      {"type": "string", "minLength": 1, "description": "iospush token"},
+        "provider":   {
+          "type": "string", "enum": ["apns"],
+          "description": "iospush token provider(apns)"
+        },
+        "device_id":  {"type": ["string", "null"]}
+      },
+      "required": ["token", "provider"],
+      "additionalProperties": false
+    },
     "user_setting": {
       "type": "object",
       "properties": {
@@ -94,12 +120,21 @@
           "minLength": 1,
           "description": "distinct_id: Id which uniquely identify a user in your app"
         },
+        "$channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger"]
+          },
+          "minItems": 0,
+          "description": "user preferred channels. notification will be tried only on specified channels e.g ['email', 'sms']"
+        },
         "$email": {
           "oneOf": [
             {"$ref": "#/definitions/email_pattern"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/email_pattern" }
@@ -111,7 +146,7 @@
             {"$ref": "#/definitions/mobile_number_pattern"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/mobile_number_pattern" }
@@ -120,10 +155,18 @@
         },
         "$androidpush": {
           "oneOf": [
+            {"$ref": "#/definitions/androidpush_settings"},
+            {
+              "type": "array",
+              "uniqueItems": false,
+              "maxItems": 10,
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/androidpush_settings" }
+            },
             {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/non_empty_string" }
@@ -132,10 +175,18 @@
         },
         "$iospush": {
           "oneOf": [
+            {"$ref": "#/definitions/iospush_settings"},
+            {
+              "type": "array",
+              "uniqueItems": false,
+              "maxItems": 10,
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/iospush_settings" }
+            },
             {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/non_empty_string" }
@@ -147,7 +198,7 @@
             {"$ref": "#/definitions/mobile_number_pattern"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/mobile_number_pattern" }
@@ -159,7 +210,7 @@
             {"type": "object", "minProperties": 1},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": {"type": "object", "minProperties": 1}
@@ -171,7 +222,7 @@
             { "$ref": "#/definitions/slack_setting" },
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/slack_setting" }
@@ -183,7 +234,7 @@
             { "$ref": "#/definitions/non_empty_string" },
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/non_empty_string" }
@@ -195,7 +246,7 @@
             {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
-              "uniqueItems": true,
+              "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/non_empty_string" }
