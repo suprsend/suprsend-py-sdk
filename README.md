@@ -46,9 +46,11 @@ workflow_body = {
     # "delay": "15m",  # Check duration format below
     "users": [
         {
-            "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
-            "$email": ["user@example.com"],
-            "$androidpush": ["__android_push_token__"],
+          "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
+          # if $channels is present, communication will be tried on mentioned channels only.
+          # "$channels": ["email"],
+          "$email": ["user@example.com"],
+          "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": ""}],
         }
     ],
     # delivery instruction. how should notifications be sent, and whats the success metric
