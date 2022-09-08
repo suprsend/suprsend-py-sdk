@@ -1,7 +1,4 @@
-import os
 import platform
-import base64
-import magic
 
 from typing import List, Dict
 from .version import __version__
@@ -10,9 +7,9 @@ from .exception import SuprsendConfigError
 from .attachment import get_attachment_json_for_file
 from .workflow import Workflow, _WorkflowTrigger
 from .request_log import set_logging
-from .workflow_batch import WorkflowBatchFactory
-from .event_batch import EventBatchFactory
-from .subscriber_batch import SubscriberBatchFactory
+from .workflows_bulk import BulkWorkflowsFactory
+from .events_bulk import BulkEventsFactory
+from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .event import Event, EventCollector
 
@@ -46,24 +43,24 @@ class Suprsend:
         #
         self._workflow_trigger = _WorkflowTrigger(self)
         self._eventcollector = EventCollector(self)
-        # -- instantiate batch
-        self._workflow_batch = WorkflowBatchFactory(self)
-        self._event_batch = EventBatchFactory(self)
-        self._user_batch = SubscriberBatchFactory(self)
+        # -- bulk instances
+        self._bulk_workflows = BulkWorkflowsFactory(self)
+        self._bulk_events = BulkEventsFactory(self)
+        self._bulk_users = BulkSubscribersFactory(self)
         # --
         self._user = SubscriberFactory(self)
 
     @property
-    def workflow_batch(self):
-        return self._workflow_batch
+    def bulk_workflows(self):
+        return self._bulk_workflows
 
     @property
-    def event_batch(self):
-        return self._event_batch
+    def bulk_events(self):
+        return self._bulk_events
 
     @property
-    def user_batch(self):
-        return self._user_batch
+    def bulk_users(self):
+        return self._bulk_users
 
     @property
     def user(self):

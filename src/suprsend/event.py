@@ -17,6 +17,7 @@ RESERVED_EVENT_NAMES = [
     "$app_launched", "$user_login", "$user_logout",
 ]
 
+
 class Event:
     def __init__(self, distinct_id: str, event_name: str, properties: Dict = None):
         self.distinct_id = distinct_id
@@ -47,7 +48,7 @@ class Event:
             if prefix_3_chars.startswith("$") or prefix_3_chars == "ss_":
                 raise ValueError("event_names starting with [$,ss_] are reserved by SuprSend")
 
-    def __validate_event_name(self) -> str:
+    def __validate_event_name(self):
         if not isinstance(self.event_name, (str,)):
             raise ValueError("event_name must be a string")
         event_name = self.event_name.strip()
@@ -64,7 +65,7 @@ class Event:
         # -----
         self.properties["$attachments"].append(attachment)
 
-    def get_final_json(self, config, is_part_of_batch: bool=False) -> Dict:
+    def get_final_json(self, config, is_part_of_bulk: bool = False):
         super_props = {"$ss_sdk_version": config.user_agent}
         event_dict = {
             "$insert_id": str(uuid.uuid4()),
@@ -76,9 +77,9 @@ class Event:
         }
         event_dict = validate_track_event_schema(event_dict)
         # ---- Check size
-        apparent_size = get_apparent_event_size(event_dict, is_part_of_batch)
+        apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"Event properties (discounting attachment if any) too big - {apparent_size} Bytes, "
+            raise ValueError(f"Event properties too big - {apparent_size} Bytes, "
                              f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
@@ -112,7 +113,7 @@ class EventCollector:
         }
 
     def collect(self, event: Event) -> Dict:
-        event_dict, event_size = event.get_final_json(self.config, is_part_of_batch=False)
+        event_dict, event_size = event.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(event_dict)
 
     def send(self, event: Dict) -> Dict:

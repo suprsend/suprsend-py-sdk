@@ -12,19 +12,19 @@ ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES = 2100
 # few keys added in-flight, amounting to almost 200 bytes increase per workflow-body
 WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES = 200
 
-# max workflow-records in one batch api call.
-MAX_WORKFLOWS_IN_BATCH = 100
-# max event-records in one batch api call
-MAX_EVENTS_IN_BATCH = 100
+# max workflow-records in one bulk api call.
+MAX_WORKFLOWS_IN_BULK_API = 100
+# max event-records in one bulk api call
+MAX_EVENTS_IN_BULK_API = 100
 
-ALLOW_ATTACHMENTS_IN_BATCH = False
+ALLOW_ATTACHMENTS_IN_BULK_API = False
 ATTACHMENT_UPLOAD_ENABLED = False
 
 # -- single Identity event limit
 IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES = 2 * 1024
 IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "2KB"
 
-MAX_IDENTITY_EVENTS_IN_BATCH = 400
+MAX_IDENTITY_EVENTS_IN_BULK_API = 400
 
 # In TZ Format: "%a, %d %b %Y %H:%M:%S %Z"
 HEADER_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"

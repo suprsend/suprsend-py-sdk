@@ -7,46 +7,56 @@ from typing import List, Dict
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
-    MAX_EVENTS_IN_BATCH,
-    ALLOW_ATTACHMENTS_IN_BATCH,
+    MAX_IDENTITY_EVENTS_IN_BULK_API,
     HEADER_DATE_FMT,
 )
 from .signature import get_request_signature
-from .batch_response import BatchResponse
-from .event import Event
+from .bulk_response import BulkResponse
+from .subscriber import Subscriber
 
 
-class EventBatchFactory:
+class BulkSubscribersFactory:
 
     def __init__(self, config):
         self.config = config
 
-    def new(self):
+    def new_instance(self):
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-        batch_ins = supr_client.event_batch.new()
+        bulk_ins = supr_client.bulk_users.new_instance()
 
         # append one by one
         for i in range(0, 10):
-            event = Event('distinct_id', 'event_name', {}) # create event instance
-            batch_ins.append(event)
+            # -- User instance
+            user = supr_client.user.get_instance('distinct_id')  # create user instance
+            user.add_email("user1@example.com")
+            # -- add user to bulk-instance
+            bulk_ins.append(user)
 
         # append many in one call
-        all_events = [Event(..), Event(..), ...] # multiple events
-        batch_ins.append(*all_events)
+        # -- 1
+        user1 = supr_client.user.get_instance('distinct_id_1')
+        user1.add_email("user1@example.com")
+        # -- 2
+        user2 = supr_client.user.get_instance('distinct_id_2')
+        user2.add_email("user2@example.com")
+        #
+        all_users = [user1, user2, ...] # multiple users
+        bulk_ins.append(*all_users)
 
-        # call trigger
-        response = batch_ins.trigger()
+        # call save
+        response = bulk_ins.save()
 
         :return:
         """
-        return EventBatch(self.config)
+        return BulkSubscribers(self.config)
 
-class _EventBatchChunk:
+
+class _BulkSubscribersChunk:
     _chunk_apparent_size_in_bytes = BODY_MAX_APPARENT_SIZE_IN_BYTES
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
-    _max_records_in_chunk = MAX_EVENTS_IN_BATCH
+    _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
     def __init__(self, config):
         self.config = config
@@ -97,6 +107,7 @@ class _EventBatchChunk:
         returns whether passed event was able to get added to this chunk or not,
         if true, event gets added to chunk
         :param event:
+        :param event_size:
         :return:
         :raises: ValueError
         """
@@ -106,14 +117,11 @@ class _EventBatchChunk:
             return False
         # ---
         if event_size > self._chunk_apparent_size_in_bytes:
-            raise ValueError(f"Event properties (discounting attachment if any) too big - {event_size} Bytes, "
+            raise ValueError(f"Event too big - {event_size} Bytes, "
                              f"must not cross {self._chunk_apparent_size_in_bytes_readable}")
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
-
-        if not ALLOW_ATTACHMENTS_IN_BATCH:
-            event["properties"].pop("$attachments", None)
 
         # Add Event to chunk
         self.__add_event_to_chunk(event, event_size)
@@ -137,7 +145,6 @@ class _EventBatchChunk:
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
-                # status: success/fail
                 "status": "fail",
                 "status_code": 500,
                 "total": len(self.__chunk),
@@ -150,7 +157,6 @@ class _EventBatchChunk:
             ok_response = resp.status_code // 100 == 2
             if ok_response:
                 self.response = {
-                    # status: success/fail
                     "status": "success",
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
@@ -161,7 +167,6 @@ class _EventBatchChunk:
             else:
                 error_str = resp.text
                 self.response = {
-                    # status: success/fail
                     "status": "fail",
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
@@ -172,23 +177,25 @@ class _EventBatchChunk:
                 }
 
 
-class EventBatch:
+class BulkSubscribers:
     def __init__(self, config):
         self.config = config
-        self.__events = []
+        self.__subscribers = []
         self.__pending_records = []
         self.chunks = []
-        self.response = BatchResponse()
+        self.response = BulkResponse()
 
-    def __validate_events(self):
-        if not self.__events:
-            raise ValueError("events list is empty in batch request")
-        for ev in self.__events:
-            ev_json, body_size = ev.get_final_json(self.config, is_part_of_batch=True)
-            self.__pending_records.append((ev_json, body_size))
+    def __validate_subscriber_events(self):
+        if not self.__subscribers:
+            raise ValueError("users list is empty in bulk request")
+        for sub in self.__subscribers:
+            ev_arr = sub.events()
+            for ev in ev_arr:
+                ev_json, body_size = sub.validate_event_size(ev)
+                self.__pending_records.append((ev_json, body_size))
 
     def __chunkify(self, start_idx=0):
-        curr_chunk = _EventBatchChunk(self.config)
+        curr_chunk = _BulkSubscribersChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
             is_added = curr_chunk.try_to_add_into_chunk(rec[0], rec[1])
@@ -198,19 +205,22 @@ class EventBatch:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *events):
-        if not events:
-            raise ValueError("events list empty. must pass one or more events")
-        for ev in events:
-            if not ev:
-                raise ValueError("null/empty batch element")
-            if not isinstance(ev, Event):
-                raise ValueError("batch element must be an instance of suprsend.Event")
-            ev_copy = copy.deepcopy(ev)
-            self.__events.append(ev_copy)
+    def append(self, *subscribers):
+        if not subscribers:
+            raise ValueError("users list empty. must pass one or more users")
+        for sub in subscribers:
+            if not sub:
+                raise ValueError("null/empty element found in bulk instance")
+            if not isinstance(sub, Subscriber):
+                raise ValueError("element must be an instance of suprsend.Subscriber")
+            sub_copy = copy.deepcopy(sub)
+            self.__subscribers.append(sub_copy)
 
     def trigger(self):
-        self.__validate_events()
+        return self.save()
+
+    def save(self):
+        self.__validate_subscriber_events()
         self.__chunkify()
         for c_idx, ch in enumerate(self.chunks):
             if self.config.req_log_level > 0:

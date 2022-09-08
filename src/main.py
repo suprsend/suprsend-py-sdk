@@ -1,24 +1,25 @@
-from suprsend import Suprsend
+from suprsend import Suprsend, Workflow
 
 
 def test_request():
-    extra_params = {
-        "is_uat": False, "auth_enabled": True,
-        "include_signature_param": True
-    }
-    supr_client = Suprsend("__workspace_key__", "__workspace_secret__", debug=False, **extra_params)
+    supr_client = Suprsend("__workspace_key__", "__workspace_secret__", debug=True)
     workflow_body = {
         "name": "Purchase Workflow",
         "template": "purchase-made",
         "notification_category": "system",
-        "delay": "15m",
+        # "delay": "15m",
         "users": [
             {
                 "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
+                "$channels": ["email", "androidpush"],
                 "$email": ["user@example.com"],
-                "$androidpush": ["__android_push_token__"],
+                "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": None}],
             }
         ],
+        "delivery": {
+            "smart": False,
+            "mandatory_channels": ["email"]
+        },
         "data": {
             "event": {
                 "location": {
@@ -34,7 +35,8 @@ def test_request():
             }
         }
     }
-    resp = supr_client.trigger_workflow(workflow_body)
+    wf = Workflow(body=workflow_body)
+    resp = supr_client.trigger_workflow(wf)
     print(resp)
 
 

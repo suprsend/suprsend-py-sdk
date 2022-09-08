@@ -171,7 +171,7 @@ Ensure that file_path is proper, otherwise it will raise FileNotFoundError.
 ```python
 from suprsend import Workflow
 workflow_body = {...}
-wf_instance = Workflow(workflow_body)
+wf_instance = Workflow(body=workflow_body)
 
 # this snippet can be used to add attachment to workflow.
 file_path = "/home/user/billing.pdf"
@@ -194,34 +194,34 @@ Where
 * `data` - base64-encoded content of file.
 
 ### Limitation
-* a single workflow body size must not exceed 200KB (200 * 1024 bytes). While calculating size, attachments are ignored
+* a single workflow body size must not exceed 800KB (800 * 1024 bytes). While calculating size, attachments are ignored
 * if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
 
-### Batching Workflow Requests
-You can batch multiple workflow requests in one call. Use `workflow_batch.append(...)` on batch-instance
-to add however-many-records to call in batch.
+### Bulk API for Workflow Requests
+You can send bulk request for workflows in one call. Use `.append()` on bulk_workflows instance
+to add however-many-records to call in bulk.
 ```python3
 from suprsend import Workflow
 
-batch_ins = supr_client.workflow_batch.new()
+bulk_ins = supr_client.bulk_workflows.new_instance()
 
 # one or more workflow instances
 workflow1 = Workflow(body={...}) # body must be a proper workflow request json/dict
 workflow2 = Workflow(body={...}) # body must be a proper workflow request json/dict
 
-# --- use .append on batch instance to add one or more records
-batch_ins.append(workflow1)
-batch_ins.append(workflow2)
+# --- use .append on bulk instance to add one or more records
+bulk_ins.append(workflow1)
+bulk_ins.append(workflow2)
 # OR
-batch_ins.append(workflow1, workflow2)
+bulk_ins.append(workflow1, workflow2)
 
 # -------
-response = batch_ins.trigger()
+response = bulk_ins.trigger()
 
 print(response)
 ```
-* There isn't any limit on number-of-records that can be added to batch-instance.
-* On calling `workflow_batch.trigger()` the SDK internally makes one-or-more Callable-chunks.
+* There isn't any limit on number-of-records that can be added to bulk_workflows instance.
+* On calling `bulk_ins.trigger()` the SDK internally makes one-or-more Callable-chunks.
 * each callable-chunk contains a subset of records, the subset calculation is based on each record's bytes-size
   and max allowed chunk-size and chunk-length etc.
 * for each callable-chunk SDK makes an HTTP call to SuprSend To register the request.
@@ -236,7 +236,7 @@ All associated channels in User profile will be automatically picked when execut
 ```python
 distinct_id = "__uniq_user_id__"  # Unique id of user in your application
 # Instantiate User profile
-user = supr_client.user.new(distinct_id=distinct_id)
+user = supr_client.user.get_instance(distinct_id=distinct_id)
 ```
 - To add channel details to this user (viz. email, sms, whatsapp, androidpush, iospush etc)
   use `user.add_*` method(s) as shown in the example below.
@@ -362,26 +362,26 @@ wf = Workflow(body=workflow_body)
 response = supr_client.trigger_workflow(wf)
 print(response)
 ```
-#### Batch Users
-You can batch multiple subscriber requests in one call. Use `user_batch.append(...)` on batch-instance
-to add however-many-records to call in batch.
+#### Bulk API for Users
+You can send multiple subscriber requests in one call. Use `.append()` on bulk_users instance
+to add however-many-records to call in bulk.
 ```python3
-batch_ins = supr_client.user_batch.new()
+bulk_ins = supr_client.bulk_users.new_instance()
 # Prepare multiple users
-u1 = supr_client.user.new("distinct_id_1") # User 1
+u1 = supr_client.user.get_instance("distinct_id_1") # User 1
 u1.set_email("u1@example.com")
 
-u2 = supr_client.user.new("distinct_id_2") # User 2
+u2 = supr_client.user.get_instance("distinct_id_2") # User 2
 u2.set_email("u2@example.com")
 
-# --- use .append on batch instance to add one or more records
-batch_ins.append(u1)
-batch_ins.append(u2)
+# --- use .append on bulk instance to add one or more records
+bulk_ins.append(u1)
+bulk_ins.append(u2)
 # OR
-batch_ins.append(u1, u2)
+bulk_ins.append(u1, u2)
 
 # -------
-response = batch_ins.save()
+response = bulk_ins.save()
 print(response)
 
 ```
@@ -423,25 +423,25 @@ print(response)
 
 ```
 
-#### Batching events
-You can batch multiple events in one call. Use `event_batch.append(...)` on batch-instance
-to add however-many-records to call in batch.
+#### Bulk API for events
+You can send multiple events in one call. Use `.append()` on bulk_events instance
+to add however-many-records to call in bulk.
 ```python3
 from suprsend import Event
 
-batch_ins = supr_client.event_batch.new()
+bulk_ins = supr_client.bulk_events.new_instance()
 # Example
 e1 = Event("distinct_id1", "event_name1", {"k1": "v1"}) # Event 1
 e2 = Event("distinct_id2", "event_name2", {"k2": "v2"}) # Event 2
 
-# --- use .append on batch instance to add one or more records
-batch_ins.append(e1)
-batch_ins.append(e2)
+# --- use .append on bulk instance to add one or more records
+bulk_ins.append(e1)
+bulk_ins.append(e2)
 # OR
-batch_ins.append(e1, e2)
+bulk_ins.append(e1, e2)
 
 # -------
-response = batch_ins.trigger()
+response = bulk_ins.trigger()
 print(response)
 
 ```

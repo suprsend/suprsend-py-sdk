@@ -28,12 +28,12 @@ class Workflow:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config, is_part_of_batch: bool=False):
+    def get_final_json(self, config, is_part_of_bulk: bool = False):
         self.body = validate_workflow_body_schema(self.body)
         # ---- Check body size
-        apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_batch)
+        apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_bulk)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"workflow body (discounting attachment if any) too big - {apparent_size} Bytes, "
+            raise ValueError(f"workflow body too big - {apparent_size} Bytes, "
                              f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return self.body, apparent_size
@@ -62,7 +62,7 @@ class _WorkflowTrigger:
         }
 
     def trigger(self, workflow: Workflow) -> Dict:
-        workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_batch=False)
+        workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(workflow_body)
 
     def send(self, workflow_body: Dict) -> Dict:

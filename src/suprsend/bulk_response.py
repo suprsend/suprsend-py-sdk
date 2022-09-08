@@ -1,5 +1,5 @@
 
-class BatchResponse:
+class BulkResponse:
     def __init__(self):
         self.status = None
         self.failed_records = []
@@ -8,7 +8,7 @@ class BatchResponse:
         self.failure = 0
 
     def __str__(self):
-        return f"BatchResponse<status:{self.status}| success: {self.success} | failure: {self.failure} | " \
+        return f"BulkResponse<status:{self.status}| success: {self.success} | failure: {self.failure} | " \
                f"total: {self.total}>"
 
     def merge_chunk_response(self, ch_resp):

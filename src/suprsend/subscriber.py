@@ -19,6 +19,9 @@ class SubscriberFactory:
         self.config = config
 
     def new(self, distinct_id: str = None):
+        return self.get_instance(distinct_id)
+
+    def get_instance(self, distinct_id: str = None):
         if not isinstance(distinct_id, (str,)):
             raise ValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = distinct_id.strip()

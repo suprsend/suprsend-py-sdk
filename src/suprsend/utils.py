@@ -6,22 +6,22 @@ import jsonschema
 from .constants import (
     WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES,
     ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES,
-    ATTACHMENT_UPLOAD_ENABLED, ALLOW_ATTACHMENTS_IN_BATCH,
+    ATTACHMENT_UPLOAD_ENABLED, ALLOW_ATTACHMENTS_IN_BULK_API,
 )
 from .exception import SuprsendValidationError, SuprsendInvalidSchema
 from .request_schema import _get_schema
 
 
-def get_apparent_workflow_body_size(body: Dict, is_part_of_batch: bool) -> int:
+def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES
     apparent_body = body
     # ---
     if body.get("data") and body["data"].get("$attachments"):
         num_attachments = len(body["data"]["$attachments"])
-        if is_part_of_batch:
-            if ALLOW_ATTACHMENTS_IN_BATCH:
-                # if attachment is allowed in batch, then calculate size based on whether auto Upload is enabled
+        if is_part_of_bulk:
+            if ALLOW_ATTACHMENTS_IN_BULK_API:
+                # if attachment is allowed in bulk api, then calculate size based on whether auto Upload is enabled
                 if ATTACHMENT_UPLOAD_ENABLED:
                     # If auto upload enabled, To calculate size, replace attachment size with equivalent url size
                     extra_bytes += num_attachments * ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES
@@ -57,16 +57,16 @@ def get_apparent_workflow_body_size(body: Dict, is_part_of_batch: bool) -> int:
     return apparent_body_size
 
 
-def get_apparent_event_size(event: Dict, is_part_of_batch: bool) -> int:
+def get_apparent_event_size(event: Dict, is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = 0
     apparent_body = event
     # ---
     if event.get("properties") and event["properties"].get("$attachments"):
         num_attachments = len(event["properties"]["$attachments"])
-        if is_part_of_batch:
-            if ALLOW_ATTACHMENTS_IN_BATCH:
-                # if attachment is allowed in batch, then calculate size based on whether auto Upload is enabled
+        if is_part_of_bulk:
+            if ALLOW_ATTACHMENTS_IN_BULK_API:
+                # if attachment is allowed in bulk api, then calculate size based on whether auto Upload is enabled
                 if ATTACHMENT_UPLOAD_ENABLED:
                     # If auto upload enabled, To calculate size, replace attachment size with equivalent url size
                     extra_bytes += num_attachments * ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES
