@@ -4,13 +4,13 @@ import re
 
 
 # ---------- Identity keys
-IDENT_KEY_EMAIL="$email"
-IDENT_KEY_SMS="$sms"
-IDENT_KEY_ANDROIDPUSH="$androidpush"
-IDENT_KEY_IOSPUSH="$iospush"
-IDENT_KEY_WHATSAPP="$whatsapp"
-IDENT_KEY_WEBPUSH="$webpush"
-IDENT_KEY_SLACK="$slack"
+IDENT_KEY_EMAIL = "$email"
+IDENT_KEY_SMS = "$sms"
+IDENT_KEY_ANDROIDPUSH = "$androidpush"
+IDENT_KEY_IOSPUSH = "$iospush"
+IDENT_KEY_WHATSAPP = "$whatsapp"
+IDENT_KEY_WEBPUSH = "$webpush"
+IDENT_KEY_SLACK = "$slack"
 
 IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_KEY_IOSPUSH,
                   IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK]
@@ -82,7 +82,7 @@ class _SubscriberInternalHelper:
         return ret_val
 
     def __form_event(self):
-        if (self.__dict_append or self.__dict_remove or self.__list_unset):
+        if self.__dict_append or self.__dict_remove or self.__list_unset:
             event = {
                 "$insert_id": str(uuid.uuid4()).lower(),
                 "$time": int(time.time() * 1000),
@@ -184,7 +184,7 @@ class _SubscriberInternalHelper:
         elif key == IDENT_KEY_SLACK:
             self._add_slack(val, caller=caller)
 
-    def __remove_identity(self, key, value, kwargs, caller):
+    def __remove_identity(self, key, val, kwargs, caller):
         if key == IDENT_KEY_EMAIL:
             self._remove_email(val, caller=caller)
 
@@ -432,13 +432,13 @@ class _SubscriberInternalHelper:
             self.__errors.append(f"[{caller}] {msg}")
             return value, False
 
-    def _add_slack(self, value: str, caller: str):
+    def _add_slack(self, value, caller: str):
         value, is_valid = self.__check_slack_dict(value, caller)
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_SLACK] = value
 
-    def _remove_slack(self, value: str, caller):
+    def _remove_slack(self, value, caller: str):
         value, is_valid = self.__check_slack_dict(value, caller)
         if not is_valid:
             return
