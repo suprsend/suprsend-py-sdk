@@ -108,15 +108,29 @@ class Subscriber:
         # ----
         return event_dict, apparent_size
 
-    def __validate_body(self):
+    def validate_body(self, is_part_of_bulk=False):
+        warnings_list = []
         if self.__info:
-            print("WARNING:", "\n".join(self.__info))
+            msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
+            warnings_list.append(msg)
+            # print on console as well
+            print(f"WARNING: {msg}")
         if self.__errors:
-            raise ValueError("ERROR: " + "\n".join(self.__errors))
+            msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__errors)
+            warnings_list.append(msg)
+            err_msg = f"ERROR: {msg}"
+            if is_part_of_bulk:
+                # print on console in case of bulk-api
+                print(err_msg)
+            else:
+                # raise error in case of single api
+                raise ValueError(err_msg)
+        # ------
+        return warnings_list
 
     def save(self):
         try:
-            self.__validate_body()
+            self.validate_body(is_part_of_bulk=False)
             headers = self.__get_headers()
             events = self.events()
             # --- validate event size

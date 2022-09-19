@@ -189,6 +189,11 @@ class BulkSubscribers:
         if not self.__subscribers:
             raise ValueError("users list is empty in bulk request")
         for sub in self.__subscribers:
+            # -- check if there is any error/warning, if so add it to warnings list of BulkResponse
+            warnings_list = sub.validate_body(is_part_of_bulk=True)
+            if warnings_list:
+                self.response.warnings.extend(warnings_list)
+            # ---
             ev_arr = sub.events()
             for ev in ev_arr:
                 ev_json, body_size = sub.validate_event_size(ev)
