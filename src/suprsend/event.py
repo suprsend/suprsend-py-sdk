@@ -19,10 +19,11 @@ RESERVED_EVENT_NAMES = [
 
 
 class Event:
-    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None):
+    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None, idempotency_key: str = None):
         self.distinct_id = distinct_id
         self.event_name = event_name
         self.properties = properties
+        self.idempotency_key = idempotency_key
         # --- validate
         self.__validate_distinct_id()
         self.__validate_event_name()
@@ -59,7 +60,7 @@ class Event:
 
     def add_attachment(self, file_path: str):
         attachment = get_attachment_json_for_file(file_path)
-        # --- add the attachment to body->data->$attachments
+        # --- add the attachment to properties->$attachments
         if self.properties.get("$attachments") is None:
             self.properties["$attachments"] = []
         # -----
@@ -75,6 +76,9 @@ class Event:
             "distinct_id": self.distinct_id,
             "properties": {**self.properties, **super_props}
         }
+        if self.idempotency_key:
+            event_dict["$idempotency_key"] = self.idempotency_key
+        # ---
         event_dict = validate_track_event_schema(event_dict)
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)

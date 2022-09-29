@@ -10,10 +10,11 @@ from .attachment import get_attachment_json_for_file
 
 
 class Workflow:
-    def __init__(self, body):
+    def __init__(self, body, idempotency_key: str = None):
         if not isinstance(body, (dict,)):
             raise ValueError("workflow body must be a json/dictionary")
         self.body = body
+        self.idempotency_key = idempotency_key
 
     def add_attachment(self, file_path: str):
         if self.body.get("data") is None:
@@ -29,6 +30,10 @@ class Workflow:
         self.body["data"]["$attachments"].append(attachment)
 
     def get_final_json(self, config, is_part_of_bulk: bool = False):
+        # add idempotency key in body if present
+        if self.idempotency_key:
+            self.body["$idempotency_key"] = self.idempotency_key
+        # --
         self.body = validate_workflow_body_schema(self.body)
         # ---- Check body size
         apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_bulk)
