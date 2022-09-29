@@ -79,6 +79,22 @@ When you call `supr_client.trigger_workflow`, the SDK internally makes an HTTP c
 Platform to register this request, and you'll immediately receive a response indicating
 the acceptance status.
 
+You can also pass `idempotency-key` while triggering a workflow. Maximum length of idempotency_key can be 64 chars.
+idempotency_key has multiple uses e.g.
+1. Avoid duplicate request. If Suprsend receives and processes a request with an idempotency_key,
+   it will skip processing requests with same idempotency_key for next 24 hours.
+2. You can use this key to track webhooks related to workflow notifications.
+
+```python3
+from suprsend import Workflow
+
+workflow_body = {...}
+wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__")
+# Trigger workflow
+response = supr_client.trigger_workflow(wf)
+print(response)
+```
+
 Note: The actual processing/execution of workflow happens asynchronously.
 
 ```python
@@ -399,7 +415,9 @@ event_name = "__event_name__"   # Mandatory, name of the event you're tracking
 properties = {} # Optional, default=None, a dict representing event-attributes
 
 event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties)
-
+# You can also add Idempotency-key
+event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties,
+              idempotency_key="__uniq_request_id__")
 # Send event
 response = supr_client.track_event(event)
 print(response)

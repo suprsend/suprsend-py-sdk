@@ -91,7 +91,7 @@ class Subscriber:
                 "event": "$identify",
                 "properties": {
                     # Don't add $anon_id to properties,
-                    **{"$identified_id": self.distinct_id,},
+                    **{"$identified_id": self.distinct_id},
                     **self.__super_props
                 },
             }

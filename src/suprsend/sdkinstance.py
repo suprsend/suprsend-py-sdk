@@ -118,15 +118,16 @@ class Suprsend:
         if isinstance(data, Workflow):
             wf_ins = data
         else:
-            wf_ins = Workflow(data)
+            wf_ins = Workflow(data, idempotency_key=None)
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
-    def track(self, distinct_id: str, event_name: str, properties: Dict = None) -> Dict:
+    def track(self, distinct_id: str, event_name: str, properties: Dict = None, idempotency_key: str = None) -> Dict:
         """
         :param distinct_id:
         :param event_name:
         :param properties:
+        :param idempotency_key:
         :return: {
             "success": True,
             "status": "success",
@@ -137,7 +138,7 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
-        event = Event(distinct_id, event_name, properties)
+        event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key)
         return self._eventcollector.collect(event)
 
     def track_event(self, event: Event) -> Dict:
