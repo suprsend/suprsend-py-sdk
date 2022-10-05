@@ -42,6 +42,7 @@ class Subscriber:
         self.__info = []
         self._append_count = 0
         self._remove_count = 0
+        self._set_count = 0
         self._unset_count = 0
         self._events = []
         self._helper = _SubscriberInternalHelper(distinct_id, config.workspace_key)
@@ -83,7 +84,7 @@ class Subscriber:
             e["properties"] = self.__super_props
         # --------------------
         # Add $identify event by default, if new properties get added
-        if len(all_events) == 0 or self._append_count > 0:
+        if len(all_events) == 0 or self._set_count > 0 or self._append_count > 0:
             user_identify_event = {
                 "$insert_id": str(uuid.uuid4()),
                 "$time": int(time.time() * 1000),
@@ -183,6 +184,7 @@ class Subscriber:
 
         if resp["event"]:
             self._events.append(resp["event"])
+            self._set_count += resp["set"]
             self._append_count += resp["append"]
             self._remove_count += resp["remove"]
             self._unset_count += resp["unset"]
@@ -262,6 +264,17 @@ class Subscriber:
                 self._helper._unset_k(k, caller=caller)
             # --
             self._collect_event(discard_if_error=False)
+
+    # ------------------------ Preferred language
+    def set_preferred_language(self, lang_code):
+        """
+
+        :param lang_code:
+        :return:
+        """
+        caller = "set_preferred_language"
+        self._helper._set_preferred_language(lang_code, caller=caller)
+        self._collect_event(discard_if_error=True)
 
     # ------------------------ Email
     def add_email(self, value: str):

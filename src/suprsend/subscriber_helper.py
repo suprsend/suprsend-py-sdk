@@ -2,6 +2,7 @@ import uuid
 import time
 import re
 
+from .language_codes import ALL_LANG_CODES
 
 # ---------- Identity keys
 IDENT_KEY_EMAIL = "$email"
@@ -16,13 +17,14 @@ IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_K
                   IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK]
 
 KEY_PUSHVENDOR = "$pushvendor"
+KEY_PREFERRED_LANGUAGE = "$preferred_language"
 
 OTHER_RESERVED_KEYS = [
     "$messenger", "$inbox",
     KEY_PUSHVENDOR, "$device_id",
     "$insert_id", "$time",
     "$set", "$set_once", "$add", "$append", "$remove", "$unset",
-    "$identify", "$anon_id", "$identified_id",
+    "$identify", "$anon_id", "$identified_id", KEY_PREFERRED_LANGUAGE,
     "$notification_delivered", "$notification_dismiss", "$notification_clicked",
 ]
 
@@ -50,6 +52,9 @@ class _SubscriberInternalHelper:
         self.distinct_id = distinct_id
         self.workspace_key = workspace_key
         #
+        self.__dict_set = {}
+        self.__set_count = 0
+        #
         self.__dict_append = {}
         self.__append_count = 0
         #
@@ -63,8 +68,8 @@ class _SubscriberInternalHelper:
         self.__info = []
 
     def reset(self):
-        self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, []
-        self.__append_count, self.__remove_count, self.__unset_count = 0, 0, 0
+        self.__dict_set, self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, {}, []
+        self.__set_count, self.__append_count, self.__remove_count, self.__unset_count = 0, 0, 0, 0
         self.__errors = []
         self.__info = []
 
@@ -74,6 +79,7 @@ class _SubscriberInternalHelper:
             "errors": self.__errors,
             "info": self.__info,
             "event": evt,
+            "set": self.__set_count,
             "append": self.__append_count,
             "remove": self.__remove_count,
             "unset": self.__unset_count,
@@ -82,13 +88,16 @@ class _SubscriberInternalHelper:
         return ret_val
 
     def __form_event(self):
-        if self.__dict_append or self.__dict_remove or self.__list_unset:
+        if self.__dict_set or self.__dict_append or self.__dict_remove or self.__list_unset:
             event = {
                 "$insert_id": str(uuid.uuid4()).lower(),
                 "$time": int(time.time() * 1000),
                 "env": self.workspace_key,
                 "distinct_id": self.distinct_id,
             }
+            if self.__dict_set:
+                event["$set"] = self.__dict_set
+                self.__set_count += 1
             if self.__dict_append:
                 event["$append"] = self.__dict_append
                 self.__append_count += 1
@@ -155,6 +164,14 @@ class _SubscriberInternalHelper:
             return
         # ----
         self.__list_unset.append(k)
+
+    def _set_preferred_language(self, lang_code, caller):
+        # Check language code is in the list
+        if lang_code not in ALL_LANG_CODES:
+            self.__info.append(f"[{caller}] invalid value {lang_code}")
+            return
+        # ---
+        self.__dict_set[KEY_PREFERRED_LANGUAGE] = lang_code
 
     def __add_identity(self, key, val, kwargs, caller):
         if key == IDENT_KEY_EMAIL:
