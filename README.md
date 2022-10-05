@@ -210,7 +210,7 @@ Where
 * `data` - base64-encoded content of file.
 
 ### Limitation
-* a single workflow body size must not exceed 800KB (800 * 1024 bytes). While calculating size, attachments are ignored
+* a single workflow body size must not exceed 800KB (800 * 1024 bytes).
 * if size exceeds above mentioned limit, SDK raises python's builtin ValueError.
 
 ### Bulk API for Workflow Requests
@@ -340,7 +340,17 @@ user.unset(["$email", "$sms", "$whatsapp"])
 user.save()
 ```
 
-- Note: After calling `add_*`/`remove_*`/`unset` methods, don't forget to call `user.save()`. On call of save(),
+- You can also set preferred language of user using `set_preferred_language(lang_code)`. Value for lang_code
+  must be 2-letter code in the `ISO 639-1 Alpha-2 code` format.
+  e.g. en (for English), es (for Spanish), fr (for French) etc.
+```python
+# --- Set 2-letter language code in "ISO 639-1 Alpha-2" format
+user.set_preferred_language("en")
+response = user.save()
+print(response)
+```
+
+- Note: After calling `add_*`/`remove_*`/`unset`/`set_*` methods, don't forget to call `user.save()`. On call of save(),
 SDK sends the request to SuprSend platform to update the User-Profile.
 
 Once channels details are set at User profile, you only have to mention the user's distinct_id
