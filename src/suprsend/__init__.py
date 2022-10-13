@@ -14,3 +14,5 @@ from .sdkinstance import Suprsend           # noqa
 from .bulk_response import BulkResponse     # noqa
 from .event import Event                    # noqa
 from .workflow import Workflow              # noqa
+
+from .exception import (SuprsendError, SuprsendConfigError, SuprsendAPIException, )

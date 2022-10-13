@@ -12,6 +12,7 @@ from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .event import Event, EventCollector
+from .brand import BrandsApi
 
 
 class Suprsend:
@@ -49,6 +50,8 @@ class Suprsend:
         self._bulk_users = BulkSubscribersFactory(self)
         # --
         self._user = SubscriberFactory(self)
+        # --
+        self.brands = BrandsApi(self)
 
     @property
     def bulk_workflows(self):
@@ -118,16 +121,18 @@ class Suprsend:
         if isinstance(data, Workflow):
             wf_ins = data
         else:
-            wf_ins = Workflow(data, idempotency_key=None)
+            wf_ins = Workflow(data, idempotency_key=None, brand_id=None)
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
-    def track(self, distinct_id: str, event_name: str, properties: Dict = None, idempotency_key: str = None) -> Dict:
+    def track(self, distinct_id: str, event_name: str, properties: Dict = None,
+              idempotency_key: str = None, brand_id: str = None) -> Dict:
         """
         :param distinct_id:
         :param event_name:
         :param properties:
         :param idempotency_key:
+        :param brand_id:
         :return: {
             "success": True,
             "status": "success",
@@ -138,7 +143,7 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
-        event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key)
+        event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, brand_id=brand_id)
         return self._eventcollector.collect(event)
 
     def track_event(self, event: Event) -> Dict:
