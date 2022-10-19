@@ -3,10 +3,13 @@ import requests
 import json
 from typing import Dict
 
-from .constants import (HEADER_DATE_FMT, BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE)
+from .constants import (
+    HEADER_DATE_FMT,
+    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+)
 from .utils import (get_apparent_workflow_body_size, validate_workflow_body_schema)
 from .signature import get_request_signature
-from .attachment import get_attachment_json_for_file
+from .attachment import get_attachment_json
 
 
 class Workflow:
@@ -16,13 +19,13 @@ class Workflow:
         self.body = body
         self.idempotency_key = idempotency_key
 
-    def add_attachment(self, file_path: str):
+    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
         if self.body.get("data") is None:
             self.body["data"] = {}
         if not isinstance(self.body, dict):
             raise ValueError("data must be a dictionary")
         # ---
-        attachment = get_attachment_json_for_file(file_path)
+        attachment = get_attachment_json(file_path, file_name, ignore_if_error)
         # --- add the attachment to body->data->$attachments
         if self.body["data"].get("$attachments") is None:
             self.body["data"]["$attachments"] = []
@@ -37,9 +40,9 @@ class Workflow:
         self.body = validate_workflow_body_schema(self.body)
         # ---- Check body size
         apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_bulk)
-        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
+        if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
             raise ValueError(f"workflow body too big - {apparent_size} Bytes, "
-                             f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return self.body, apparent_size
 

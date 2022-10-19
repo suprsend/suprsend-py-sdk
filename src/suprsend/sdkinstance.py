@@ -4,7 +4,7 @@ from typing import List, Dict
 from .version import __version__
 from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
 from .exception import SuprsendConfigError
-from .attachment import get_attachment_json_for_file
+from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
 from .request_log import set_logging
 from .workflows_bulk import BulkWorkflowsFactory
@@ -88,14 +88,14 @@ class Suprsend:
         if not self.base_url:
             raise SuprsendConfigError("Missing base_url")
 
-    def add_attachment(self, body: Dict, file_path: str) -> Dict:
+    def add_attachment(self, body: Dict, file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
         # if data key not present, add it and set value={}.
         if body.get("data") is None:
             body["data"] = {}
         if not isinstance(body, dict):
             raise ValueError("data must be a dictionary")
         # --------
-        attachment = get_attachment_json_for_file(file_path)
+        attachment = get_attachment_json(file_path, file_name, ignore_if_error)
         # --- add the attachment to body->data->$attachments
         if body["data"].get("$attachments") is None:
             body["data"]["$attachments"] = []
