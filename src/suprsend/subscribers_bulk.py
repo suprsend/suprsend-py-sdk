@@ -5,6 +5,8 @@ import copy
 from typing import List, Dict
 
 from .constants import (
+    IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
+    IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_IDENTITY_EVENTS_IN_BULK_API,
@@ -116,9 +118,9 @@ class _BulkSubscribersChunk:
         if self.__check_limit_reached():
             return False
         # ---
-        if event_size > self._chunk_apparent_size_in_bytes:
+        if event_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
             raise ValueError(f"Event too big - {event_size} Bytes, "
-                             f"must not cross {self._chunk_apparent_size_in_bytes_readable}")
+                             f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False

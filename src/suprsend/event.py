@@ -5,8 +5,11 @@ from datetime import datetime, timezone
 import requests
 from typing import List, Dict
 
-from .constants import (HEADER_DATE_FMT, BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE)
-from .attachment import get_attachment_json_for_file
+from .constants import (
+    HEADER_DATE_FMT,
+    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+)
+from .attachment import get_attachment_json
 from .signature import get_request_signature
 from .utils import (validate_track_event_schema, get_apparent_event_size, )
 
@@ -60,8 +63,8 @@ class Event:
         self.__check_event_prefix(event_name)
         self.event_name = event_name
 
-    def add_attachment(self, file_path: str):
-        attachment = get_attachment_json_for_file(file_path)
+    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+        attachment = get_attachment_json(file_path, file_name, ignore_if_error)
         # --- add the attachment to properties->$attachments
         if self.properties.get("$attachments") is None:
             self.properties["$attachments"] = []
@@ -86,9 +89,9 @@ class Event:
         event_dict = validate_track_event_schema(event_dict)
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
-        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"Event properties too big - {apparent_size} Bytes, "
-                             f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+        if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
+            raise ValueError(f"Event size too big - {apparent_size} Bytes, "
+                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
 
