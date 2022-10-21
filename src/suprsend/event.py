@@ -22,11 +22,13 @@ RESERVED_EVENT_NAMES = [
 
 
 class Event:
-    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None, idempotency_key: str = None):
+    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None,
+                 idempotency_key: str = None, brand_id: str = None):
         self.distinct_id = distinct_id
         self.event_name = event_name
         self.properties = properties
         self.idempotency_key = idempotency_key
+        self.brand_id = brand_id
         # --- validate
         self.__validate_distinct_id()
         self.__validate_event_name()
@@ -81,6 +83,8 @@ class Event:
         }
         if self.idempotency_key:
             event_dict["$idempotency_key"] = self.idempotency_key
+        if self.brand_id:
+            event_dict["brand_id"] = self.brand_id
         # ---
         event_dict = validate_track_event_schema(event_dict)
         # ---- Check size

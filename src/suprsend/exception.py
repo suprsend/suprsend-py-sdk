@@ -11,6 +11,27 @@ class SuprsendError(Exception):
             self.message = None
         self.status_code = kwargs.get('status_code', 500)
 
+    def __str__(self):
+        return f"[code: {self.status_code}] {self.message}"
+
+
+class SuprsendAPIException(SuprsendError):
+    response = None
+    message = "unknown error"
+
+    def __init__(self, response):
+        # -- Get error message
+        content_type = response.headers.get("Content-Type")
+        if content_type and "application/json" in content_type:
+            rjson = response.json()
+            err_msg = rjson.get("message") or rjson.get("detail")
+        else:
+            err_msg = response.text
+        message = f"{err_msg}"
+        # --
+        super().__init__(message=message, status_code=response.status_code)
+        self.response = response
+
 
 class SuprsendConfigError(SuprsendError):
     def __init__(self, *args, **kwargs):
