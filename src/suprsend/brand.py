@@ -29,7 +29,7 @@ class BrandsApi:
         return {
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
         }
-    
+
     def cleaned_limit_offset(self, limit: int, offset: int):
         # limit must be 0 < x <= 1000
         limit = limit if (isinstance(limit, int) and 0 < limit <= 1000) else 20
@@ -74,7 +74,7 @@ class BrandsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update(self, brand_id: str, brand_payload: Dict):
+    def upsert(self, brand_id: str, brand_payload: Dict):
         url = self.detail_url(brand_id)
         # ---
         brand_payload = brand_payload or {}

@@ -27,7 +27,7 @@ class SuprsendAPIException(SuprsendError):
             err_msg = rjson.get("message") or rjson.get("detail")
         else:
             err_msg = response.text
-        message = f"URI: {response.url}. err: {err_msg}"
+        message = f"{err_msg}"
         # --
         super().__init__(message=message, status_code=response.status_code)
         self.response = response
