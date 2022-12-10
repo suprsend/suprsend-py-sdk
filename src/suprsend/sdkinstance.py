@@ -33,9 +33,6 @@ class Suprsend:
         #
         is_uat = kwargs.get("is_uat", False)
         self.base_url = self.__get_url(base_url, is_uat)
-        # include cryptographic signature
-        self.auth_enabled = (kwargs.get('auth_enabled') is not False)
-        self.include_signature_param = (kwargs.get('include_signature_param') is not False)
         # ---
         self.__validate()
         # --- set logging level for http request

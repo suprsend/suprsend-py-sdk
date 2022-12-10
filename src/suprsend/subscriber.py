@@ -1,8 +1,7 @@
-import json
-import uuid
-import time
 from datetime import datetime, timezone
 import requests
+import time
+import uuid
 
 from .constants import (
     HEADER_DATE_FMT,
@@ -40,21 +39,11 @@ class Subscriber:
         #
         self.__errors = []
         self.__info = []
-        self._append_count = 0
-        self._remove_count = 0
-        self._set_count = 0
-        self._unset_count = 0
-        self._events = []
-        self._helper = _SubscriberInternalHelper(distinct_id, config.workspace_key)
+        self.user_operations = []
+        self._helper = _SubscriberInternalHelper()
 
     def __get_url(self):
-        url_template = "{}event/"
-        if self.config.include_signature_param:
-            if self.config.auth_enabled:
-                url_template = url_template + "?verify=true"
-            else:
-                url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url)
+        url_formatted = "{}event/".format(self.config.base_url)
         return url_formatted
 
     def __get_headers(self):
@@ -77,29 +66,16 @@ class Subscriber:
     def errors(self):
         return self.__errors
 
-    def events(self):
-        # Don't mutate the original array. Make a copy of _events
-        all_events = [*self._events]
-        for e in all_events:
-            e["properties"] = self.__super_props
-        # --------------------
-        # Add $identify event by default, if new properties get added
-        if len(all_events) == 0 or self._set_count > 0 or self._append_count > 0:
-            user_identify_event = {
-                "$insert_id": str(uuid.uuid4()),
-                "$time": int(time.time() * 1000),
-                "env": self.config.workspace_key,
-                "event": "$identify",
-                "properties": {
-                    # Don't add $anon_id to properties,
-                    **{"$identified_id": self.distinct_id},
-                    **self.__super_props
-                },
-            }
-            # Add $identify event at the 0th index, so that $identify runs before $append/$remove/$reset
-            all_events.insert(0, user_identify_event)
-        # ---------
-        return all_events
+    def get_event(self):
+        return {
+            "$schema": "2",
+            "$insert_id": str(uuid.uuid4()),
+            "$time": int(time.time() * 1000),
+            "env": self.config.workspace_key,
+            "distinct_id": self.distinct_id,
+            "$user_operations": self.user_operations,
+            "properties": self.__super_props,
+        }
 
     def validate_event_size(self, event_dict):
         apparent_size = get_apparent_identity_event_size(event_dict)
@@ -133,19 +109,14 @@ class Subscriber:
         try:
             self.validate_body(is_part_of_bulk=False)
             headers = self.__get_headers()
-            events = self.events()
+            event = self.get_event()
             # --- validate event size
-            for ev in events:
-                ev, size = self.validate_event_size(ev)
+            ev, size = self.validate_event_size(event)
 
-            # --- Based on whether signature is required or not, add Authorization header
-            if self.config.auth_enabled:
-                # Signature and Authorization-header
-                content_txt, sig = get_request_signature(self.__url, 'POST', events, headers,
-                                                         self.config.workspace_secret)
-                headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            else:
-                content_txt = json.dumps(events, ensure_ascii=False)
+            # --- Signature and Authorization-header
+            content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
+                                                     self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
             # -----
             resp = requests.post(self.__url,
                                  data=content_txt.encode('utf-8'),
@@ -181,13 +152,8 @@ class Subscriber:
             self.__errors.extend(resp["errors"])
         if resp["info"]:
             self.__info.extend(resp["info"])
-
         if resp["event"]:
-            self._events.append(resp["event"])
-            self._set_count += resp["set"]
-            self._append_count += resp["append"]
-            self._remove_count += resp["remove"]
-            self._unset_count += resp["unset"]
+            self.user_operations.append(resp["event"])
 
     def append(self, arg1, arg2=None):
         """

@@ -1,9 +1,8 @@
-import json
-import uuid
-import time
 from datetime import datetime, timezone
 import requests
+import time
 from typing import List, Dict
+import uuid
 
 from .constants import (
     HEADER_DATE_FMT,
@@ -103,13 +102,7 @@ class EventCollector:
         self.__headers = self.__common_headers()
 
     def __get_url(self):
-        url_template = "{}event/"
-        if self.config.include_signature_param:
-            if self.config.auth_enabled:
-                url_template = url_template + "?verify=true"
-            else:
-                url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url)
+        url_formatted = "{}event/".format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
@@ -130,14 +123,10 @@ class EventCollector:
     def send(self, event: Dict) -> Dict:
         try:
             headers = {**self.__headers, **self.__dynamic_headers()}
-            # Based on whether signature is required or not, add Authorization header
-            if self.config.auth_enabled:
-                # Signature and Authorization-header
-                content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
-                                                         self.config.workspace_secret)
-                headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            else:
-                content_txt = json.dumps(event, ensure_ascii=False)
+            # Signature and Authorization-header
+            content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
+                                                     self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
             # -----
             resp = requests.post(self.__url,
                                  data=content_txt.encode('utf-8'),

@@ -1,7 +1,6 @@
+import copy
 from datetime import datetime, timezone
 import requests
-import json
-import copy
 from typing import List, Dict
 
 from .constants import (
@@ -71,13 +70,7 @@ class _BulkSubscribersChunk:
         self.response = None
 
     def __get_url(self):
-        url_template = "{}event/"
-        if self.config.include_signature_param:
-            if self.config.auth_enabled:
-                url_template = url_template + "?verify=true"
-            else:
-                url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url)
+        url_formatted = "{}event/".format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
@@ -131,14 +124,10 @@ class _BulkSubscribersChunk:
 
     def trigger(self):
         headers = {**self.__headers, **self.__dynamic_headers()}
-        # Based on whether signature is required or not, add Authorization header
-        if self.config.auth_enabled:
-            # Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
-                                                     self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        else:
-            content_txt = json.dumps(self.__chunk, ensure_ascii=False)
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
+                                                 self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         try:
             resp = requests.post(self.__url,
@@ -196,10 +185,9 @@ class BulkSubscribers:
             if warnings_list:
                 self.response.warnings.extend(warnings_list)
             # ---
-            ev_arr = sub.events()
-            for ev in ev_arr:
-                ev_json, body_size = sub.validate_event_size(ev)
-                self.__pending_records.append((ev_json, body_size))
+            ev = sub.get_event()
+            ev_json, body_size = sub.validate_event_size(ev)
+            self.__pending_records.append((ev_json, body_size))
 
     def __chunkify(self, start_idx=0):
         curr_chunk = _BulkSubscribersChunk(self.config)
@@ -217,7 +205,7 @@ class BulkSubscribers:
             raise ValueError("users list empty. must pass one or more users")
         for sub in subscribers:
             if not sub:
-                raise ValueError("null/empty element found in bulk instance")
+                continue
             if not isinstance(sub, Subscriber):
                 raise ValueError("element must be an instance of suprsend.Subscriber")
             sub_copy = copy.deepcopy(sub)

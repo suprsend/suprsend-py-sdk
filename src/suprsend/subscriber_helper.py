@@ -1,5 +1,3 @@
-import uuid
-import time
 import re
 
 from .language_codes import ALL_LANG_CODES
@@ -48,28 +46,17 @@ class _SubscriberInternalHelper:
     """
     Internal helper class
     """
-    def __init__(self, distinct_id, workspace_key):
-        self.distinct_id = distinct_id
-        self.workspace_key = workspace_key
-        #
+    def __init__(self):
         self.__dict_set = {}
-        self.__set_count = 0
-        #
         self.__dict_append = {}
-        self.__append_count = 0
-        #
         self.__dict_remove = {}
-        self.__remove_count = 0
-        #
         self.__list_unset = []
-        self.__unset_count = 0
         #
         self.__errors = []
         self.__info = []
 
     def reset(self):
         self.__dict_set, self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, {}, []
-        self.__set_count, self.__append_count, self.__remove_count, self.__unset_count = 0, 0, 0, 0
         self.__errors = []
         self.__info = []
 
@@ -79,37 +66,21 @@ class _SubscriberInternalHelper:
             "errors": self.__errors,
             "info": self.__info,
             "event": evt,
-            "set": self.__set_count,
-            "append": self.__append_count,
-            "remove": self.__remove_count,
-            "unset": self.__unset_count,
         }
         self.reset()
         return ret_val
 
     def __form_event(self):
-        if self.__dict_set or self.__dict_append or self.__dict_remove or self.__list_unset:
-            event = {
-                "$insert_id": str(uuid.uuid4()).lower(),
-                "$time": int(time.time() * 1000),
-                "env": self.workspace_key,
-                "distinct_id": self.distinct_id,
-            }
-            if self.__dict_set:
-                event["$set"] = self.__dict_set
-                self.__set_count += 1
-            if self.__dict_append:
-                event["$append"] = self.__dict_append
-                self.__append_count += 1
-            if self.__dict_remove:
-                event["$remove"] = self.__dict_remove
-                self.__remove_count += 1
-            if self.__list_unset:
-                event["$unset"] = self.__list_unset
-                self.__unset_count += 1
-            return event
-        else:
-            return None
+        event = {}
+        if self.__dict_set:
+            event["$set"] = self.__dict_set
+        if self.__dict_append:
+            event["$append"] = self.__dict_append
+        if self.__dict_remove:
+            event["$remove"] = self.__dict_remove
+        if self.__list_unset:
+            event["$unset"] = self.__list_unset
+        return event
 
     # ------------------------
     def __validate_key_basic(self, key, caller):
@@ -174,60 +145,50 @@ class _SubscriberInternalHelper:
         self.__dict_set[KEY_PREFERRED_LANGUAGE] = lang_code
 
     def __add_identity(self, key, val, kwargs, caller):
+        new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
-            self._add_email(val, caller=caller)
+            self._add_email(val, caller=new_caller)
 
         elif key == IDENT_KEY_SMS:
-            self._add_sms(val, caller=caller)
+            self._add_sms(val, caller=new_caller)
 
         elif key == IDENT_KEY_WHATSAPP:
-            self._add_whatsapp(val, caller=caller)
+            self._add_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._add_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_append.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_append.get(KEY_PUSHVENDOR)
+            self._add_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._add_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_append.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_append.get(KEY_PUSHVENDOR)
+            self._add_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
-            self._add_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_append.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_append.get(KEY_PUSHVENDOR)
+            self._add_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_SLACK:
-            self._add_slack(val, caller=caller)
+            self._add_slack(val, caller=new_caller)
 
     def __remove_identity(self, key, val, kwargs, caller):
+        new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
-            self._remove_email(val, caller=caller)
+            self._remove_email(val, caller=new_caller)
 
         elif key == IDENT_KEY_SMS:
-            self._remove_sms(val, caller=caller)
+            self._remove_sms(val, caller=new_caller)
 
         elif key == IDENT_KEY_WHATSAPP:
-            self._remove_whatsapp(val, caller=caller)
+            self._remove_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._remove_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_remove.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_remove.get(KEY_PUSHVENDOR)
+            self._remove_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._remove_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_remove.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_remove.get(KEY_PUSHVENDOR)
+            self._remove_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
-            self._remove_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=caller)
-            if self.__dict_remove.get(KEY_PUSHVENDOR):
-                kwargs[KEY_PUSHVENDOR] = self.__dict_remove.get(KEY_PUSHVENDOR)
+            self._remove_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
 
         elif key == IDENT_KEY_SLACK:
-            self._remove_slack(val, caller=caller)
+            self._remove_slack(val, caller=new_caller)
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):
@@ -331,6 +292,10 @@ class _SubscriberInternalHelper:
         # -- validate provider
         if not provider:
             provider = "fcm"
+        # --- convert to lowercase to make it case-insensitive
+        if isinstance(provider, str):
+            provider = provider.lower()
+        # ---
         if provider not in ["fcm", "xiaomi", "oppo"]:
             self.__errors.append(f"[{caller}] unsupported androidpush provider {provider}")
             return value, provider, False
@@ -360,6 +325,10 @@ class _SubscriberInternalHelper:
         # -- validate provider
         if not provider:
             provider = "apns"
+        # --- convert to lowercase to make it case-insensitive
+        if isinstance(provider, str):
+            provider = provider.lower()
+        # ---
         if provider not in ["apns", ]:
             self.__errors.append(f"[{caller}] unsupported iospush provider {provider}")
             return value, provider, False
@@ -390,6 +359,10 @@ class _SubscriberInternalHelper:
         # -- validate provider
         if not provider:
             provider = "vapid"
+        # --- convert to lowercase to make it case-insensitive
+        if isinstance(provider, str):
+            provider = provider.lower()
+        # ---
         if provider not in ["vapid", ]:
             self.__errors.append(f"[{caller}] unsupported webpush provider {provider}")
             return value, provider, False

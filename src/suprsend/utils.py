@@ -8,8 +8,8 @@ from .constants import (
     ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES,
     ATTACHMENT_UPLOAD_ENABLED, ALLOW_ATTACHMENTS_IN_BULK_API,
 )
-from .exception import SuprsendValidationError, SuprsendInvalidSchema
-from .request_schema import _get_schema
+from .exception import SuprsendValidationError
+from .request_schema import _get_schema_validator
 
 
 def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
@@ -114,12 +114,9 @@ def validate_workflow_body_schema(body: Dict) -> Dict:
     if not isinstance(body["data"], dict):
         raise ValueError("data must be a dictionary")
     # --------------------------------
-    schema = _get_schema('workflow')
+    schema_validator = _get_schema_validator('workflow')
     try:
-        # jsonschema.validate(instance, schema, cls=None, *args, **kwargs)
-        jsonschema.validate(body, schema)
-    except jsonschema.exceptions.SchemaError as se:
-        raise SuprsendInvalidSchema(se.message)
+        schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
         raise SuprsendValidationError(ve.message)
     return body
@@ -130,12 +127,9 @@ def validate_track_event_schema(body: Dict) -> Dict:
     if body.get("properties") is None:
         body["properties"] = {}
     # --------------------------------
-    schema = _get_schema('event')
+    schema_validator = _get_schema_validator('event')
     try:
-        # jsonschema.validate(instance, schema, cls=None, *args, **kwargs)
-        jsonschema.validate(body, schema)
-    except jsonschema.exceptions.SchemaError as se:
-        raise SuprsendInvalidSchema(se.message)
+        schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
         raise SuprsendValidationError(ve.message)
     return body
