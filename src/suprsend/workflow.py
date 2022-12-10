@@ -56,13 +56,7 @@ class _WorkflowTrigger:
         self.url = self.__get_url()
 
     def __get_url(self):
-        url_template = "{}{}/trigger/"
-        if self.config.include_signature_param:
-            if self.config.auth_enabled:
-                url_template = url_template + "?verify=true"
-            else:
-                url_template = url_template + "?verify=false"
-        url_formatted = url_template.format(self.config.base_url, self.config.workspace_key)
+        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_key)
         return url_formatted
 
     def __get_headers(self):
@@ -79,14 +73,10 @@ class _WorkflowTrigger:
     def send(self, workflow_body: Dict) -> Dict:
         try:
             headers = self.__get_headers()
-            # Based on whether signature is required or not, add Authorization header
-            if self.config.auth_enabled:
-                # Signature and Authorization-header
-                content_txt, sig = get_request_signature(self.url, 'POST', workflow_body,
-                                                         headers, self.config.workspace_secret)
-                headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            else:
-                content_txt = json.dumps(workflow_body, ensure_ascii=False)
+            # Signature and Authorization-header
+            content_txt, sig = get_request_signature(self.url, 'POST', workflow_body,
+                                                     headers, self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
             # -----
             resp = requests.post(self.url,
                                  data=content_txt.encode('utf-8'),
