@@ -38,30 +38,6 @@ class SuprsendConfigError(SuprsendError):
         super().__init__(*args, **kwargs)
 
 
-class SuprsendAuthenticationError(SuprsendError):
-    """
-    Invalid auth
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.status_code = 401
-        self.error_type = "SuprsendAuthenticationError"
-        if self.message is None:
-            self.message = "Authentication failed"
-
-
-class SuprsendAuthorizationError(SuprsendError):
-    """
-    client does not have authorization to access API.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.status_code = 403
-        self.error_type = "SuprsendAuthorizationError"
-        if self.message is None:
-            self.message = "Authorization failed"
-
-
 class SuprsendMissingSchema(SuprsendError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

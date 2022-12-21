@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://github.com/suprsend/suprsend-py-sdk/request_json/list_broadcast.json",
+  "title": "list_broadcast_request",
+  "description": "Json schema for list_broadcast request",
+  "$comment": "Json schema for list_broadcast request",
+  "type": "object",
+  "properties": {
+    "$idempotency_key": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "description": "unique id provided by client for request"
+    },
+    "brand_id": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "description": "brand id for workflow to be run in context of a brand"
+    },
+    "$insert_id": {
+      "type": "string",
+      "minLength": 36,
+      "description": "unique uuid generated per request"
+    },
+    "$time": {
+      "type": "integer",
+      "minimum": 1640995200000,
+      "description": "Timestamp: unix epoch in milliseconds"
+    },
+    "list_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SubscriberList id"
+    },
+    "template": {
+      "$ref": "#/definitions/non_empty_string",
+      "description": "slug of Template"
+    },
+    "notification_category": {
+      "$ref": "#/definitions/non_empty_string",
+      "description": "slug of Notification category"
+    },
+    "delay": {
+      "type": ["string", "integer"],
+      "minimum": 0,
+      "description": "If string: format [XX]d[XX]h[XX]m[XX]s e.g 1d2h30m10s(for 1day 2hours 30minutes 10sec). If integer: value in number of seconds"
+    },
+    "trigger_at": {
+      "type": "string",
+      "description": "timestamp in ISO-8601 format. e.g 2021-08-27T20:14:51.643Z"
+    },
+    "data": {
+      "type": "object",
+      "description": "variables to be used in workflow. e.g replacing templates variables."
+    }
+  },
+  "required": ["$insert_id", "$time", "list_id", "template", "notification_category", "data"],
+  "definitions": {
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 2
+    }
+  }
+}
