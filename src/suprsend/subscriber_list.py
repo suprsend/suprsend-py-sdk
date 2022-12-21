@@ -34,7 +34,7 @@ class SubscriberListBroadcast:
         # ---- Check body size
         apparent_size = get_apparent_list_broadcast_body_size(self.body)
         if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"SubscribersListBroadcast body too big - {apparent_size} Bytes, "
+            raise ValueError(f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
                              f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return self.body, apparent_size
@@ -43,7 +43,7 @@ class SubscriberListBroadcast:
 class SubscriberListsApi:
     def __init__(self, config):
         self.config = config
-        self.subscribers_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
+        self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
         self.broadcast_url = "{}{}/list_broadcast/".format(self.config.base_url, self.config.workspace_key)
         self.__headers = self.__common_headers()
         self.non_error_default_response = {"success": True}
@@ -78,11 +78,11 @@ class SubscriberListsApi:
         payload["list_id"] = list_id
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(self.subscribers_list_url, 'POST', payload, headers,
+        content_txt, sig = get_request_signature(self.subscriber_list_url, 'POST', payload, headers,
                                                  self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
-        resp = requests.post(self.subscribers_list_url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = requests.post(self.subscriber_list_url, data=content_txt.encode('utf-8'), headers=headers)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -100,7 +100,7 @@ class SubscriberListsApi:
         params = {"limit": limit, "offset": offset}
         encoded_params = urllib.parse.urlencode(params)
         #
-        url = f"{self.subscribers_list_url}?{encoded_params}"
+        url = f"{self.subscriber_list_url}?{encoded_params}"
         # ---
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -112,16 +112,16 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def __subscribers_list_detail_url(self, list_id: str):
+    def __subscriber_list_detail_url(self, list_id: str):
         list_id = str(list_id).strip()
         list_id_encoded = urllib.parse.quote_plus(list_id)
-        url = f"{self.subscribers_list_url}{list_id_encoded}/"
+        url = f"{self.subscriber_list_url}{list_id_encoded}/"
         return url
 
     def get(self, list_id: str):
         list_id = self._validate_list_id(list_id)
         # --------
-        url = self.__subscribers_list_detail_url(list_id)
+        url = self.__subscriber_list_detail_url(list_id)
         # ---
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -139,7 +139,7 @@ class SubscriberListsApi:
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
-        url = "{}subscriber/add/".format(self.__subscribers_list_detail_url(list_id))
+        url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -157,7 +157,7 @@ class SubscriberListsApi:
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
-        url = "{}subscriber/remove/".format(self.__subscribers_list_detail_url(list_id))
+        url = "{}subscriber/remove/".format(self.__subscriber_list_detail_url(list_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
