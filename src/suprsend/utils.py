@@ -107,6 +107,11 @@ def get_apparent_identity_event_size(event: Dict) -> int:
     return body_size
 
 
+def get_apparent_list_broadcast_body_size(body: Dict) -> int:
+    body_size = len(json.dumps(body, ensure_ascii=False).encode('utf-8'))
+    return body_size
+
+
 def validate_workflow_body_schema(body: Dict) -> Dict:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
@@ -128,6 +133,21 @@ def validate_track_event_schema(body: Dict) -> Dict:
         body["properties"] = {}
     # --------------------------------
     schema_validator = _get_schema_validator('event')
+    try:
+        schema_validator.validate(body)
+    except jsonschema.exceptions.ValidationError as ve:
+        raise SuprsendValidationError(ve.message)
+    return body
+
+
+def validate_list_broadcast_body_schema(body: Dict) -> Dict:
+    # --- In case data is not provided, set it to empty dict
+    if body.get("data") is None:
+        body["data"] = {}
+    if not isinstance(body["data"], dict):
+        raise ValueError("data must be a dictionary")
+    # --------------------------------
+    schema_validator = _get_schema_validator('list_broadcast')
     try:
         schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
