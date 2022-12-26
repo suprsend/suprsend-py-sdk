@@ -31,6 +31,15 @@
       "minLength": 1,
       "description": "SubscriberList id"
     },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger"]
+      },
+      "minItems": 0,
+      "description": "channels on which notification to be broadcast. e.g ['androidpush', 'iospush']"
+    },
     "template": {
       "$ref": "#/definitions/non_empty_string",
       "description": "slug of Template"

@@ -44,7 +44,7 @@ class SubscriberListsApi:
     def __init__(self, config):
         self.config = config
         self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
-        self.broadcast_url = "{}{}/list_broadcast/".format(self.config.base_url, self.config.workspace_key)
+        self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_key)
         self.__headers = self.__common_headers()
         self.non_error_default_response = {"success": True}
 
