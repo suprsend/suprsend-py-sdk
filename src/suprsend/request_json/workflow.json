@@ -125,10 +125,13 @@
     "user_setting": {
       "type": "object",
       "properties": {
+        "is_transient": {
+          "type": ["boolean", "null"],
+          "description": "indicates whether this is a transient user. Profiles are not created for such users."
+        },
         "distinct_id": {
-          "type": "string",
-          "minLength": 1,
-          "description": "distinct_id: Id which uniquely identify a user in your app"
+          "type": ["string", "null"],
+          "description": "distinct_id: Id which uniquely identifies a user in your app"
         },
         "$channels": {
           "type": "array",
@@ -264,7 +267,7 @@
           ]
         }
       },
-      "required": [ "distinct_id" ],
+      "required": [],
       "additionalProperties": false
     },
     "delivery_setting": {
