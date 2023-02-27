@@ -385,42 +385,13 @@ class _SubscriberInternalHelper:
 
     # ------------------------ Slack
 
-    def __validate_slack_userid(self, userid, caller):
-        userid, is_valid = self.__check_ident_val_string(userid, caller)
-        if not is_valid:
-            return userid, False
-        userid = userid.upper()
-        if not (userid.startswith("U") or userid.startswith("W")):
-            self.__errors.append(f"[{caller}] invalid value {userid}. Slack user/member_id starts with a U or W")
-            return userid, False
-        # -------
-        return userid, True
-
     def __check_slack_dict(self, value, caller):
-        msg = "value must be a valid dict/json with one of these keys: [email, user_id]"
+        msg = "value must be a valid dict/json with proper keys"
         if not (value and isinstance(value, (dict,))):
             self.__errors.append(f"[{caller}] {msg}")
             return value, False
-        user_id = value.get("user_id")
-        email = value.get("email")
-        if user_id and user_id.strip():
-            user_id = user_id.strip()
-            user_id, is_valid = self.__validate_slack_userid(user_id, caller)
-            if not is_valid:
-                return value, False
-            else:
-                return {"user_id": user_id}, True
-
-        elif email and email.strip():
-            email = email.strip()
-            email, is_valid = self.__validate_email(email, caller)
-            if not is_valid:
-                return value, False
-            else:
-                return {"email": email}, True
         else:
-            self.__errors.append(f"[{caller}] {msg}")
-            return value, False
+            return value, True
 
     def _add_slack(self, value, caller: str):
         value, is_valid = self.__check_slack_dict(value, caller)
