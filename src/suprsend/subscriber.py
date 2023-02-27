@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import requests
 import time
 import uuid
+from warnings import warn
 
 from .constants import (
     HEADER_DATE_FMT,
@@ -375,42 +376,70 @@ class Subscriber:
         self._collect_event(discard_if_error=True)
 
     # ------------------------ Slack
-    def add_slack_email(self, value: str):
+    def add_slack(self, value: dict):
         """
 
         :param value:
         :return:
         """
+        caller = "add_slack"
+        self._helper._add_slack(value, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def remove_slack(self, value: dict):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "remove_slack"
+        self._helper._remove_slack(value, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def add_slack_email(self, value: str):
+        """
+        Deprecated: use add_slack instead
+        :param value:
+        :return:
+        """
+        warn("add_slack_email() method has been deprecated. use add_slack() instead",
+             DeprecationWarning, stacklevel=2)
         caller = "add_slack_email"
         self._helper._add_slack({"email": value}, caller=caller)
         self._collect_event(discard_if_error=True)
 
     def remove_slack_email(self, value: str):
         """
-
+        Deprecated: use remove_slack instead
         :param value:
         :return:
         """
+        warn("remove_slack_email() method has been deprecated. use remove_slack() instead",
+             DeprecationWarning, stacklevel=2)
         caller = "remove_slack_email"
         self._helper._remove_slack({"email": value}, caller=caller)
         self._collect_event(discard_if_error=True)
 
     def add_slack_userid(self, value: str):
         """
-
+        Deprecated: use add_slack instead
         :param value:
         :return:
         """
+        warn("add_slack_userid() method has been deprecated. use add_slack() instead",
+             DeprecationWarning, stacklevel=2)
         caller = "add_slack_userid"
         self._helper._add_slack({"user_id": value}, caller=caller)
         self._collect_event(discard_if_error=True)
 
     def remove_slack_userid(self, value: str):
         """
-
+        Deprecated: use remove_slack instead
         :param value:
         :return:
         """
+        warn("remove_slack_userid() method has been deprecated. use remove_slack() instead",
+             DeprecationWarning, stacklevel=2)
         caller = "remove_slack_userid"
         self._helper._remove_slack({"user_id": value}, caller=caller)
         self._collect_event(discard_if_error=True)

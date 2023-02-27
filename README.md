@@ -274,8 +274,10 @@ user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 
 user.add_iospush("__iospush_token__")
 
-user.add_slack_email("user@example.com")  # - To add Slack using email
-user.add_slack_userid("U03XXXXXXXX")  # - To add Slack if slack member_id is known
+user.add_slack({"email": "user@example.com", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using email
+user.add_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using slack member_id if known
+user.add_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
+user.add_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
 
 # After setting the channel details on user-instance, call save()
 response = user.save()
@@ -311,8 +313,10 @@ user.remove_androidpush("__android_push_fcm_token__")
 user.remove_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 user.remove_iospush("__iospush_token__")
 
-user.remove_slack_email("user@example.com")
-user.remove_slack_userid("U03XXXXXXXX")
+user.remove_slack({"email": "user@example.com", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using email
+user.remove_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using slack member_id if known
+user.remove_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
+user.remove_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
 
 # save
 response = user.save()
