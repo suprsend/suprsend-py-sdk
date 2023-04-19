@@ -12,6 +12,7 @@ from .constants import (
     ALLOW_ATTACHMENTS_IN_BULK_API,
     HEADER_DATE_FMT,
 )
+from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
@@ -96,7 +97,7 @@ class _BulkWorkflowsChunk:
         :param body:
         :param body_size:
         :return:
-        :raises: ValueError
+        :raises: InputValueError
         """
         if not body:
             return True
@@ -104,8 +105,8 @@ class _BulkWorkflowsChunk:
             return False
         # ---
         if body_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"workflow body too big - {body_size} Bytes, "
-                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"workflow body too big - {body_size} Bytes, "
+                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # if apparent_size of body crosses limit
         if self.__running_size + body_size > self._chunk_apparent_size_in_bytes:
             return False

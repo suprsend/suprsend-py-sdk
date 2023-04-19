@@ -11,6 +11,7 @@ from .constants import (
     MAX_IDENTITY_EVENTS_IN_BULK_API,
     HEADER_DATE_FMT,
 )
+from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
@@ -105,7 +106,7 @@ class _BulkSubscribersChunk:
         :param event:
         :param event_size:
         :return:
-        :raises: ValueError
+        :raises: InputValueError
         """
         if not event:
             return True
@@ -113,8 +114,8 @@ class _BulkSubscribersChunk:
             return False
         # ---
         if event_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"Event too big - {event_size} Bytes, "
-                             f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"Event too big - {event_size} Bytes, "
+                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
