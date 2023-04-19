@@ -9,6 +9,7 @@ from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
+from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import (get_apparent_identity_event_size, )
 from .subscriber_helper import _SubscriberInternalHelper
@@ -23,10 +24,10 @@ class SubscriberFactory:
 
     def get_instance(self, distinct_id: str = None):
         if not isinstance(distinct_id, (str,)):
-            raise ValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
+            raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = distinct_id.strip()
         if not distinct_id:
-            raise ValueError("distinct_id must be passed")
+            raise InputValueError("distinct_id must be passed")
         # -----
         return Subscriber(self.config, distinct_id)
 
@@ -81,8 +82,8 @@ class Subscriber:
     def validate_event_size(self, event_dict):
         apparent_size = get_apparent_identity_event_size(event_dict)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"User Event size too big - {apparent_size} Bytes, "
-                             f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"User Event size too big - {apparent_size} Bytes, "
+                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
 
@@ -102,7 +103,7 @@ class Subscriber:
                 print(err_msg)
             else:
                 # raise error in case of single api
-                raise ValueError(err_msg)
+                raise InputValueError(err_msg)
         # ------
         return warnings_list
 

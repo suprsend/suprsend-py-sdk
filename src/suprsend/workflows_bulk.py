@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 import requests
-import json
 import copy
 from typing import List, Dict
 
@@ -14,6 +13,7 @@ from .constants import (
     HEADER_DATE_FMT,
 )
 from .signature import get_request_signature
+from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .workflow import Workflow
 
@@ -170,13 +170,17 @@ class BulkWorkflows:
         self.__pending_records = []
         self.chunks = []
         self.response = BulkResponse()
+        # invalid_record json: {"record": workflow-json, "error": error_str, "code": 500}
+        self.__invalid_records = []
 
     def __validate_workflows(self):
-        if not self.__workflows:
-            raise ValueError("workflow list is empty in bulk request")
         for wf in self.__workflows:
-            wf_body, body_size = wf.get_final_json(self.config, is_part_of_bulk=True)
-            self.__pending_records.append((wf_body, body_size))
+            try:
+                wf_body, body_size = wf.get_final_json(self.config, is_part_of_bulk=True)
+                self.__pending_records.append((wf_body, body_size))
+            except Exception as ex:
+                inv_rec = invalid_record_json(wf.as_json(), ex)
+                self.__invalid_records.append(inv_rec)
 
     def __chunkify(self, start_idx=0):
         curr_chunk = _BulkWorkflowsChunk(self.config)
@@ -191,24 +195,32 @@ class BulkWorkflows:
 
     def append(self, *workflows):
         if not workflows:
-            raise ValueError("workflow list empty. must pass one or more valid workflow instances")
+            return
         for wf in workflows:
-            if not wf:
-                raise ValueError("null/empty element found in bulk instance")
-            if not isinstance(wf, Workflow):
-                raise ValueError("element must be an instance of suprsend.Workflow")
-            wf_copy = copy.deepcopy(wf)
-            self.__workflows.append(wf_copy)
+            if wf and isinstance(wf, Workflow):
+                wf_copy = copy.deepcopy(wf)
+                self.__workflows.append(wf_copy)
 
     def trigger(self):
         self.__validate_workflows()
-        self.__chunkify()
-        for c_idx, ch in enumerate(self.chunks):
-            if self.config.req_log_level > 0:
-                print(f"DEBUG: triggering api call for chunk: {c_idx}")
-            # do api call
-            ch.trigger()
-            # merge response
-            self.response.merge_chunk_response(ch.response)
+        # --------
+        if len(self.__invalid_records) > 0:
+            ch_response = BulkResponse.invalid_records_chunk_response(self.__invalid_records)
+            self.response.merge_chunk_response(ch_response)
+        # --------
+        if len(self.__pending_records):
+            self.__chunkify()
+            for c_idx, ch in enumerate(self.chunks):
+                if self.config.req_log_level > 0:
+                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                # do api call
+                ch.trigger()
+                # merge response
+                self.response.merge_chunk_response(ch.response)
+        else:
+            # if no records. i.e. len(invalid_records) and len(pending_records) both are 0
+            # then add empty success response
+            if len(self.__invalid_records) == 0:
+                self.response.merge_chunk_response(BulkResponse.empty_chunk_success_response())
         # -----
         return self.response

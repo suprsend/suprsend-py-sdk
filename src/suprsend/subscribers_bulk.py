@@ -175,6 +175,8 @@ class BulkSubscribers:
         self.__pending_records = []
         self.chunks = []
         self.response = BulkResponse()
+        # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
+        self.__invalid_records = []
 
     def __validate_subscriber_events(self):
         if not self.__subscribers:
@@ -202,27 +204,35 @@ class BulkSubscribers:
 
     def append(self, *subscribers):
         if not subscribers:
-            raise ValueError("users list empty. must pass one or more users")
+            return
         for sub in subscribers:
-            if not sub:
-                continue
-            if not isinstance(sub, Subscriber):
-                raise ValueError("element must be an instance of suprsend.Subscriber")
-            sub_copy = copy.deepcopy(sub)
-            self.__subscribers.append(sub_copy)
+            if sub and isinstance(sub, Subscriber):
+                sub_copy = copy.deepcopy(sub)
+                self.__subscribers.append(sub_copy)
 
     def trigger(self):
         return self.save()
 
     def save(self):
         self.__validate_subscriber_events()
-        self.__chunkify()
-        for c_idx, ch in enumerate(self.chunks):
-            if self.config.req_log_level > 0:
-                print(f"DEBUG: triggering api call for chunk: {c_idx}")
-            # do api call
-            ch.trigger()
-            # merge response
-            self.response.merge_chunk_response(ch.response)
+        # --------
+        if len(self.__invalid_records) > 0:
+            ch_response = BulkResponse.invalid_records_chunk_response(self.__invalid_records)
+            self.response.merge_chunk_response(ch_response)
+        # --------
+        if len(self.__pending_records):
+            self.__chunkify()
+            for c_idx, ch in enumerate(self.chunks):
+                if self.config.req_log_level > 0:
+                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                # do api call
+                ch.trigger()
+                # merge response
+                self.response.merge_chunk_response(ch.response)
+        else:
+            # if no records. i.e. len(invalid_records) and len(pending_records) both are 0
+            # then add empty success response
+            if len(self.__invalid_records) == 0:
+                self.response.merge_chunk_response(BulkResponse.empty_chunk_success_response())
         # -----
         return self.response

@@ -2,13 +2,14 @@ from typing import Dict
 import copy
 import json
 import jsonschema
+import traceback
 
 from .constants import (
     WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES,
     ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES,
     ATTACHMENT_UPLOAD_ENABLED, ALLOW_ATTACHMENTS_IN_BULK_API,
 )
-from .exception import SuprsendValidationError
+from .exception import SuprsendValidationError, InputValueError
 from .request_schema import _get_schema_validator
 
 
@@ -117,7 +118,7 @@ def validate_workflow_body_schema(body: Dict) -> Dict:
     if body.get("data") is None:
         body["data"] = {}
     if not isinstance(body["data"], dict):
-        raise ValueError("data must be a dictionary")
+        raise InputValueError("data must be a dictionary")
     # --------------------------------
     schema_validator = _get_schema_validator('workflow')
     try:
@@ -145,7 +146,7 @@ def validate_list_broadcast_body_schema(body: Dict) -> Dict:
     if body.get("data") is None:
         body["data"] = {}
     if not isinstance(body["data"], dict):
-        raise ValueError("data must be a dictionary")
+        raise InputValueError("data must be a dictionary")
     # --------------------------------
     schema_validator = _get_schema_validator('list_broadcast')
     try:
@@ -153,3 +154,15 @@ def validate_list_broadcast_body_schema(body: Dict) -> Dict:
     except jsonschema.exceptions.ValidationError as ve:
         raise SuprsendValidationError(ve.message)
     return body
+
+
+def invalid_record_json(failed_record, err):
+    if isinstance(err, (InputValueError,)):
+        err_str = str(err)
+    else:
+        # includes SuprsendValidationError,
+        # OR any other error
+        err_str = traceback.format_exc()
+    # ------
+    rec = {"record": failed_record, "error": err_str, "code": 500}
+    return rec

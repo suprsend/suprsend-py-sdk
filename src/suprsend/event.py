@@ -8,6 +8,7 @@ from .constants import (
     HEADER_DATE_FMT,
     SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
+from .exception import InputValueError
 from .attachment import get_attachment_json
 from .signature import get_request_signature
 from .utils import (validate_track_event_schema, get_apparent_event_size, )
@@ -28,42 +29,47 @@ class Event:
         self.properties = properties
         self.idempotency_key = idempotency_key
         self.brand_id = brand_id
-        # --- validate
-        self.__validate_distinct_id()
-        self.__validate_event_name()
-        self.__validate_properties()
+        # default values
+        if self.properties is None:
+            self.properties = {}
 
     def __validate_distinct_id(self):
         if not isinstance(self.distinct_id, (str,)):
-            raise ValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
+            raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = self.distinct_id.strip()
         if not distinct_id:
-            raise ValueError("distinct_id missing")
+            raise InputValueError("distinct_id missing")
         self.distinct_id = distinct_id
 
     def __validate_properties(self):
-        if self.properties is None:
-            self.properties = {}
         if not isinstance(self.properties, (dict,)):
-            raise ValueError("properties must be a dictionary")
+            raise InputValueError("properties must be a dictionary")
 
     def __check_event_prefix(self, event_name: str):
         if event_name not in RESERVED_EVENT_NAMES:
             prefix_3_chars = event_name[:3].lower()
             if prefix_3_chars.startswith("$") or prefix_3_chars == "ss_":
-                raise ValueError("event_names starting with [$,ss_] are reserved by SuprSend")
+                raise InputValueError("event_names starting with [$,ss_] are reserved by SuprSend")
 
     def __validate_event_name(self):
         if not isinstance(self.event_name, (str,)):
-            raise ValueError("event_name must be a string")
+            raise InputValueError("event_name must be a string")
         event_name = self.event_name.strip()
         if not event_name:
-            raise ValueError("event_name missing")
+            raise InputValueError("event_name missing")
         self.__check_event_prefix(event_name)
         self.event_name = event_name
 
     def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+        # if properties is not a dict, not raising error while adding attachment.
+        if not isinstance(self.properties, (dict,)):
+            print("WARNING: attachment cannot be added. please make sure properties is a dictionary. " +
+                  str(self.as_json()))
+            return
+        # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
+        if not attachment:
+            return
         # --- add the attachment to properties->$attachments
         if self.properties.get("$attachments") is None:
             self.properties["$attachments"] = []
@@ -71,6 +77,11 @@ class Event:
         self.properties["$attachments"].append(attachment)
 
     def get_final_json(self, config, is_part_of_bulk: bool = False):
+        # --- validate
+        self.__validate_distinct_id()
+        self.__validate_event_name()
+        self.__validate_properties()
+        # ---
         super_props = {"$ss_sdk_version": config.user_agent}
         event_dict = {
             "$insert_id": str(uuid.uuid4()),
@@ -89,10 +100,23 @@ class Event:
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
         if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"Event size too big - {apparent_size} Bytes, "
-                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"Event size too big - {apparent_size} Bytes, "
+                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
+
+    def as_json(self):
+        event_dict = {
+            "event": self.event_name,
+            "distinct_id": self.distinct_id,
+            "properties": self.properties,
+        }
+        if self.idempotency_key:
+            event_dict["$idempotency_key"] = self.idempotency_key
+        if self.brand_id:
+            event_dict["brand_id"] = self.brand_id
+        # -----
+        return event_dict
 
 
 class EventCollector:

@@ -17,5 +17,6 @@ from .workflow import Workflow              # noqa
 from .subscriber_list import SubscriberListBroadcast      # noqa
 
 from .exception import (
-    SuprsendError, SuprsendConfigError, SuprsendAPIException, SuprsendValidationError
+    SuprsendError, SuprsendConfigError, SuprsendAPIException, SuprsendValidationError,
+    InputValueError,
 )
