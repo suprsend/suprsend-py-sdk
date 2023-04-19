@@ -63,7 +63,7 @@ class Event:
     def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
         # if properties is not a dict, not raising error while adding attachment.
         if not isinstance(self.properties, (dict,)):
-            print("WARNING: attachment cannot be added. please make sure properties is a dictionary. " +
+            print("WARNING: attachment cannot be added. please make sure properties is a dictionary. Event" +
                   str(self.as_json()))
             return
         # ---

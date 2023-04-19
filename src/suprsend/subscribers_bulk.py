@@ -12,6 +12,7 @@ from .constants import (
     HEADER_DATE_FMT,
 )
 from .signature import get_request_signature
+from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .subscriber import Subscriber
 
@@ -179,17 +180,19 @@ class BulkSubscribers:
         self.__invalid_records = []
 
     def __validate_subscriber_events(self):
-        if not self.__subscribers:
-            raise ValueError("users list is empty in bulk request")
         for sub in self.__subscribers:
-            # -- check if there is any error/warning, if so add it to warnings list of BulkResponse
-            warnings_list = sub.validate_body(is_part_of_bulk=True)
-            if warnings_list:
-                self.response.warnings.extend(warnings_list)
-            # ---
-            ev = sub.get_event()
-            ev_json, body_size = sub.validate_event_size(ev)
-            self.__pending_records.append((ev_json, body_size))
+            try:
+                # -- check if there is any error/warning, if so add it to warnings list of BulkResponse
+                warnings_list = sub.validate_body(is_part_of_bulk=True)
+                if warnings_list:
+                    self.response.warnings.extend(warnings_list)
+                # ---
+                ev = sub.get_event()
+                ev_json, body_size = sub.validate_event_size(ev)
+                self.__pending_records.append((ev_json, body_size))
+            except Exception as ex:
+                inv_rec = invalid_record_json(sub.as_json(), ex)
+                self.__invalid_records.append(inv_rec)
 
     def __chunkify(self, start_idx=0):
         curr_chunk = _BulkSubscribersChunk(self.config)

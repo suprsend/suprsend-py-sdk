@@ -25,7 +25,7 @@ class Workflow:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. " +
+            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. Workflow" +
                   str(self.as_json()))
             return
         # ---
