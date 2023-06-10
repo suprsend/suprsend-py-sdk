@@ -12,7 +12,9 @@ from .constants import (
     ALLOW_ATTACHMENTS_IN_BULK_API,
     HEADER_DATE_FMT,
 )
+from .exception import InputValueError
 from .signature import get_request_signature
+from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .event import Event
 
@@ -95,7 +97,7 @@ class _BulkEventsChunk:
         :param event:
         :param event_size:
         :return:
-        :raises: ValueError
+        :raises: InputValueError
         """
         if not event:
             return True
@@ -103,8 +105,8 @@ class _BulkEventsChunk:
             return False
         # ---
         if event_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"Event properties too big - {event_size} Bytes, "
-                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"Event properties too big - {event_size} Bytes, "
+                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -169,13 +171,17 @@ class BulkEvents:
         self.__pending_records = []
         self.chunks = []
         self.response = BulkResponse()
+        # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
+        self.__invalid_records = []
 
     def __validate_events(self):
-        if not self.__events:
-            raise ValueError("events list is empty in bulk request")
         for ev in self.__events:
-            ev_json, body_size = ev.get_final_json(self.config, is_part_of_bulk=True)
-            self.__pending_records.append((ev_json, body_size))
+            try:
+                ev_json, body_size = ev.get_final_json(self.config, is_part_of_bulk=True)
+                self.__pending_records.append((ev_json, body_size))
+            except Exception as ex:
+                inv_rec = invalid_record_json(ev.as_json(), ex)
+                self.__invalid_records.append(inv_rec)
 
     def __chunkify(self, start_idx=0):
         curr_chunk = _BulkEventsChunk(self.config)
@@ -190,24 +196,32 @@ class BulkEvents:
 
     def append(self, *events):
         if not events:
-            raise ValueError("events list empty. must pass one or more events")
+            return
         for ev in events:
-            if not ev:
-                raise ValueError("null/empty element found in bulk instance")
-            if not isinstance(ev, Event):
-                raise ValueError("element must be an instance of suprsend.Event")
-            ev_copy = copy.deepcopy(ev)
-            self.__events.append(ev_copy)
+            if ev and isinstance(ev, Event):
+                ev_copy = copy.deepcopy(ev)
+                self.__events.append(ev_copy)
 
     def trigger(self):
         self.__validate_events()
-        self.__chunkify()
-        for c_idx, ch in enumerate(self.chunks):
-            if self.config.req_log_level > 0:
-                print(f"DEBUG: triggering api call for chunk: {c_idx}")
-            # do api call
-            ch.trigger()
-            # merge response
-            self.response.merge_chunk_response(ch.response)
+        # --------
+        if len(self.__invalid_records) > 0:
+            ch_response = BulkResponse.invalid_records_chunk_response(self.__invalid_records)
+            self.response.merge_chunk_response(ch_response)
+        # --------
+        if len(self.__pending_records):
+            self.__chunkify()
+            for c_idx, ch in enumerate(self.chunks):
+                if self.config.req_log_level > 0:
+                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                # do api call
+                ch.trigger()
+                # merge response
+                self.response.merge_chunk_response(ch.response)
+        else:
+            # if no records. i.e. len(invalid_records) and len(pending_records) both are 0
+            # then add empty success response
+            if len(self.__invalid_records) == 0:
+                self.response.merge_chunk_response(BulkResponse.empty_chunk_success_response())
         # -----
         return self.response

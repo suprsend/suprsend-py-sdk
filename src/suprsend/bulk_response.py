@@ -9,7 +9,7 @@ class BulkResponse:
         self.warnings = []
 
     def __str__(self):
-        return f"BulkResponse<status:{self.status}| total: {self.total} | success: {self.success} | " \
+        return f"BulkResponse<status: {self.status} | total: {self.total} | success: {self.success} | " \
                f"failure: {self.failure} | warnings: {len(self.warnings)}>"
 
     def merge_chunk_response(self, ch_resp):
@@ -30,3 +30,25 @@ class BulkResponse:
         self.failure += ch_resp.get("failure", 0)
         failed_recs = ch_resp.get("failed_records", [])
         self.failed_records.extend(failed_recs)
+
+    @classmethod
+    def empty_chunk_success_response(cls):
+        return {
+            "status": "success",
+            "status_code": 200,
+            "total": 0,
+            "success": 0,
+            "failure": 0,
+            "failed_records": []
+        }
+
+    @classmethod
+    def invalid_records_chunk_response(cls, invalid_records):
+        return {
+            "status": "fail",
+            "status_code": 500,
+            "total": len(invalid_records),
+            "success": 0,
+            "failure": len(invalid_records),
+            "failed_records": invalid_records
+        }

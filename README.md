@@ -151,8 +151,9 @@ Where
     on each channel until given `success`-metric is achieved.
 
 * `success` - what is your measurement of success for this notification?
-  - Possible values: `seen` / `interaction` / `<some-user-defined-success-event>`
+  - Possible values: `delivered` / `seen` / `interaction` / `<some-user-defined-success-event>`
   - Default value: `seen`
+  - If `delivered`: If notification on any of the channels is successfully delivered, consider it a success.
   - If `seen`: If notification on any of the channels is seen by user, consider it a success.
   - If `interaction`: If notification on any of the channels is clicked/interacted by the user, consider it a success.
   - If `<some-user-defined-success-event>`: If certain event is done by user within the event-window (1 day), consider it a success.

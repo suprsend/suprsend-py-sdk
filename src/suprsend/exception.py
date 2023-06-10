@@ -33,6 +33,10 @@ class SuprsendAPIException(SuprsendError):
         self.response = response
 
 
+class InputValueError(ValueError):
+    pass
+
+
 class SuprsendConfigError(SuprsendError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

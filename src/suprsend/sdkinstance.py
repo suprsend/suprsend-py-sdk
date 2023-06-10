@@ -3,7 +3,7 @@ import platform
 from typing import List, Dict
 from .version import __version__
 from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
-from .exception import SuprsendConfigError
+from .exception import SuprsendConfigError, InputValueError
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
 from .request_log import set_logging
@@ -11,7 +11,7 @@ from .workflows_bulk import BulkWorkflowsFactory
 from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
-from .subscriber_list import SubscriberListsApi, SubscriberListBroadcast
+from .subscriber_list import SubscriberListsApi
 from .event import Event, EventCollector
 from .brand import BrandsApi
 
@@ -95,7 +95,7 @@ class Suprsend:
         if body.get("data") is None:
             body["data"] = {}
         if not isinstance(body, dict):
-            raise ValueError("data must be a dictionary")
+            raise InputValueError("data must be a dictionary")
         # --------
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
         # --- add the attachment to body->data->$attachments
@@ -159,5 +159,5 @@ class Suprsend:
             - ValueError
         """
         if not isinstance(event, Event):
-            raise ValueError("argument must be an instance of suprsend.Event")
+            raise InputValueError("argument must be an instance of suprsend.Event")
         return self._eventcollector.collect(event)

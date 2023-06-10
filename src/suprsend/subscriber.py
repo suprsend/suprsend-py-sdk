@@ -9,6 +9,7 @@ from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
+from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import (get_apparent_identity_event_size, )
 from .subscriber_helper import _SubscriberInternalHelper
@@ -23,10 +24,10 @@ class SubscriberFactory:
 
     def get_instance(self, distinct_id: str = None):
         if not isinstance(distinct_id, (str,)):
-            raise ValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
+            raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = distinct_id.strip()
         if not distinct_id:
-            raise ValueError("distinct_id must be passed")
+            raise InputValueError("distinct_id must be passed")
         # -----
         return Subscriber(self.config, distinct_id)
 
@@ -42,6 +43,7 @@ class Subscriber:
         self.__info = []
         self.user_operations = []
         self._helper = _SubscriberInternalHelper()
+        self.__warnings_list = []
 
     def __get_url(self):
         url_formatted = "{}event/".format(self.config.base_url)
@@ -78,33 +80,42 @@ class Subscriber:
             "properties": self.__super_props,
         }
 
+    def as_json(self):
+        event_dict = {
+            "distinct_id": self.distinct_id,
+            "$user_operations": self.user_operations,
+            "warnings": self.__warnings_list,
+        }
+        # -----
+        return event_dict
+
     def validate_event_size(self, event_dict):
         apparent_size = get_apparent_identity_event_size(event_dict)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"User Event size too big - {apparent_size} Bytes, "
-                             f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"User Event size too big - {apparent_size} Bytes, "
+                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
 
     def validate_body(self, is_part_of_bulk=False):
-        warnings_list = []
+        self.__warnings_list = []
         if self.__info:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
-            warnings_list.append(msg)
+            self.__warnings_list.append(msg)
             # print on console as well
             print(f"WARNING: {msg}")
         if self.__errors:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__errors)
-            warnings_list.append(msg)
+            self.__warnings_list.append(msg)
             err_msg = f"ERROR: {msg}"
             if is_part_of_bulk:
                 # print on console in case of bulk-api
                 print(err_msg)
             else:
                 # raise error in case of single api
-                raise ValueError(err_msg)
+                raise InputValueError(err_msg)
         # ------
-        return warnings_list
+        return self.__warnings_list
 
     def save(self):
         try:

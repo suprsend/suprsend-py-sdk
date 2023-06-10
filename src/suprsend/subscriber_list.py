@@ -5,22 +5,41 @@ from typing import List, Dict
 import urllib.parse
 import uuid
 
-from .exception import SuprsendAPIException, SuprsendValidationError
+from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
 from .constants import (
     HEADER_DATE_FMT,
     SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema)
 from .signature import get_request_signature
+from .attachment import get_attachment_json
 
 
 class SubscriberListBroadcast:
     def __init__(self, body, idempotency_key: str = None, brand_id: str = None):
         if not isinstance(body, (dict,)):
-            raise ValueError("broadcast body must be a json/dictionary")
+            raise InputValueError("broadcast body must be a json/dictionary")
         self.body = body
         self.idempotency_key = idempotency_key
         self.brand_id = brand_id
+
+    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+        if self.body.get("data") is None:
+            self.body["data"] = {}
+        # if body["data"] is not a dict, not raising error while adding attachment.
+        if not isinstance(self.body["data"], (dict,)):
+            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. "
+                  "SubscriberListBroadcast" + str(self.as_json()))
+            return
+        # ---
+        attachment = get_attachment_json(file_path, file_name, ignore_if_error)
+        if not attachment:
+            return
+        # --- add the attachment to body->data->$attachments
+        if self.body["data"].get("$attachments") is None:
+            self.body["data"]["$attachments"] = []
+        # -----
+        self.body["data"]["$attachments"].append(attachment)
 
     def get_final_json(self):
         self.body["$insert_id"] = str(uuid.uuid4())
@@ -34,10 +53,19 @@ class SubscriberListBroadcast:
         # ---- Check body size
         apparent_size = get_apparent_list_broadcast_body_size(self.body)
         if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise ValueError(f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
-                             f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
+                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return self.body, apparent_size
+
+    def as_json(self):
+        body_dict = {**self.body}
+        if self.idempotency_key:
+            body_dict["$idempotency_key"] = self.idempotency_key
+        if self.brand_id:
+            body_dict["brand_id"] = self.brand_id
+        # -----
+        return body_dict
 
 
 class SubscriberListsApi:
@@ -171,7 +199,7 @@ class SubscriberListsApi:
 
     def broadcast(self, broadcast_instance: SubscriberListBroadcast) -> Dict:
         if not isinstance(broadcast_instance, SubscriberListBroadcast):
-            raise ValueError("argument must be an instance of suprsend.SubscriberListBroadcast")
+            raise InputValueError("argument must be an instance of suprsend.SubscriberListBroadcast")
 
         broadcast_body, body_size = broadcast_instance.get_final_json()
         try:
