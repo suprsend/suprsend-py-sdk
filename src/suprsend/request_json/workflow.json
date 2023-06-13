@@ -8,7 +8,7 @@
   "properties": {
     "$idempotency_key": {
       "type": ["string", "null"],
-      "maxLength": 64,
+      "maxLength": 255,
       "description": "unique id provided by client for request"
     },
     "brand_id": {
