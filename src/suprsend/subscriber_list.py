@@ -223,7 +223,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def delete(self, list_id: str, version_id: str = None):
+    def delete(self, list_id: str, version_id: str):
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
 
