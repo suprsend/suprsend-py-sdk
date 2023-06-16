@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 
 def get_request_signature(url: str, http_verb: str, content, headers: Dict, secret: str) -> Tuple[str, str]:
-    if http_verb == "GET":  # POST/GET/PUT
+    if http_verb == "GET" or http_verb == "DELETE":  # POST/GET/PUT
         content_txt, content_md5 = "", ""
     else:
         content_txt = json.dumps(content, ensure_ascii=False)
