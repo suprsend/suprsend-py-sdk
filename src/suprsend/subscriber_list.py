@@ -67,6 +67,14 @@ class SubscriberListsApi:
             raise SuprsendValidationError("missing list_id")
         return list_id
 
+    def _validate_version_id(self, version_id):
+        if not isinstance(version_id, (str,)):
+            raise SuprsendValidationError("version_id must be a string")
+        version_id = version_id.strip()
+        if not version_id:
+            raise SuprsendValidationError("missing version_id")
+        return version_id
+
     def create(self, payload: Dict):
         if not payload:
             raise SuprsendValidationError("missing payload")
@@ -118,6 +126,14 @@ class SubscriberListsApi:
         url = f"{self.subscriber_list_url}{list_id_encoded}/"
         return url
 
+    def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
+        list_id = str(list_id).strip()
+        list_id_encoded = urllib.parse.quote_plus(list_id)
+        version_id = str(version_id).strip()
+        version_id_encoded = urllib.parse.quote_plus(version_id)
+        url = f"{self.subscriber_list_url}{list_id_encoded}{version_id_encoded}/"
+        return url
+
     def get(self, list_id: str):
         list_id = self._validate_list_id(list_id)
         # --------
@@ -133,13 +149,47 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def add(self, list_id: str, distinct_ids: list):
+    def start_sync(self, list_id: str):
         list_id = self._validate_list_id(list_id)
-        if not isinstance(distinct_ids, (list, )):
+
+        url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
+        payload = {}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def stop_sync(self, list_id: str, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        version_id = self._validate_version_id(version_id)
+        url = "{}stop_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def add(self, list_id: str, distinct_ids: list, version_id: str = None):
+        list_id = self._validate_list_id(list_id)
+        if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
         url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
+        # if version is not none, we use version update on draft list, hence change url
+        if version_id is not None:
+            version_id = self._validate_version_id(version_id)
+            url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -151,13 +201,17 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def remove(self, list_id: str, distinct_ids: list):
+    def remove(self, list_id: str, distinct_ids: list, version_id: str = None):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
         url = "{}subscriber/remove/".format(self.__subscriber_list_detail_url(list_id))
+        # if version is not none, we use version update on draft list, hence change url
+        if version_id is not None:
+            version_id = self._validate_version_id(version_id)
+            url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
