@@ -131,7 +131,7 @@ class SubscriberListsApi:
         list_id_encoded = urllib.parse.quote_plus(list_id)
         version_id = str(version_id).strip()
         version_id_encoded = urllib.parse.quote_plus(version_id)
-        url = f"{self.subscriber_list_url}{list_id_encoded}{version_id_encoded}/"
+        url = f"{self.subscriber_list_url}{list_id_encoded}/{version_id_encoded}/"
         return url
 
     def get(self, list_id: str):
@@ -171,7 +171,7 @@ class SubscriberListsApi:
         payload = {}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
@@ -179,17 +179,13 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def add(self, list_id: str, distinct_ids: list, version_id: str = None):
+    def add(self, list_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
         url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
-        # if version is not none, we use version update on draft list, hence change url
-        if version_id is not None:
-            version_id = self._validate_version_id(version_id)
-            url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -201,17 +197,33 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def remove(self, list_id: str, distinct_ids: list, version_id: str = None):
+    def add_to_draft(self, list_id: str, distinct_ids: list, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        if not isinstance(distinct_ids, (list,)):
+            raise SuprsendValidationError("distinct_ids must be list of strings")
+        if len(distinct_ids) == 0:
+            return self.non_error_default_response
+
+        version_id = self._validate_version_id(version_id)
+        url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {"distinct_ids": distinct_ids}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def remove(self, list_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
         url = "{}subscriber/remove/".format(self.__subscriber_list_detail_url(list_id))
-        # if version is not none, we use version update on draft list, hence change url
-        if version_id is not None:
-            version_id = self._validate_version_id(version_id)
-            url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -223,14 +235,33 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def delete(self, list_id: str, version_id: str):
+    def remove_from_draft(self, list_id: str, distinct_ids: list, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        if not isinstance(distinct_ids, (list,)):
+            raise SuprsendValidationError("distinct_ids must be list of strings")
+        if len(distinct_ids) == 0:
+            return self.non_error_default_response
+        version_id = self._validate_version_id(version_id)
+        url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {"distinct_ids": distinct_ids}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def delete_draft(self, list_id: str, version_id: str):
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
 
         url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'DELETE', None, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'PATCH', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
