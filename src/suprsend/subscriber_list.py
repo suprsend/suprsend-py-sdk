@@ -149,6 +149,22 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def get_draft(self, list_id: str, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        version_id = self._validate_version_id(version_id)
+        # --------
+        url = self.__subscriber_list_url_with_version(list_id, version_id)
+        # ---
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def start_sync(self, list_id: str):
         list_id = self._validate_list_id(list_id)
 
