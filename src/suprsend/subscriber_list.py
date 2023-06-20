@@ -181,7 +181,7 @@ class SubscriberListsApi:
 
     def add(self, list_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
-        if not isinstance(distinct_ids, (list,)):
+        if not isinstance(distinct_ids, (list, )):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
