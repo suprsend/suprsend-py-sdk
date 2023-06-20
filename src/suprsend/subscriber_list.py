@@ -213,7 +213,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def add_to_draft(self, list_id: str, distinct_ids: list, version_id: str):
+    def add_to_draft(self, list_id: str, version_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -251,7 +251,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def remove_from_draft(self, list_id: str, distinct_ids: list, version_id: str):
+    def remove_from_draft(self, list_id: str, version_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
