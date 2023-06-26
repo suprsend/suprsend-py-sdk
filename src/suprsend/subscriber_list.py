@@ -190,7 +190,7 @@ class SubscriberListsApi:
         content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -280,7 +280,7 @@ class SubscriberListsApi:
         content_txt, sig = get_request_signature(url, 'PATCH', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
