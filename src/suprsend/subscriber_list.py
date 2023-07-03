@@ -270,6 +270,19 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def delete(self, list_id: str):
+        list_id = self._validate_list_id(list_id)
+        url = "{}delete/".format(self.__subscriber_list_detail_url(list_id))
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'PATCH', None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def delete_draft(self, list_id: str, version_id: str):
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
