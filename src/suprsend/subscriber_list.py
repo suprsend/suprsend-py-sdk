@@ -274,8 +274,9 @@ class SubscriberListsApi:
         list_id = self._validate_list_id(list_id)
         url = "{}delete/".format(self.__subscriber_list_detail_url(list_id))
         headers = {**self.__headers, **self.__dynamic_headers()}
+        payload = {}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', None, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
@@ -289,8 +290,9 @@ class SubscriberListsApi:
 
         url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         headers = {**self.__headers, **self.__dynamic_headers()}
+        payload = {}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', None, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
