@@ -149,7 +149,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def get_draft(self, list_id: str, version_id: str):
+    def get_version(self, list_id: str, version_id: str):
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
         # --------
@@ -213,7 +213,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def add_to_draft(self, list_id: str, version_id: str, distinct_ids: list):
+    def add_to_version(self, list_id: str, version_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -251,7 +251,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def remove_from_draft(self, list_id: str, version_id: str, distinct_ids: list):
+    def remove_from_version(self, list_id: str, version_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -284,7 +284,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def delete_draft(self, list_id: str, version_id: str):
+    def delete_version(self, list_id: str, version_id: str):
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
 
