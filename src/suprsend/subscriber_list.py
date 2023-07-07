@@ -131,7 +131,7 @@ class SubscriberListsApi:
         list_id_encoded = urllib.parse.quote_plus(list_id)
         version_id = str(version_id).strip()
         version_id_encoded = urllib.parse.quote_plus(version_id)
-        url = f"{self.subscriber_list_url}{list_id_encoded}/{version_id_encoded}/"
+        url = f"{self.subscriber_list_url}{list_id_encoded}/version/{version_id_encoded}/"
         return url
 
     def get(self, list_id: str):
