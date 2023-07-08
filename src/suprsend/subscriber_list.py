@@ -67,14 +67,6 @@ class SubscriberListsApi:
             raise SuprsendValidationError("missing list_id")
         return list_id
 
-    def _validate_version_id(self, version_id):
-        if not isinstance(version_id, (str,)):
-            raise SuprsendValidationError("version_id must be a string")
-        version_id = version_id.strip()
-        if not version_id:
-            raise SuprsendValidationError("missing version_id")
-        return version_id
-
     def create(self, payload: Dict):
         if not payload:
             raise SuprsendValidationError("missing payload")
@@ -245,6 +237,14 @@ class SubscriberListsApi:
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
+
+    def _validate_version_id(self, version_id):
+        if not isinstance(version_id, (str,)):
+            raise SuprsendValidationError("version_id must be a string")
+        version_id = version_id.strip()
+        if not version_id:
+            raise SuprsendValidationError("missing version_id")
+        return version_id
 
     def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
         list_id = str(list_id).strip()
