@@ -126,14 +126,6 @@ class SubscriberListsApi:
         url = f"{self.subscriber_list_url}{list_id_encoded}/"
         return url
 
-    def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
-        list_id = str(list_id).strip()
-        list_id_encoded = urllib.parse.quote_plus(list_id)
-        version_id = str(version_id).strip()
-        version_id_encoded = urllib.parse.quote_plus(version_id)
-        url = f"{self.subscriber_list_url}{list_id_encoded}/version/{version_id_encoded}/"
-        return url
-
     def get(self, list_id: str):
         list_id = self._validate_list_id(list_id)
         # --------
@@ -149,52 +141,6 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def get_version(self, list_id: str, version_id: str):
-        list_id = self._validate_list_id(list_id)
-        version_id = self._validate_version_id(version_id)
-        # --------
-        url = self.__subscriber_list_url_with_version(list_id, version_id)
-        # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def start_sync(self, list_id: str):
-        list_id = self._validate_list_id(list_id)
-
-        url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
-        payload = {}
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def stop_sync(self, list_id: str, version_id: str):
-        list_id = self._validate_list_id(list_id)
-        version_id = self._validate_version_id(version_id)
-        url = "{}stop_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
-        payload = {}
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
     def add(self, list_id: str, distinct_ids: list):
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list, )):
@@ -202,26 +148,6 @@ class SubscriberListsApi:
         if len(distinct_ids) == 0:
             return self.non_error_default_response
         url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
-        payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def add_to_version(self, list_id: str, version_id: str, distinct_ids: list):
-        list_id = self._validate_list_id(list_id)
-        if not isinstance(distinct_ids, (list,)):
-            raise SuprsendValidationError("distinct_ids must be list of strings")
-        if len(distinct_ids) == 0:
-            return self.non_error_default_response
-
-        version_id = self._validate_version_id(version_id)
-        url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
@@ -251,44 +177,9 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def remove_from_version(self, list_id: str, version_id: str, distinct_ids: list):
-        list_id = self._validate_list_id(list_id)
-        if not isinstance(distinct_ids, (list,)):
-            raise SuprsendValidationError("distinct_ids must be list of strings")
-        if len(distinct_ids) == 0:
-            return self.non_error_default_response
-        version_id = self._validate_version_id(version_id)
-        url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
-        payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
     def delete(self, list_id: str):
         list_id = self._validate_list_id(list_id)
         url = "{}delete/".format(self.__subscriber_list_detail_url(list_id))
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        payload = {}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def delete_version(self, list_id: str, version_id: str):
-        list_id = self._validate_list_id(list_id)
-        version_id = self._validate_version_id(version_id)
-
-        url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         headers = {**self.__headers, **self.__dynamic_headers()}
         payload = {}
         # Signature and Authorization-header
@@ -339,3 +230,112 @@ class SubscriberListsApi:
                     "status_code": resp.status_code,
                     "message": resp.text,
                 }
+
+    def start_sync(self, list_id: str):
+        list_id = self._validate_list_id(list_id)
+
+        url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
+        payload = {}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
+        list_id = str(list_id).strip()
+        list_id_encoded = urllib.parse.quote_plus(list_id)
+        version_id = str(version_id).strip()
+        version_id_encoded = urllib.parse.quote_plus(version_id)
+        url = f"{self.subscriber_list_url}{list_id_encoded}/version/{version_id_encoded}/"
+        return url
+
+    def get_version(self, list_id: str, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        version_id = self._validate_version_id(version_id)
+        # --------
+        url = self.__subscriber_list_url_with_version(list_id, version_id)
+        # ---
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def add_to_version(self, list_id: str, version_id: str, distinct_ids: list):
+        list_id = self._validate_list_id(list_id)
+        if not isinstance(distinct_ids, (list,)):
+            raise SuprsendValidationError("distinct_ids must be list of strings")
+        if len(distinct_ids) == 0:
+            return self.non_error_default_response
+
+        version_id = self._validate_version_id(version_id)
+        url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {"distinct_ids": distinct_ids}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def remove_from_version(self, list_id: str, version_id: str, distinct_ids: list):
+        list_id = self._validate_list_id(list_id)
+        if not isinstance(distinct_ids, (list,)):
+            raise SuprsendValidationError("distinct_ids must be list of strings")
+        if len(distinct_ids) == 0:
+            return self.non_error_default_response
+        version_id = self._validate_version_id(version_id)
+        url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {"distinct_ids": distinct_ids}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def finish_sync(self, list_id: str, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        version_id = self._validate_version_id(version_id)
+        url = "{}finish_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        payload = {}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def delete_version(self, list_id: str, version_id: str):
+        list_id = self._validate_list_id(list_id)
+        version_id = self._validate_version_id(version_id)
+
+        url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        payload = {}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
