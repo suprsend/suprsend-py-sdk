@@ -123,6 +123,40 @@
       },
       "additionalProperties": false
     },
+    "ms_teams_setting": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "description": "ms teams tenant id"
+        },
+        "service_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://smba.trafficmanager.net/",
+          "description": "service webhook url. e.g https://smba.trafficmanager.net/XXXXXXXXXX"
+        },
+        "conversation_id": {
+          "type": "string",
+          "description": "ms teams conversation id"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "ms teams bot user id"
+        },
+        "incoming_webhook": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "incoming webhook url. e.g https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "androidpush_settings": {
       "type": "object",
       "properties": {
@@ -164,7 +198,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger"]
+            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger", "ms_teams"]
           },
           "minItems": 0,
           "description": "user preferred channels. notification will be tried only on specified channels e.g ['email', 'sms']"
@@ -319,7 +353,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger"]
+            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger", "ms_teams"]
           },
           "minItems": 0,
           "description": "e.g ['email', 'sms']. Used if smart=true, notification on these channels must be sent, irrespective of success metric outcome"
