@@ -280,6 +280,10 @@ user.add_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"}) 
 user.add_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
 user.add_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
 
+user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "conversation_id": "XXXXXXXXXXXX"})  # - DM on Team's channel using conversation id
+user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"})  # - DM user using team user id
+user.add_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
+
 # After setting the channel details on user-instance, call save()
 response = user.save()
 print(response)
@@ -319,6 +323,10 @@ user.remove_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"
 user.remove_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
 user.remove_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
 
+user.remove_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "conversation_id": "XXXXXXXXXXXX"})  # - DM on Team's channel using conversation id
+user.remove_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"})  # - DM user using team user id
+user.remove_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
+
 # save
 response = user.save()
 print(response)
@@ -341,6 +349,7 @@ print(response)
 # for iospush tokens:       $iospush
 # for webpush tokens:       $webpush
 # for slack:                $slack
+# for ms_teams:             $ms_teams
 
 # --- multiple channels can also be deleted in one call by passing argument as a list
 user.unset(["$email", "$sms", "$whatsapp"])

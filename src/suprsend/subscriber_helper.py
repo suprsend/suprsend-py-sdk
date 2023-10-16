@@ -10,9 +10,10 @@ IDENT_KEY_IOSPUSH = "$iospush"
 IDENT_KEY_WHATSAPP = "$whatsapp"
 IDENT_KEY_WEBPUSH = "$webpush"
 IDENT_KEY_SLACK = "$slack"
+IDENT_KEY_MS_TEAMS = "$ms_teams"
 
 IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_KEY_IOSPUSH,
-                  IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK]
+                  IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK, IDENT_KEY_MS_TEAMS]
 
 KEY_PUSHVENDOR = "$pushvendor"
 KEY_PREFERRED_LANGUAGE = "$preferred_language"
@@ -167,6 +168,9 @@ class _SubscriberInternalHelper:
         elif key == IDENT_KEY_SLACK:
             self._add_slack(val, caller=new_caller)
 
+        elif key == IDENT_KEY_MS_TEAMS:
+            self._add_ms_teams(val, caller=new_caller)
+
     def __remove_identity(self, key, val, kwargs, caller):
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
@@ -189,6 +193,9 @@ class _SubscriberInternalHelper:
 
         elif key == IDENT_KEY_SLACK:
             self._remove_slack(val, caller=new_caller)
+
+        elif key == IDENT_KEY_MS_TEAMS:
+            self._remove_ms_teams(val, caller=new_caller)
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):
@@ -404,3 +411,24 @@ class _SubscriberInternalHelper:
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_SLACK] = value
+
+    # ------------------------ MS Teams
+    def __check_ms_teams_dict(self, value, caller):
+        msg = "value must be a valid dict/json with proper keys"
+        if not (value and isinstance(value, (dict,))):
+            self.__errors.append(f"[{caller}] {msg}")
+            return value, False
+        else:
+            return value, True
+
+    def _add_ms_teams(self, value, caller: str):
+        value, is_valid = self.__check_ms_teams_dict(value, caller)
+        if not is_valid:
+            return
+        self.__dict_append[IDENT_KEY_MS_TEAMS] = value
+
+    def _remove_ms_teams(self, value, caller: str):
+        value, is_valid = self.__check_ms_teams_dict(value, caller)
+        if not is_valid:
+            return
+        self.__dict_remove[IDENT_KEY_MS_TEAMS] = value

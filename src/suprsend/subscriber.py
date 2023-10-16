@@ -407,6 +407,29 @@ class Subscriber:
         self._helper._remove_slack(value, caller=caller)
         self._collect_event(discard_if_error=True)
 
+    # ------------------------ MS Teams
+    def add_ms_teams(self, value: dict):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "add_ms_teams"
+        self._helper._add_ms_teams(value, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    def remove_ms_teams(self, value: dict):
+        """
+
+        :param value:
+        :return:
+        """
+        caller = "remove_ms_teams"
+        self._helper._remove_ms_teams(value, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    # ------------------------ Slack Deprecated methods
+
     def add_slack_email(self, value: str):
         """
         Deprecated: use add_slack instead
