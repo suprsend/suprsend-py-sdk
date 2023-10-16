@@ -168,6 +168,9 @@ class _SubscriberInternalHelper:
         elif key == IDENT_KEY_SLACK:
             self._add_slack(val, caller=new_caller)
 
+        elif key == IDENT_KEY_MS_TEAMS:
+            self._add_ms_teams(val, caller=new_caller)
+
     def __remove_identity(self, key, val, kwargs, caller):
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
@@ -190,6 +193,9 @@ class _SubscriberInternalHelper:
 
         elif key == IDENT_KEY_SLACK:
             self._remove_slack(val, caller=new_caller)
+
+        elif key == IDENT_KEY_MS_TEAMS:
+            self._remove_ms_teams(val, caller=new_caller)
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):

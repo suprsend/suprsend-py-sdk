@@ -138,11 +138,11 @@
         },
         "conversation_id": {
           "type": "string",
-          "description": "ms teams conversation id"
+          "description": "ms team conversation id"
         },
         "user_id": {
           "type": "string",
-          "description": "ms teams bot user id"
+          "description": "ms team user id"
         },
         "incoming_webhook": {
           "type": "object",
@@ -300,6 +300,18 @@
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/slack_setting" }
+            }
+          ]
+        },
+        "$ms_teams": {
+          "oneOf": [
+            { "$ref": "#/definitions/ms_teams_setting" },
+            {
+              "type": "array",
+              "uniqueItems": false,
+              "maxItems": 10,
+              "minItems": 1,
+              "items": { "$ref": "#/definitions/ms_teams_setting" }
             }
           ]
         },
