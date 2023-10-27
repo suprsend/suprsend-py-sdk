@@ -49,6 +49,7 @@ class _SubscriberInternalHelper:
     """
     def __init__(self):
         self.__dict_set = {}
+        self.__dict_set_once = {}
         self.__dict_append = {}
         self.__dict_remove = {}
         self.__list_unset = []
@@ -75,6 +76,8 @@ class _SubscriberInternalHelper:
         event = {}
         if self.__dict_set:
             event["$set"] = self.__dict_set
+        if self.__dict_set_once:
+            event["$set_once"] = self.__dict_set_once
         if self.__dict_append:
             event["$append"] = self.__dict_append
         if self.__dict_remove:
@@ -136,6 +139,28 @@ class _SubscriberInternalHelper:
             return
         # ----
         self.__list_unset.append(k)
+
+    def _set_k(self, key, val, kwargs, caller="set"):
+        key, is_k_valid = self.__validate_key_basic(key, caller)
+        if not is_k_valid:
+            return
+        if self.__is_identity_key(key):
+            self.__add_identity(key, val, kwargs, caller=caller)
+        else:
+            is_k_valid = self.__validate_key_prefix(key, caller)
+            if is_k_valid:
+                self.__dict_set[key] = val
+
+    def _set_once_k(self, key, val, kwargs, caller="set_once"):
+        key, is_k_valid = self.__validate_key_basic(key, caller)
+        if not is_k_valid:
+            return
+        if self.__is_identity_key(key):
+            self.__add_identity(key, val, kwargs, caller=caller)
+        else:
+            is_k_valid = self.__validate_key_prefix(key, caller)
+            if is_k_valid:
+                self.__dict_set_once[key] = val
 
     def _set_preferred_language(self, lang_code, caller):
         # Check language code is in the list

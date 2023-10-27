@@ -194,6 +194,54 @@ class Subscriber:
             # --
             self._collect_event(discard_if_error=False)
 
+    def set(self, arg1, arg2=None):
+        """
+        1. set(k, v)
+
+        :param arg1: required, one of  [str, dict]
+        :param arg2: required if arg1 is str
+        :return:
+        """
+        caller = "set"
+        if not isinstance(arg1, (str, dict)):
+            self.__errors.append(f"[{caller}] key must be String or a dict")
+            return
+        if isinstance(arg1, (str,)):
+            if arg2 is None:
+                self.__errors.append(f"[{caller}] if key is a string, then val must be passed")
+                return
+            else:
+                self._helper._set_k(arg1, arg2, {}, caller=caller)
+                self._collect_event(discard_if_error=True)
+        else:
+            for k, v in arg1.items():
+                self._helper._set_k(k, v, arg1, caller=caller)
+            self._collect_event(discard_if_error=True)
+
+    def set_once(self, arg1, arg2=None):
+        """
+        1. set(k, v)
+
+        :param arg1: required, one of  [str, dict]
+        :param arg2: required if arg1 is str
+        :return:
+        """
+        caller = "set_once"
+        if not isinstance(arg1, (str, dict)):
+            self.__errors.append(f"[{caller}] key must be String or a dict")
+            return
+        if isinstance(arg1, (str,)):
+            if arg2 is None:
+                self.__errors.append(f"[{caller}] if key is a string, then val must be passed")
+                return
+            else:
+                self._helper._set_once_k(arg1, arg2, {}, caller=caller)
+                self._collect_event(discard_if_error=True)
+        else:
+            for k, v in arg1.items():
+                self._helper._set_once_k(k, v, arg1, caller=caller)
+            self._collect_event(discard_if_error=True)
+
     def remove(self, arg1, arg2=None):
         """
         Usage:
