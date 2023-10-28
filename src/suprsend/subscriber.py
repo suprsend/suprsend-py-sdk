@@ -197,6 +197,7 @@ class Subscriber:
     def set(self, arg1, arg2=None):
         """
         1. set(k, v)
+        2. set({k1: v1, k2, v2})
 
         :param arg1: required, one of  [str, dict]
         :param arg2: required if arg1 is str
@@ -204,11 +205,11 @@ class Subscriber:
         """
         caller = "set"
         if not isinstance(arg1, (str, dict)):
-            self.__errors.append(f"[{caller}] key must be String or a dict")
+            self.__errors.append(f"[{caller}] arg1 must be String or a dict")
             return
         if isinstance(arg1, (str,)):
             if arg2 is None:
-                self.__errors.append(f"[{caller}] if key is a string, then val must be passed")
+                self.__errors.append(f"[{caller}] if arg1 is a string, then arg2 must be passed")
                 return
             else:
                 self._helper._set_kv(arg1, arg2, caller=caller)
@@ -216,11 +217,13 @@ class Subscriber:
         else:
             for k, v in arg1.items():
                 self._helper._set_kv(k, v, caller=caller)
+            # --
             self._collect_event(discard_if_error=True)
 
     def set_once(self, arg1, arg2=None):
         """
-        1. set(k, v)
+        1. set_once(k, v)
+        2. set_once({k1: v1, k2, v2})
 
         :param arg1: required, one of  [str, dict]
         :param arg2: required if arg1 is str
@@ -228,11 +231,11 @@ class Subscriber:
         """
         caller = "set_once"
         if not isinstance(arg1, (str, dict)):
-            self.__errors.append(f"[{caller}] key must be String or a dict")
+            self.__errors.append(f"[{caller}] arg1 must be String or a dict")
             return
         if isinstance(arg1, (str,)):
             if arg2 is None:
-                self.__errors.append(f"[{caller}] if key is a string, then val must be passed")
+                self.__errors.append(f"[{caller}] if arg1 is a string, then arg2 must be passed")
                 return
             else:
                 self._helper._set_once_kv(arg1, arg2, caller=caller)
@@ -240,11 +243,13 @@ class Subscriber:
         else:
             for k, v in arg1.items():
                 self._helper._set_once_kv(k, v, caller=caller)
+            # --
             self._collect_event(discard_if_error=True)
 
     def increment(self, arg1, arg2=None):
         """
         1. increment(k, v)
+        2. increment({k1: v1, k2, v2})
 
         :param arg1: required, one of  [str, dict]
         :param arg2: required if arg1 is str
@@ -252,11 +257,11 @@ class Subscriber:
         """
         caller = "increment"
         if not isinstance(arg1, (str, dict)):
-            self.__errors.append(f"[{caller}] key must be String or a dict")
+            self.__errors.append(f"[{caller}] arg1 must be String or a dict")
             return
         if isinstance(arg1, (str,)):
-            if arg2 is None or not isinstance(arg2, (int,)):
-                self.__errors.append(f"[{caller}] if key is a string, then integer val must be passed")
+            if arg2 is None:
+                self.__errors.append(f"[{caller}] if arg1 is a string, then arg2 must be passed")
                 return
             else:
                 self._helper._increment_kv(arg1, arg2, caller=caller)
@@ -264,6 +269,7 @@ class Subscriber:
         else:
             for k, v in arg1.items():
                 self._helper._increment_kv(k, v, caller=caller)
+            # --
             self._collect_event(discard_if_error=True)
 
     def remove(self, arg1, arg2=None):

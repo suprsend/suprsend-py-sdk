@@ -60,6 +60,7 @@ class _SubscriberInternalHelper:
 
     def reset(self):
         self.__dict_set, self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, {}, []
+        self.__dict_set_once, self.__dict_increment = {}, {}
         self.__errors = []
         self.__info = []
 
