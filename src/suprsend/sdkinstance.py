@@ -14,6 +14,7 @@ from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
 from .event import Event, EventCollector
 from .brand import BrandsApi
+from .tenant import TenantsApi
 
 
 class Suprsend:
@@ -50,6 +51,8 @@ class Suprsend:
         self._user = SubscriberFactory(self)
         # --
         self.brands = BrandsApi(self)
+        self.tenants = TenantsApi(self)
+        # --
         self.subscriber_lists = SubscriberListsApi(self)
 
     @property
