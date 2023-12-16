@@ -23,13 +23,13 @@ RESERVED_EVENT_NAMES = [
 
 class Event:
     def __init__(self, distinct_id: str, event_name: str, properties: Dict = None,
-                 idempotency_key: str = None, brand_id: str = None, tenant_id: str = None):
+                 idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
         self.distinct_id = distinct_id
         self.event_name = event_name
         self.properties = properties
         self.idempotency_key = idempotency_key
-        self.brand_id = brand_id
         self.tenant_id = tenant_id
+        self.brand_id = brand_id
         # default values
         if self.properties is None:
             self.properties = {}
@@ -96,7 +96,7 @@ class Event:
             event_dict["$idempotency_key"] = self.idempotency_key
         if self.tenant_id:
             event_dict["tenant_id"] = self.tenant_id
-        elif self.brand_id:
+        if self.brand_id:
             event_dict["brand_id"] = self.brand_id
         # ---
         event_dict = validate_track_event_schema(event_dict)
@@ -118,7 +118,7 @@ class Event:
             event_dict["$idempotency_key"] = self.idempotency_key
         if self.tenant_id:
             event_dict["tenant_id"] = self.tenant_id
-        elif self.brand_id:
+        if self.brand_id:
             event_dict["brand_id"] = self.brand_id
         # -----
         return event_dict

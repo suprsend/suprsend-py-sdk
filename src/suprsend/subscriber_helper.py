@@ -28,7 +28,7 @@ OTHER_RESERVED_KEYS = [
 ]
 
 SUPER_PROPERTY_KEYS = [
-    "$app_version_string", "$app_build_number", "$brand", "$carrier", "$manufacturer", "$model", "$os",
+    "$app_version_string", "$app_build_number", "$tenant", "$brand", "$carrier", "$manufacturer", "$model", "$os",
     "$ss_sdk_version", "$insert_id", "$time"
 ]
 
