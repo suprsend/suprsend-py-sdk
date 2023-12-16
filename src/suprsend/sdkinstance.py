@@ -13,8 +13,8 @@ from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
 from .event import Event, EventCollector
-from .brand import BrandsApi
 from .tenant import TenantsApi
+from .brand import BrandsApi
 
 
 class Suprsend:
@@ -50,8 +50,8 @@ class Suprsend:
         # --
         self._user = SubscriberFactory(self)
         # --
-        self.brands = BrandsApi(self)
         self.tenants = TenantsApi(self)
+        self.brands = BrandsApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
 
@@ -123,7 +123,7 @@ class Suprsend:
         if isinstance(data, Workflow):
             wf_ins = data
         else:
-            wf_ins = Workflow(data, idempotency_key=None, brand_id=None, tenant_id=None)
+            wf_ins = Workflow(data, idempotency_key=None, tenant_id=None, brand_id=None)
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
