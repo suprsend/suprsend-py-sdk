@@ -92,6 +92,8 @@ workflow_body = {...}
 wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__")
 # You can also the brand_id to be used for templates/notifications
 wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__", brand_id="default")
+# You can also the tenant_id to be used for templates/notifications
+wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__", tenant_id="default")
 # Trigger workflow
 response = supr_client.trigger_workflow(wf)
 print(response)
@@ -447,6 +449,9 @@ event = Event(distinct_id=distinct_id, event_name=event_name, properties=propert
 # You can also the brand_id to be used for templates/notifications
 event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties,
               idempotency_key="__uniq_request_id__", brand_id="default")
+# You can also the tenant_id to be used for templates/notifications
+event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties,
+              idempotency_key="__uniq_request_id__", tenant_id="default")
 # Send event
 response = supr_client.track_event(event)
 print(response)

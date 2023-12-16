@@ -16,6 +16,11 @@
       "maxLength": 64,
       "description": "brand id for workflow to be run in context of a brand"
     },
+    "tenant_id": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "description": "tenant id for workflow to be run in context of a tenant"
+    },
     "name":     {
       "$ref": "#/definitions/non_empty_string",
       "description": "name of workflow"
