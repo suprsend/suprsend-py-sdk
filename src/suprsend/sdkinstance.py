@@ -123,7 +123,7 @@ class Suprsend:
         if isinstance(data, Workflow):
             wf_ins = data
         else:
-            wf_ins = Workflow(data, idempotency_key=None, tenant_id=None, brand_id=None)
+            wf_ins = Workflow(data, idempotency_key=None, tenant_id=None)
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
@@ -146,7 +146,7 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
-        if not tenant_id and brand_id:
+        if not tenant_id:
             tenant_id = brand_id
         # ---
         event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, tenant_id=tenant_id)
