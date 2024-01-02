@@ -16,11 +16,12 @@ from .attachment import get_attachment_json
 
 
 class SubscriberListBroadcast:
-    def __init__(self, body, idempotency_key: str = None, brand_id: str = None):
+    def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
         if not isinstance(body, (dict,)):
             raise InputValueError("broadcast body must be a json/dictionary")
         self.body = body
         self.idempotency_key = idempotency_key
+        self.tenant_id = tenant_id
         self.brand_id = brand_id
 
     def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
@@ -46,6 +47,8 @@ class SubscriberListBroadcast:
         self.body["$time"] = int(time.time() * 1000)
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key
+        if self.tenant_id:
+            self.body["tenant_id"] = self.tenant_id
         if self.brand_id:
             self.body["brand_id"] = self.brand_id
         # --
@@ -62,6 +65,8 @@ class SubscriberListBroadcast:
         body_dict = {**self.body}
         if self.idempotency_key:
             body_dict["$idempotency_key"] = self.idempotency_key
+        if self.tenant_id:
+            body_dict["tenant_id"] = self.tenant_id
         if self.brand_id:
             body_dict["brand_id"] = self.brand_id
         # -----

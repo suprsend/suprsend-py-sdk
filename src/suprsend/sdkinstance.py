@@ -13,6 +13,7 @@ from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
 from .event import Event, EventCollector
+from .tenant import TenantsApi
 from .brand import BrandsApi
 
 
@@ -49,7 +50,9 @@ class Suprsend:
         # --
         self._user = SubscriberFactory(self)
         # --
+        self.tenants = TenantsApi(self)
         self.brands = BrandsApi(self)
+        # --
         self.subscriber_lists = SubscriberListsApi(self)
 
     @property
@@ -120,17 +123,18 @@ class Suprsend:
         if isinstance(data, Workflow):
             wf_ins = data
         else:
-            wf_ins = Workflow(data, idempotency_key=None, brand_id=None)
+            wf_ins = Workflow(data, idempotency_key=None, tenant_id=None)
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
     def track(self, distinct_id: str, event_name: str, properties: Dict = None,
-              idempotency_key: str = None, brand_id: str = None) -> Dict:
+              idempotency_key: str = None, tenant_id: str = None, brand_id: str = None) -> Dict:
         """
         :param distinct_id:
         :param event_name:
         :param properties:
         :param idempotency_key:
+        :param tenant_id:
         :param brand_id:
         :return: {
             "success": True,
@@ -142,7 +146,10 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
-        event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, brand_id=brand_id)
+        if not tenant_id:
+            tenant_id = brand_id
+        # ---
+        event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, tenant_id=tenant_id)
         return self._eventcollector.collect(event)
 
     def track_event(self, event: Event) -> Dict:
