@@ -21,7 +21,7 @@
       "maxLength": 64,
       "description": "brand id for workflow to be run in context of a brand"
     },
-    "name":     {
+    "name": {
       "$ref": "#/definitions/non_empty_string",
       "description": "name of workflow"
     },
@@ -49,7 +49,7 @@
     },
     "users": {
       "type": "array",
-      "items": { "$ref": "#/definitions/user_setting"},
+      "items": {"$ref": "#/definitions/user_setting"},
       "minItems": 1,
       "maxItems": 100,
       "description": "user object to run workflow for. At least 1 user is required"

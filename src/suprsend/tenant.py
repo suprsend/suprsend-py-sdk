@@ -3,7 +3,7 @@ import requests
 from typing import Dict
 import urllib.parse
 
-from .exception import SuprsendAPIException
+from .exception import SuprsendAPIException, SuprsendValidationError
 from .constants import HEADER_DATE_FMT
 from .signature import get_request_signature
 
@@ -55,13 +55,21 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def _validate_tenant_id(self, tenant_id):
+        if not isinstance(tenant_id, (str,)):
+            raise SuprsendValidationError("tenant_id must be a string")
+        tenant_id = tenant_id.strip()
+        if not tenant_id:
+            raise SuprsendValidationError("missing tenant_id")
+        return tenant_id
+
     def detail_url(self, tenant_id: str):
-        tenant_id = str(tenant_id).strip()
         tenant_id_encoded = urllib.parse.quote_plus(tenant_id)
         url = f"{self.list_url}{tenant_id_encoded}/"
         return url
 
     def get(self, tenant_id: str):
+        tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
         headers = {**self.__headers, **self.__dynamic_headers()}
@@ -75,6 +83,7 @@ class TenantsApi:
         return resp.json()
 
     def upsert(self, tenant_id: str, tenant_payload: Dict):
+        tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
         tenant_payload = tenant_payload or {}
@@ -87,3 +96,17 @@ class TenantsApi:
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
+
+    def delete(self, tenant_id: str):
+        tenant_id = self._validate_tenant_id(tenant_id)
+        url = self.detail_url(tenant_id)
+        # ---
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return {"success": True, "status_code": resp.status_code}
