@@ -17,13 +17,15 @@ IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_K
 
 KEY_PUSHVENDOR = "$pushvendor"
 KEY_PREFERRED_LANGUAGE = "$preferred_language"
+KEY_TIMEZONE = "$timezone"
 
 OTHER_RESERVED_KEYS = [
     "$messenger", "$inbox",
     KEY_PUSHVENDOR, "$device_id",
     "$insert_id", "$time",
     "$set", "$set_once", "$add", "$append", "$remove", "$unset",
-    "$identify", "$anon_id", "$identified_id", KEY_PREFERRED_LANGUAGE,
+    "$identify", "$anon_id", "$identified_id",
+    KEY_PREFERRED_LANGUAGE, KEY_TIMEZONE,
     "$notification_delivered", "$notification_dismiss", "$notification_clicked",
 ]
 
@@ -178,6 +180,9 @@ class _SubscriberInternalHelper:
             return
         # ---
         self.__dict_set[KEY_PREFERRED_LANGUAGE] = lang_code
+
+    def _set_timezone(self, timezone, caller):
+        self.__dict_set[KEY_TIMEZONE] = timezone
 
     def __add_identity(self, key, val, kwargs, caller):
         new_caller = f"{caller}:{key}"
