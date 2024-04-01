@@ -324,12 +324,21 @@ class Subscriber:
     # ------------------------ Preferred language
     def set_preferred_language(self, lang_code):
         """
-
         :param lang_code:
         :return:
         """
         caller = "set_preferred_language"
         self._helper._set_preferred_language(lang_code, caller=caller)
+        self._collect_event(discard_if_error=True)
+
+    # ------------------------ Timezone
+    def set_timezone(self, timezone):
+        """
+        :param timezone:
+        :return:
+        """
+        caller = "set_timezone"
+        self._helper._set_timezone(timezone, caller=caller)
         self._collect_event(discard_if_error=True)
 
     # ------------------------ Email

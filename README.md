@@ -366,6 +366,16 @@ response = user.save()
 print(response)
 ```
 
+- You can also set timezone of user using `set_timezone(timezone)`. Value for timezone
+  must be from amongst the IANA timezones as maintained in the latest release here:
+  https://data.iana.org/time-zones/tzdb-2024a/zonenow.tab.
+```python
+# --- Set timezone property at user level in IANA timezone format
+user.set_timezone("America/Los_Angeles")
+response = user.save()
+print(response)
+```
+
 - Note: After calling `add_*`/`remove_*`/`unset`/`set_*` methods, don't forget to call `user.save()`. On call of save(),
 SDK sends the request to SuprSend platform to update the User-Profile.
 
