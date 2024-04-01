@@ -368,7 +368,7 @@ print(response)
 
 - You can also set timezone of user using `set_timezone(timezone)`. Value for timezone
   must be from amongst the IANA timezones as maintained in the latest release here:
-  https://data.iana.org/time-zones/releases/.
+  https://data.iana.org/time-zones/tzdb-2024a/zonenow.tab.
 ```python
 # --- Set timezone property at user level in IANA timezone format
 user.set_timezone("America/Los_Angeles")

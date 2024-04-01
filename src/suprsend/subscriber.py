@@ -332,13 +332,13 @@ class Subscriber:
         self._collect_event(discard_if_error=True)
 
     # ------------------------ Timezone
-    def set_timezone(self, time_zone):
+    def set_timezone(self, timezone):
         """
-        :param time_zone:
+        :param timezone:
         :return:
         """
         caller = "set_timezone"
-        self._helper._set_timezone(time_zone, caller=caller)
+        self._helper._set_timezone(timezone, caller=caller)
         self._collect_event(discard_if_error=True)
 
     # ------------------------ Email
