@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://github.com/suprsend/suprsend-py-sdk/request_json/workflow.json",
-  "title": "workflow_request",
-  "description": "Json schema for workflow request",
-  "$comment": "Json schema for workflow request",
+  "$id": "http://github.com/suprsend/suprsend-py-sdk/request_json/workflow_trigger.json",
+  "title": "workflow_trigger",
+  "description": "Json schema for workflow trigger request",
+  "$comment": "Json schema for workflow trigger request",
   "type": "object",
   "properties": {
     "$idempotency_key": {
@@ -16,54 +16,49 @@
       "maxLength": 64,
       "description": "tenant id for workflow to be run in context of a tenant"
     },
-    "brand_id": {
-      "type": ["string", "null"],
-      "maxLength": 64,
-      "description": "brand id for workflow to be run in context of a brand"
-    },
-    "name": {
+    "workflow": {
       "$ref": "#/definitions/non_empty_string",
-      "description": "name of workflow"
+      "description": "workflow slug"
     },
-    "template": {
-      "$ref": "#/definitions/non_empty_string",
-      "description": "slug of Template"
+    "actor": {
+      "oneOf": [
+        {"$ref": "#/definitions/non_empty_string"},
+        {"$ref": "#/definitions/user_setting"}
+      ],
+      "description": "actor id/object of workflow"
     },
-    "notification_category": {
-      "$ref": "#/definitions/non_empty_string",
-      "description": "slug of Notification category"
-    },
-    "delay": {
-      "type": ["string", "integer"],
-      "minimum": 0,
-      "description": "If string: format [XX]d[XX]h[XX]m[XX]s e.g 1d2h30m10s(for 1day 2hours 30minutes 10sec). If integer: value in number of seconds"
-    },
-    "trigger_at": {
-        "$ref": "#/definitions/non_empty_string",
-        "description": "timestamp in ISO-8601 format. e.g 2021-08-27T20:14:51.643Z"
-    },
-    "delivery": {
-      "type": "object",
-      "$ref": "#/definitions/delivery_setting",
-      "description": "set parameters e.g smart (true/false), success metric, TTL, mandatory channels etc"
-    },
-    "users": {
+    "recipients": {
       "type": "array",
-      "items": {"$ref": "#/definitions/user_setting"},
+      "items": {
+        "oneOf": [
+          {"$ref": "#/definitions/non_empty_string"},
+          {"$ref": "#/definitions/user_setting"}
+        ]
+      },
       "minItems": 1,
       "maxItems": 100,
-      "description": "user object to run workflow for. At least 1 user is required"
+      "description": "list of recipient id/object to run workflow for. At least 1 user is required"
     },
     "data": {
       "type": "object",
       "description": "variables to be used in workflow. e.g replacing templates variables."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "metadata of request"
+    },
+    "cancellation_key": {
+      "type": ["string", "null"],
+      "maxLength": 255,
+      "description": "cancellation key for workflow"
     }
   },
-  "required": ["name", "template", "notification_category", "users", "data"],
+  "required": ["workflow", "recipients", "data"],
+  "additionalProperties": false,
   "definitions": {
     "non_empty_string": {
       "type": "string",
-      "minLength": 2
+      "minLength": 1
     },
     "mobile_number_pattern": {
       "type": "string", "minLength": 8,
@@ -249,14 +244,6 @@
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/androidpush_settings" }
-            },
-            {"$ref": "#/definitions/non_empty_string"},
-            {
-              "type": "array",
-              "uniqueItems": false,
-              "maxItems": 10,
-              "minItems": 1,
-              "items": { "$ref": "#/definitions/non_empty_string" }
             }
           ]
         },
@@ -269,14 +256,6 @@
               "maxItems": 10,
               "minItems": 1,
               "items": { "$ref": "#/definitions/iospush_settings" }
-            },
-            {"$ref": "#/definitions/non_empty_string"},
-            {
-              "type": "array",
-              "uniqueItems": false,
-              "maxItems": 10,
-              "minItems": 1,
-              "items": { "$ref": "#/definitions/non_empty_string" }
             }
           ]
         },
@@ -354,37 +333,6 @@
         }
       },
       "required": []
-    },
-    "delivery_setting": {
-      "type": "object",
-      "properties": {
-        "smart": {
-          "type": "boolean",
-          "default": false,
-          "description": "If false, notifications are sent to all channels at once. If true, notifications are sent one-by-one until success metric is satisfied"
-        },
-        "success": {
-          "type": "string",
-          "default": "seen",
-          "description": "possible values: delivered/seen/interaction/<user_defined_event>."
-        },
-        "time_to_live": {
-          "type": "string",
-          "default": "1h",
-          "description": "Used if smart=true. format [XX]d[XX]h[XX]m[XX]s e.g 1d2h30m10s(for 1day 2hours 30minutes 10sec)"
-        },
-        "mandatory_channels": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["androidpush", "iospush", "webpush", "email", "sms", "whatsapp", "slack", "inbox", "messenger", "ms_teams"]
-          },
-          "minItems": 0,
-          "description": "e.g ['email', 'sms']. Used if smart=true, notification on these channels must be sent, irrespective of success metric outcome"
-        }
-      },
-      "required": [],
-      "additionalProperties": false
     }
   }
 }

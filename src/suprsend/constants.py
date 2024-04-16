@@ -1,6 +1,5 @@
 # Default urls
 DEFAULT_URL = "https://hub.suprsend.com/"
-DEFAULT_UAT_URL = "https://collector-staging.suprsend.workers.dev/"
 
 # an Event should not have apparent body size of more than 100KB
 SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES = 100 * 1024  # 100 * 1024

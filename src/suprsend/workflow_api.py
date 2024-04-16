@@ -1,0 +1,79 @@
+from datetime import datetime, timezone
+import requests
+from typing import Dict
+
+from .constants import HEADER_DATE_FMT
+from .signature import get_request_signature
+from .workflow_request import WorkflowRequest
+from .workflow_trigger_bulk import BulkWorkflowTrigger
+
+
+class WorkflowsApi:
+    def __init__(self, config):
+        self.config = config
+        self.metadata = {"User-Agent": self.config.user_agent}
+
+    def __get_headers(self):
+        return {
+            "Content-Type": "application/json; charset=utf-8",
+            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
+            "User-Agent": self.config.user_agent,
+        }
+
+    def trigger(self, workflow: WorkflowRequest) -> Dict:
+        workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
+        try:
+            headers = self.__get_headers()
+            url = "{}trigger/".format(self.config.base_url)
+            # Signature and Authorization-header
+            content_txt, sig = get_request_signature(url, 'POST', workflow_body,
+                                                     headers, self.config.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+            # -----
+            resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        except Exception as ex:
+            error_str = ex.__str__()
+            return {
+                "success": False,
+                "status": "fail",
+                "status_code": 500,
+                "message": error_str,
+            }
+        else:
+            ok_response = resp.status_code // 100 == 2
+            if ok_response:
+                return {
+                    "success": True,
+                    "status": "success",
+                    "status_code": resp.status_code,
+                    "message": resp.text,
+                }
+            else:
+                return {
+                    "success": False,
+                    "status": "fail",
+                    "status_code": resp.status_code,
+                    "message": resp.text,
+                }
+
+    def bulk_instance(self):
+        """
+        USAGE:
+        supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
+        bulk_ins = supr_client.workflows.bulk_instance()
+
+        # append one by one
+        for i in range(0, 10):
+            w = WorkflowRequest(body) # Workflow instance
+            bulk_ins.append(w)
+
+        # append many in one call
+        all_workflows = [W1, W2, ...] # multiple workflows
+        bulk_ins.append(*all_workflows)
+
+        # call trigger
+        response = bulk_ins.trigger()
+
+        :return:
+        """
+        return BulkWorkflowTrigger(self.config)

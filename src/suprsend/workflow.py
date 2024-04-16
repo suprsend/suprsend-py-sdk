@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import requests
 from typing import Dict
+from warnings import warn
 
 from .constants import (
     HEADER_DATE_FMT,
@@ -14,6 +15,7 @@ from .attachment import get_attachment_json
 
 class Workflow:
     def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+        # warn(f'{self.__class__.__name__} will be deprecated.', DeprecationWarning, stacklevel=2)
         if not isinstance(body, (dict,)):
             raise InputValueError("workflow body must be a json/dictionary")
         self.body = body

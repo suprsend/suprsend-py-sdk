@@ -128,6 +128,21 @@ def validate_workflow_body_schema(body: Dict) -> Dict:
     return body
 
 
+def validate_workflow_trigger_body_schema(body: Dict) -> Dict:
+    # --- In case data is not provided, set it to empty dict
+    if body.get("data") is None:
+        body["data"] = {}
+    if not isinstance(body["data"], dict):
+        raise InputValueError("data must be a dictionary")
+    # --------------------------------
+    schema_validator = _get_schema_validator("workflow_trigger")
+    try:
+        schema_validator.validate(body)
+    except jsonschema.exceptions.ValidationError as ve:
+        raise SuprsendValidationError(ve.message)
+    return body
+
+
 def validate_track_event_schema(body: Dict) -> Dict:
     # --- In case props is not provided, set it to empty dict
     if body.get("properties") is None:
