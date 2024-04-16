@@ -1,11 +1,13 @@
 import platform
 
 from typing import List, Dict
+from warnings import warn
 from .version import __version__
-from .constants import (DEFAULT_URL, DEFAULT_UAT_URL)
+from .constants import DEFAULT_URL
 from .exception import SuprsendConfigError, InputValueError
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
+from .workflow_api import WorkflowsApi
 from .request_log import set_logging
 from .workflows_bulk import BulkWorkflowsFactory
 from .events_bulk import BulkEventsFactory
@@ -33,8 +35,7 @@ class Suprsend:
         self.sdk_version = __version__
         self.user_agent = "suprsend/{};python/{}".format(self.sdk_version, platform.python_version())
         #
-        is_uat = kwargs.get("is_uat", False)
-        self.base_url = self.__get_url(base_url, is_uat)
+        self.base_url = self.__get_base_url(base_url)
         # ---
         self.__validate()
         # --- set logging level for http request
@@ -52,6 +53,7 @@ class Suprsend:
         # --
         self.tenants = TenantsApi(self)
         self.brands = BrandsApi(self)
+        self.workflows = WorkflowsApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
 
@@ -72,13 +74,13 @@ class Suprsend:
         return self._user
 
     @staticmethod
-    def __get_url(base_url, is_uat):
+    def __get_base_url(base_url):
         # ---- strip
         if base_url:
             base_url = base_url.strip()
         # ---- if url not passed, set url based on server env
         if not base_url:
-            base_url = DEFAULT_UAT_URL if is_uat else DEFAULT_URL
+            base_url = DEFAULT_URL
         # ---- check url ends with /
         base_url = base_url.strip()
         if base_url[len(base_url) - 1] != "/":
@@ -94,6 +96,8 @@ class Suprsend:
             raise SuprsendConfigError("Missing base_url")
 
     def add_attachment(self, body: Dict, file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
+        warn('This method is deprecated. Use "WorkflowRequest.add_attachment()" instead',
+             DeprecationWarning, stacklevel=2)
         # if data key not present, add it and set value={}.
         if body.get("data") is None:
             body["data"] = {}
@@ -120,6 +124,8 @@ class Suprsend:
         :except:
             - SuprsendValidationError
         """
+        # warn('This method will be deprecated. Use client.workflows.trigger(WorkflowRequest) instead',
+        #      DeprecationWarning, stacklevel=2)
         if isinstance(data, Workflow):
             wf_ins = data
         else:
@@ -146,6 +152,7 @@ class Suprsend:
             - SuprsendValidationError (if post-data is invalid.)
             - ValueError
         """
+        warn('This method is deprecated. Use "track_event(Event)" instead', DeprecationWarning, stacklevel=2)
         if not tenant_id:
             tenant_id = brand_id
         # ---
