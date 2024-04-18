@@ -4,7 +4,7 @@ from typing import Dict
 
 from .constants import HEADER_DATE_FMT
 from .signature import get_request_signature
-from .workflow_request import WorkflowRequest
+from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
 
 
@@ -20,7 +20,7 @@ class WorkflowsApi:
             "User-Agent": self.config.user_agent,
         }
 
-    def trigger(self, workflow: WorkflowRequest) -> Dict:
+    def trigger(self, workflow: WorkflowTriggerRequest) -> Dict:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
             headers = self.__get_headers()
@@ -56,15 +56,15 @@ class WorkflowsApi:
                     "message": resp.text,
                 }
 
-    def bulk_instance(self):
+    def bulk_trigger_instance(self):
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-        bulk_ins = supr_client.workflows.bulk_instance()
+        bulk_ins = supr_client.workflows.bulk_trigger_instance()
 
         # append one by one
         for i in range(0, 10):
-            w = WorkflowRequest(body) # Workflow instance
+            w = WorkflowTriggerRequest(body) # Workflow instance
             bulk_ins.append(w)
 
         # append many in one call

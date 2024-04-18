@@ -16,7 +16,7 @@ from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
-from .workflow_request import WorkflowRequest
+from .workflow_request import WorkflowTriggerRequest
 
 
 class _BulkWorkflowTriggerChunk:
@@ -161,7 +161,7 @@ class BulkWorkflowTrigger:
         if not workflows:
             return
         for wf in workflows:
-            if wf and isinstance(wf, WorkflowRequest):
+            if wf and isinstance(wf, WorkflowTriggerRequest):
                 wf_copy = copy.deepcopy(wf)
                 self.__workflows.append(wf_copy)
 
