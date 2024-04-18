@@ -6,10 +6,10 @@ from .attachment import get_attachment_json
 from .utils import (get_apparent_workflow_body_size, validate_workflow_trigger_body_schema)
 
 
-class WorkflowRequest:
+class WorkflowTriggerRequest:
     def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, cancellation_key: str = None):
         if not isinstance(body, (dict,)):
-            raise InputValueError("WorkflowRequest body must be a json/dictionary")
+            raise InputValueError("WorkflowTriggerRequest body must be a json/dictionary")
         self.body = body
         self.idempotency_key = idempotency_key
         self.tenant_id = tenant_id
@@ -20,8 +20,8 @@ class WorkflowRequest:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. Workflow" +
-                  str(self.as_json()))
+            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. "
+                  "WorkflowTriggerRequest" + str(self.as_json()))
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)

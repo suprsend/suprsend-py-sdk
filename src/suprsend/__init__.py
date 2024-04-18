@@ -14,7 +14,7 @@ from .sdkinstance import Suprsend           # noqa
 from .bulk_response import BulkResponse     # noqa
 from .event import Event                    # noqa
 from .workflow import Workflow              # noqa
-from .workflow_request import WorkflowRequest # noqa
+from .workflow_request import WorkflowTriggerRequest # noqa
 from .subscriber_list import SubscriberListBroadcast      # noqa
 
 from .exception import (

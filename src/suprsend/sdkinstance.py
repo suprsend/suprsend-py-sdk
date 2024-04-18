@@ -96,7 +96,7 @@ class Suprsend:
             raise SuprsendConfigError("Missing base_url")
 
     def add_attachment(self, body: Dict, file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
-        warn('This method is deprecated. Use "WorkflowRequest.add_attachment()" instead',
+        warn('This method is deprecated. Use "WorkflowTriggerRequest.add_attachment()" instead',
              DeprecationWarning, stacklevel=2)
         # if data key not present, add it and set value={}.
         if body.get("data") is None:
@@ -124,7 +124,7 @@ class Suprsend:
         :except:
             - SuprsendValidationError
         """
-        # warn('This method will be deprecated. Use client.workflows.trigger(WorkflowRequest) instead',
+        # warn('This method will be deprecated. Use client.workflows.trigger(WorkflowTriggerRequest) instead',
         #      DeprecationWarning, stacklevel=2)
         if isinstance(data, Workflow):
             wf_ins = data
