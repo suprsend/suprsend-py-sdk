@@ -15,13 +15,13 @@ IDENT_KEY_MS_TEAMS = "$ms_teams"
 IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_KEY_IOSPUSH,
                   IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK, IDENT_KEY_MS_TEAMS]
 
-KEY_PUSHVENDOR = "$pushvendor"
+KEY_ID_PROVIDER = "$id_provider"
 KEY_PREFERRED_LANGUAGE = "$preferred_language"
 KEY_TIMEZONE = "$timezone"
 
 OTHER_RESERVED_KEYS = [
     "$messenger", "$inbox",
-    KEY_PUSHVENDOR, "$device_id",
+    KEY_ID_PROVIDER, "$device_id",
     "$insert_id", "$time",
     "$set", "$set_once", "$add", "$append", "$remove", "$unset",
     "$identify", "$anon_id", "$identified_id",
@@ -196,13 +196,13 @@ class _SubscriberInternalHelper:
             self._add_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._add_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._add_androidpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._add_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._add_iospush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
-            self._add_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._add_webpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_SLACK:
             self._add_slack(val, caller=new_caller)
@@ -222,13 +222,13 @@ class _SubscriberInternalHelper:
             self._remove_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._remove_androidpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._remove_androidpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._remove_iospush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._remove_iospush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
-            self._remove_webpush(val, kwargs.get(KEY_PUSHVENDOR), caller=new_caller)
+            self._remove_webpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
 
         elif key == IDENT_KEY_SLACK:
             self._remove_slack(val, caller=new_caller)
@@ -353,14 +353,14 @@ class _SubscriberInternalHelper:
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_ANDROIDPUSH] = value
-        self.__dict_append[KEY_PUSHVENDOR] = provider
+        self.__dict_append[KEY_ID_PROVIDER] = provider
 
     def _remove_androidpush(self, value: str, provider: str, caller: str):
         value, provider, is_valid = self.__check_androidpush_value(value, provider, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_ANDROIDPUSH] = value
-        self.__dict_remove[KEY_PUSHVENDOR] = provider
+        self.__dict_remove[KEY_ID_PROVIDER] = provider
 
     # ------------------------ Iospush [providers: apns]
 
@@ -386,14 +386,14 @@ class _SubscriberInternalHelper:
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_IOSPUSH] = value
-        self.__dict_append[KEY_PUSHVENDOR] = provider
+        self.__dict_append[KEY_ID_PROVIDER] = provider
 
     def _remove_iospush(self, value: str, provider: str, caller: str):
         value, provider, is_valid = self.__check_iospush_value(value, provider, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_IOSPUSH] = value
-        self.__dict_remove[KEY_PUSHVENDOR] = provider
+        self.__dict_remove[KEY_ID_PROVIDER] = provider
 
     # ------------------------ Webpush [providers: vapid]
 
@@ -420,14 +420,14 @@ class _SubscriberInternalHelper:
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_WEBPUSH] = value
-        self.__dict_append[KEY_PUSHVENDOR] = provider
+        self.__dict_append[KEY_ID_PROVIDER] = provider
 
     def _remove_webpush(self, value: dict, provider: str, caller: str):
         value, provider, is_valid = self.__check_webpush_dict(value, provider, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_WEBPUSH] = value
-        self.__dict_remove[KEY_PUSHVENDOR] = provider
+        self.__dict_remove[KEY_ID_PROVIDER] = provider
 
     # ------------------------ Slack
 
