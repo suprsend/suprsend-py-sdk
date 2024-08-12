@@ -2,13 +2,6 @@
 This package can be included in a python3 project to easily integrate
 with `SuprSend` platform.
 
-We're working towards creating SDK in other languages as well.
-
-### SuprSend SDKs available in following languages
-* python3 >= 3.7 (`suprsend-py-sdk`)
-* node (`suprsend-node-sdk`)
-* java (`suprsend-java-sdk`)
-
 ### Installation
 `suprsend-py-sdk` is available on PyPI. You can install using pip.
 ```bash
@@ -32,32 +25,25 @@ supr_client = Suprsend("workspace_key", "workspace_secret")
 ```
 
 Following example shows a sample request for triggering a workflow.
-It triggers a notification to a user with id: `distinct_id`,
+It triggers a pre-created workflow `purchase-made` to a recipient with id: `distinct_id`,
 email: `user@example.com` & androidpush(fcm-token): `__android_push_fcm_token__`
-using template `purchase-made` and notification_category `system`
+
 
 ```python3
-from suprsend import Workflow
+from suprsend import WorkflowTriggerRequest
 # Prepare Workflow body
-workflow_body = {
-    "name": "Purchase Workflow",
-    "template": "purchase-made",
-    "notification_category": "system",
-    # "delay": "15m",  # Check duration format below
-    "users": [
+wf = WorkflowTriggerRequest(
+  body={
+    "workflow": "purchase-made",
+    "recipients": [
         {
           "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
-          # if $channels is present, communication will be tried on mentioned channels only.
+          # if $channels is present, communication will be tried on mentioned channels only (for this request).
           # "$channels": ["email"],
           "$email": ["user@example.com"],
           "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": ""}],
         }
     ],
-    # delivery instruction. how should notifications be sent, and whats the success metric
-    "delivery": {
-        "smart": False,
-        "success": "seen"
-    },
     # data can be any json / serializable python-dictionary
     "data": {
         "first_name": "User",
@@ -69,13 +55,13 @@ workflow_body = {
             },
         }
     }
-}
-wf = Workflow(body=workflow_body)
+  }
+)
 # Trigger workflow
-response = supr_client.trigger_workflow(wf)
+response = supr_client.workflows.trigger(wf)
 print(response)
 ```
-When you call `supr_client.trigger_workflow`, the SDK internally makes an HTTP call to SuprSend
+When you call `supr_client.workflows.trigger`, the SDK internally makes an HTTP call to SuprSend
 Platform to register this request, and you'll immediately receive a response indicating
 the acceptance status.
 
@@ -86,14 +72,14 @@ idempotency_key has multiple uses e.g.
 2. You can use this key to track webhooks related to workflow notifications.
 
 ```python3
-from suprsend import Workflow
+from suprsend import WorkflowTriggerRequest
 
 workflow_body = {...}
-wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__")
-# You can also pass the tenant_id to be used for templates/notifications
-wf = Workflow(body=workflow_body, idempotency_key="__uniq_request_id__", tenant_id="default")
+wf = WorkflowTriggerRequest(body=workflow_body, idempotency_key="__uniq_request_id__")
+# You can also pass the tenant_id on behalf of which the workflow is to run.
+wf = WorkflowTriggerRequest(body=workflow_body, idempotency_key="__uniq_request_id__", tenant_id="default")
 # Trigger workflow
-response = supr_client.trigger_workflow(wf)
+response = supr_client.workflows.trigger(wf)
 print(response)
 ```
 
@@ -116,81 +102,16 @@ Note: The actual processing/execution of workflow happens asynchronously.
     "message": "error message",
 }
 ```
-### Duration Format
-format for specifying duration: `[xx]d[xx]h[xx]m[xx]s`
-Where
-* `d` stands for days. value boundary: 0 <= `d`
-* `h` stands for hours. value boundary: 0 <= `h` <= 23
-* `m` stands for minutes. value boundary: 0 <= `m` <= 59
-* `s` stands for seconds. value boundary: 0 <= `s` <= 59
-
-Examples:
-* 2 days, 3 hours, 12 minutes, 23 seconds -> 2d3h12m23s or 02d03h12m23s
-* 48 hours -> 2d
-* 30 hours -> 1d6h
-* 300 seconds -> 5m
-* 320 seconds -> 5m20s
-* 60 seconds -> 1m
-
-### Delivery instruction
-All delivery options:
-```python
-delivery = {
-    "smart": True/False,
-    "success": "seen/interaction/<some-user-defined-success-event>",
-    "time_to_live": "<TTL duration>",
-    "mandatory_channels": [] # list of mandatory channels e.g ["email"]
-}
-```
-Where
-* `smart` (boolean) - whether to optimize for number of notifications sent?
-  - Possible values: `True` / `False`
-  - Default value: `False`
-  - If False, then notifications are sent on all channels at once.
-  - If True, then notifications are sent one-by-one (on regular interval controlled by `time_to_live`)
-    on each channel until given `success`-metric is achieved.
-
-* `success` - what is your measurement of success for this notification?
-  - Possible values: `delivered` / `seen` / `interaction` / `<some-user-defined-success-event>`
-  - Default value: `seen`
-  - If `delivered`: If notification on any of the channels is successfully delivered, consider it a success.
-  - If `seen`: If notification on any of the channels is seen by user, consider it a success.
-  - If `interaction`: If notification on any of the channels is clicked/interacted by the user, consider it a success.
-  - If `<some-user-defined-success-event>`: If certain event is done by user within the event-window (1 day), consider it a success.
-    - currently, event-window is not configurable. default set to `1d` (1 day).
-      success-event must happen within this event-window since notification was sent.
-
-* `time_to_live` - What's your buffer-window for sending notification.
-  - applicable when `smart`=True, otherwise ignored
-  - Default value: `1h` (1 hour)
-  - notification on each channel will be sent with time-interval of [`time_to_live / (number_of_valid_channels - 1))`] apart.
-  - Currently, channels are tried in low-to-high notification-cost order based on `Notification Cost` mentioned in Vendor Config.
-    If cost is not mentioned, it is considered `0` for order-calculation purpose.
-  - Process will continue until all channels are exhausted or `success` metric is achieved, whichever occurs first.
-
-* `mandatory_channels` - Channels on which notification has to be sent immediately (irrespective of notification-cost).
-  - applicable when `smart`=True, otherwise ignored
-  - Default value: [] (empty list)
-  - possible channels: `email, sms, whatsapp, androidpush, iospush` etc.
-
-
-If delivery instruction is not provided, then default value is
-```python3
-{
-    "smart": False,
-    "success": "seen"
-}
-```
 
 ### Add attachments
 
 To add one or more Attachments to a Workflow/Notification (viz. Email),
-call `Workflow.add_attachment(file_path)` for each file with local-path.
-Ensure that file_path is proper, otherwise it will raise FileNotFoundError.
+call `WorkflowTriggerRequest.add_attachment(file_path)`.
+If providing a local path, ensure that it is proper, otherwise it will raise FileNotFoundError.
 ```python
-from suprsend import Workflow
+from suprsend import WorkflowTriggerRequest
 workflow_body = {...}
-wf_instance = Workflow(body=workflow_body)
+wf_instance = WorkflowTriggerRequest(body=workflow_body)
 
 # this snippet can be used to add attachment to workflow.
 file_path = "/home/user/billing.pdf"
@@ -198,7 +119,7 @@ wf_instance.add_attachment(file_path)
 ```
 
 #### Attachment structure
-The `add_attachment(...)` call appends below structure to `workflow_body->data->'$attachments'`
+The `add_attachment(...)` call appends below structure to `body->data->'$attachments'`
 
 ```json
 {
@@ -220,13 +141,13 @@ Where
 You can send bulk request for workflows in one call. Use `.append()` on bulk_workflows instance
 to add however-many-records to call in bulk.
 ```python3
-from suprsend import Workflow
+from suprsend import WorkflowTriggerRequest
 
-bulk_ins = supr_client.bulk_workflows.new_instance()
+bulk_ins = supr_client.workflows.bulk_trigger_instance()
 
 # one or more workflow instances
-workflow1 = Workflow(body={...}) # body must be a proper workflow request json/dict
-workflow2 = Workflow(body={...}) # body must be a proper workflow request json/dict
+workflow1 = WorkflowTriggerRequest(body={...}) # body must be a proper workflow request json/dict
+workflow2 = WorkflowTriggerRequest(body={...}) # body must be a proper workflow request json/dict
 
 # --- use .append on bulk instance to add one or more records
 bulk_ins.append(workflow1)
@@ -384,15 +305,12 @@ while triggering workflow. Associated channels will automatically be picked up f
 while processing the workflow. In the example below, we are passing only distinct_id of the user:
 
 ```python3
-from suprsend import Workflow
+from suprsend import WorkflowTriggerRequest
 
 # Prepare Workflow body
-workflow_body = {
-    "name": "Purchase Workflow",
-    "template": "purchase-made",
-    "notification_category": "system",
-    # "delay": "15m",
-    "users": [
+request_body = {
+    "workflow": "purchase-made",
+    "recipients": [
         {
             "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
         }
@@ -409,9 +327,9 @@ workflow_body = {
         }
     }
 }
-wf = Workflow(body=workflow_body)
+wf = WorkflowTriggerRequest(body=request_body)
 # Trigger workflow
-response = supr_client.trigger_workflow(wf)
+response = supr_client.workflows.trigger(wf)
 print(response)
 ```
 #### Bulk API for Users
