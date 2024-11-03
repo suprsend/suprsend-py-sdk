@@ -1,5 +1,3 @@
-import re
-
 from .language_codes import ALL_LANG_CODES
 
 # ---------- Identity keys
@@ -35,13 +33,6 @@ SUPER_PROPERTY_KEYS = [
 ]
 
 ALL_RESERVED_KEYS = SUPER_PROPERTY_KEYS + OTHER_RESERVED_KEYS + IDENT_KEYS_ALL
-
-# ---------
-MOBILE_REGEX = r'^\+[0-9\s]+'
-mobile_regex_compiled = re.compile(MOBILE_REGEX)
-
-EMAIL_REGEX = r'^\S+@\S+\.\S+$'
-email_regex_compiled = re.compile(EMAIL_REGEX)
 # ---------
 
 
@@ -66,6 +57,16 @@ class _ObjectInternalHelper:
         self.__errors = []
         self.__info = []
 
+    def get_identity_event(self):
+        payload = self.form_payload()
+        ret_val = {
+            "errors": self.__errors,
+            "info": self.__info,
+            "payload": payload
+        }
+        self.reset()
+        return ret_val
+
     def form_payload(self):
         payload = {}
         if self.__dict_set:
@@ -80,7 +81,6 @@ class _ObjectInternalHelper:
             payload["$remove"] = self.__dict_remove
         if self.__list_unset:
             payload["$unset"] = self.__list_unset
-        self.reset()
         return payload
 
     # ------------------------
@@ -229,7 +229,7 @@ class _ObjectInternalHelper:
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):
-        msg = "value must a string with proper value"
+        msg = "value must be a string with proper value"
         if not isinstance(value, (str,)):
             self.__errors.append(f"[{caller}] {msg}")
             return value, False
@@ -241,100 +241,55 @@ class _ObjectInternalHelper:
         return value, True
 
     # ------------------------ Email
-
-    def __validate_email(self, email, caller):
-        email, is_valid = self.__check_ident_val_string(email, caller)
-        if not is_valid:
-            return email, False
-        # --- validate basic regex
-        msg = "value in email format required. e.g. user@example.com"
-        min_length, max_length = 6, 127
-        # ---
-        m = email_regex_compiled.match(email)
-        if m is None:
-            self.__errors.append(f"[{caller}] invalid value {email}. {msg}")
-            return email, False
-        if len(email) < min_length or len(email) > max_length:
-            self.__errors.append(f"[{caller}] invalid value {email}. must be 6 <= len(email) <= 127")
-            return email, False
-        # ---
-        return email, True
-
     def _add_email(self, value: str, caller: str):
-        value, is_valid = self.__validate_email(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_EMAIL] = value
 
     def _remove_email(self, value: str, caller):
-        value, is_valid = self.__validate_email(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_EMAIL] = value
 
-    # ------------------------ Mobile no
-
-    def __validate_mobile_no(self, mobile_no, caller):
-        mobile_no, is_valid = self.__check_ident_val_string(mobile_no, caller)
-        if not is_valid:
-            return mobile_no, False
-        # --- validate basic regex
-        msg = "number must start with + and must contain country code. e.g. +41446681800"
-        min_length = 8
-        # ---
-        m = mobile_regex_compiled.match(mobile_no)
-        if m is None:
-            self.__errors.append(f"[{caller}] invalid value {mobile_no}. {msg}")
-            return mobile_no, False
-        if len(mobile_no) < min_length:
-            self.__errors.append(f"[{caller}] invalid value {mobile_no}. len(mobile_no) must be >= 8")
-            return mobile_no, False
-        # ---
-        return mobile_no, True
-
     # ------------------------ SMS
-
     def _add_sms(self, value: str, caller: str):
-        value, is_valid = self.__validate_mobile_no(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_SMS] = value
 
     def _remove_sms(self, value: str, caller: str):
-        value, is_valid = self.__validate_mobile_no(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_SMS] = value
 
     # ------------------------ Whatsapp
-
     def _add_whatsapp(self, value: str, caller: str):
-        value, is_valid = self.__validate_mobile_no(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_append[IDENT_KEY_WHATSAPP] = value
 
     def _remove_whatsapp(self, value: str, caller: str):
-        value, is_valid = self.__validate_mobile_no(value, caller)
+        email, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return
         self.__dict_remove[IDENT_KEY_WHATSAPP] = value
 
-    # ------------------------ Androidpush [providers: fcm / xiaomi / oppo]
-
+    # ------------------------ Androidpush
     def __check_androidpush_value(self, value, provider, caller):
         value, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return value, provider, False
-        # -- validate provider
-        if not provider:
-            provider = "fcm"
-        # --- convert to lowercase to make it case-insensitive
+        # ---
         if isinstance(provider, str):
             provider = provider.lower()
         # ---
-        if provider not in ["fcm", "xiaomi", "oppo"]:
-            self.__errors.append(f"[{caller}] unsupported androidpush provider {provider}")
+        if not provider:
+            self.__errors.append(f"[{caller}] invalid androidpush provider value {provider}")
             return value, provider, False
         # ---
         return value, provider, True
@@ -353,21 +308,17 @@ class _ObjectInternalHelper:
         self.__dict_remove[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
 
-    # ------------------------ Iospush [providers: apns]
-
+    # ------------------------ Iospush
     def __check_iospush_value(self, value, provider, caller):
         value, is_valid = self.__check_ident_val_string(value, caller)
         if not is_valid:
             return value, provider, False
-        # -- validate provider
-        if not provider:
-            provider = "apns"
-        # --- convert to lowercase to make it case-insensitive
+        # --
         if isinstance(provider, str):
             provider = provider.lower()
         # ---
-        if provider not in ["apns", ]:
-            self.__errors.append(f"[{caller}] unsupported iospush provider {provider}")
+        if not provider:
+            self.__errors.append(f"[{caller}] invalid iospush provider value {provider}")
             return value, provider, False
         # ---
         return value, provider, True
@@ -386,22 +337,18 @@ class _ObjectInternalHelper:
         self.__dict_remove[IDENT_KEY_IOSPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
 
-    # ------------------------ Webpush [providers: vapid]
-
+    # ------------------------ Webpush
     def __check_webpush_dict(self, value, provider, caller):
         msg = "value must be a valid dict representing webpush-token"
         if not (value and isinstance(value, (dict,))):
             self.__errors.append(f"[{caller}] {msg}")
             return value, provider, False
-        # -- validate provider
-        if not provider:
-            provider = "vapid"
-        # --- convert to lowercase to make it case-insensitive
+        # ---
         if isinstance(provider, str):
             provider = provider.lower()
         # ---
-        if provider not in ["vapid", ]:
-            self.__errors.append(f"[{caller}] unsupported webpush provider {provider}")
+        if not provider:
+            self.__errors.append(f"[{caller}] invalid webpush provider value {provider}")
             return value, provider, False
         # ---
         return value, provider, True
@@ -421,7 +368,6 @@ class _ObjectInternalHelper:
         self.__dict_remove[KEY_ID_PROVIDER] = provider
 
     # ------------------------ Slack
-
     def __check_slack_dict(self, value, caller):
         msg = "value must be a valid dict/json with proper keys"
         if not (value and isinstance(value, (dict,))):

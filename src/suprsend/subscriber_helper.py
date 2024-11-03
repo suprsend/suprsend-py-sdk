@@ -238,7 +238,7 @@ class _SubscriberInternalHelper:
 
     # ------------------------
     def __check_ident_val_string(self, value, caller):
-        msg = "value must a string with proper value"
+        msg = "value must be a string with proper value"
         if not isinstance(value, (str,)):
             self.__errors.append(f"[{caller}] {msg}")
             return value, False
