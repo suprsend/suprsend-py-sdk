@@ -35,7 +35,7 @@ class ObjectsApi:
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
         }
 
-    def _validate_object_entity_string(self, entity_id):
+    def _validate_object_entity_id(self, entity_id):
         if not entity_id:
             raise SuprsendValidationError("invalid value provided for object entity")
 
@@ -48,7 +48,7 @@ class ObjectsApi:
         params = options or {}
         encoded_params = urllib.parse.urlencode(params)
         #
-        object_type = self._validate_object_entity_string(object_type)
+        object_type = self._validate_object_entity_id(object_type)
         object_type_encoded = urllib.parse.quote_plus(object_type)
         url = f"{self.list_url}{object_type_encoded}/?{encoded_params}"
         # ---
@@ -63,10 +63,10 @@ class ObjectsApi:
         return resp.json()
 
     def detail_url(self, object_type: str, object_id: str):
-        object_type = self._validate_object_entity_string(object_type)
+        object_type = self._validate_object_entity_id(object_type)
         object_type_encoded = urllib.parse.quote_plus(object_type)
         # --
-        object_id = self._validate_object_entity_string(object_id)
+        object_id = self._validate_object_entity_id(object_id)
         object_id_encoded = urllib.parse.quote_plus(object_id)
         # --
         url = f"{self.list_url}{object_type_encoded}/{object_id_encoded}/"
@@ -127,7 +127,7 @@ class ObjectsApi:
         return {"success": True, "status_code": resp.status_code}
 
     def bulk_ops_url(self, object_type):
-        object_type = self._validate_object_entity_string(object_type)
+        object_type = self._validate_object_entity_id(object_type)
         object_type_encoded = urllib.parse.quote_plus(object_type)
         # --
         url_template = "{}v1/bulk/object/"
@@ -135,12 +135,10 @@ class ObjectsApi:
         url = f"{url}{object_type_encoded}/"
         return url
 
-    def bulk_delete(self, object_type: str, object_ids: list):
+    def bulk_delete(self, object_type: str, payload: Dict):
         url = self.bulk_ops_url(object_type)
         # ---
-        payload = {
-            "object_ids": object_ids
-        }
+        payload = payload or {}
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'DELETE', payload, headers, self.config.workspace_secret)
