@@ -2,6 +2,8 @@ import platform
 
 from typing import List, Dict
 from warnings import warn
+
+from .object import ObjectsApi
 from .version import __version__
 from .constants import DEFAULT_URL
 from .exception import SuprsendConfigError, InputValueError
@@ -54,6 +56,7 @@ class Suprsend:
         self.tenants = TenantsApi(self)
         self.brands = BrandsApi(self)
         self.workflows = WorkflowsApi(self)
+        self.objects = ObjectsApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
 
