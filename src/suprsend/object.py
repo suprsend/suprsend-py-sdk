@@ -40,7 +40,7 @@ class ObjectsApi:
             raise SuprsendValidationError("invalid value provided for object entity")
 
         entity_id = entity_id.strip()
-        if entity_id:
+        if not entity_id:
             raise SuprsendValidationError("invalid value provided for object entity")
         return entity_id
 
@@ -240,10 +240,10 @@ class _Object:
 
     def validate_body(self):
         if self.__info:
-            msg = f"[object_type: {self.object_type}, object_id: {self.object_id}]" + "\n".join(self.__info)
+            msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__info)
             print(f"WARNING: {msg}")
         if self.__errors:
-            msg = f"[object_type: {self.object_type}, object_id: {self.object_id}]" + "\n".join(self.__errors)
+            msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__errors)
             print(f"ERROR: {msg}")
 
     def save(self):
