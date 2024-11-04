@@ -130,7 +130,7 @@ class _ObjectInternalHelper:
             if is_k_valid:
                 self.__dict_remove[key] = val
 
-    def _unset_k(self, key, caller="unset"):
+    def _unset_kv(self, key, caller="unset"):
         k, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
