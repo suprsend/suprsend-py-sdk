@@ -313,11 +313,11 @@ class Subscriber:
             self.__errors.append(f"[{caller}] key must be either String or List[string]")
             return
         if isinstance(key, (str,)):
-            self._helper._unset_kv(key, caller=caller)
+            self._helper._unset_k(key, caller=caller)
             self._collect_event(discard_if_error=True)
         else:
             for k in key:
-                self._helper._unset_kv(k, caller=caller)
+                self._helper._unset_k(k, caller=caller)
             # --
             self._collect_event(discard_if_error=False)
 
