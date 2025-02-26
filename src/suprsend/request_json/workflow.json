@@ -65,26 +65,6 @@
       "type": "string",
       "minLength": 2
     },
-    "mobile_number_pattern": {
-      "type": "string", "minLength": 8,
-      "pattern": "^\\+[0-9\\s]+",
-      "message": {
-        "required": "Either a mobile-number or an array of mobile-numbers. e.g [\"+41446681800\"]",
-        "pattern": "number must start with + and must contain country code. e.g. +41446681800"
-      }
-    },
-    "email_pattern": {
-      "type": "string",
-      "format": "email",
-      "pattern": "^\\S+@\\S+\\.\\S+$",
-      "description": "email of an user",
-      "minLength": 6,
-      "maxLength": 127,
-      "message": {
-        "required": "",
-        "pattern": "value in email format required. e.g. user@example.com"
-      }
-    },
     "slack_setting": {
       "type": "object",
       "properties": {
@@ -112,7 +92,7 @@
           }
         },
         "email": {
-          "$ref": "#/definitions/email_pattern"
+          "$ref": "#/definitions/non_empty_string"
         },
         "incoming_webhook": {
           "type": "object",
@@ -218,25 +198,25 @@
         },
         "$email": {
           "oneOf": [
-            {"$ref": "#/definitions/email_pattern"},
+            {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
               "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/email_pattern" }
+              "items": { "$ref": "#/definitions/non_empty_string" }
             }
           ]
         },
         "$sms": {
           "oneOf": [
-            {"$ref": "#/definitions/mobile_number_pattern"},
+            {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
               "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/mobile_number_pattern" }
+              "items": { "$ref": "#/definitions/non_empty_string" }
             }
           ]
         },
@@ -282,13 +262,13 @@
         },
         "$whatsapp": {
           "oneOf": [
-            {"$ref": "#/definitions/mobile_number_pattern"},
+            {"$ref": "#/definitions/non_empty_string"},
             {
               "type": "array",
               "uniqueItems": false,
               "maxItems": 10,
               "minItems": 1,
-              "items": { "$ref": "#/definitions/mobile_number_pattern" }
+              "items": { "$ref": "#/definitions/non_empty_string" }
             }
           ]
         },

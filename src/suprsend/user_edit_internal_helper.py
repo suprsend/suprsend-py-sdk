@@ -18,10 +18,7 @@ KEY_PREFERRED_LANGUAGE = "$preferred_language"
 KEY_TIMEZONE = "$timezone"
 
 
-class _SubscriberInternalHelper:
-    """
-    Internal helper class
-    """
+class _UserEditInternalHelper:
     def __init__(self):
         self.__dict_set = {}
         self.__dict_set_once = {}
@@ -39,17 +36,17 @@ class _SubscriberInternalHelper:
         self.__errors = []
         self.__info = []
 
-    def get_identity_event(self):
-        evt = self.__form_event()
+    def get_operation_result(self):
+        operation = self.__form_operation()
         ret_val = {
             "errors": self.__errors,
             "info": self.__info,
-            "event": evt,
+            "operation": operation,
         }
         self.reset()
         return ret_val
 
-    def __form_event(self):
+    def __form_operation(self):
         event = {}
         if self.__dict_set:
             event["$set"] = self.__dict_set
@@ -240,16 +237,16 @@ class _SubscriberInternalHelper:
 
     # ------------------------ Slack
 
-    def _add_slack(self, value, caller: str):
+    def _add_slack(self, value: dict, caller: str):
         self.__dict_append[IDENT_KEY_SLACK] = value
 
-    def _remove_slack(self, value, caller: str):
+    def _remove_slack(self, value: dict, caller: str):
         self.__dict_remove[IDENT_KEY_SLACK] = value
 
     # ------------------------ MS Teams
 
-    def _add_ms_teams(self, value, caller: str):
+    def _add_ms_teams(self, value: dict, caller: str):
         self.__dict_append[IDENT_KEY_MS_TEAMS] = value
 
-    def _remove_ms_teams(self, value, caller: str):
+    def _remove_ms_teams(self, value: dict, caller: str):
         self.__dict_remove[IDENT_KEY_MS_TEAMS] = value

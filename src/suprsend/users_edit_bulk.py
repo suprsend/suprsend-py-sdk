@@ -1,7 +1,7 @@
 import copy
 from datetime import datetime, timezone
 import requests
-from typing import List, Dict
+from typing import Dict, Union
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
@@ -14,73 +14,26 @@ from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
-from .subscriber import Subscriber
+from .user_edit import UserEdit
 
 
-class BulkSubscribersFactory:
-
-    def __init__(self, config):
-        self.config = config
-
-    def new_instance(self):
-        """
-        USAGE:
-        supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
-        bulk_ins = supr_client.bulk_users.new_instance()
-
-        # append one by one
-        for i in range(0, 10):
-            # -- User instance
-            user = supr_client.user.get_instance('distinct_id')  # create user instance
-            user.add_email("user1@example.com")
-            # -- add user to bulk-instance
-            bulk_ins.append(user)
-
-        # append many in one call
-        # -- 1
-        user1 = supr_client.user.get_instance('distinct_id_1')
-        user1.add_email("user1@example.com")
-        # -- 2
-        user2 = supr_client.user.get_instance('distinct_id_2')
-        user2.add_email("user2@example.com")
-        #
-        all_users = [user1, user2, ...] # multiple users
-        bulk_ins.append(*all_users)
-
-        # call save
-        response = bulk_ins.save()
-
-        :return:
-        """
-        return BulkSubscribers(self.config)
-
-
-class _BulkSubscribersChunk:
+class _BulkUsersEditChunk:
     _chunk_apparent_size_in_bytes = BODY_MAX_APPARENT_SIZE_IN_BYTES
     _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
     def __init__(self, config):
         self.config = config
         self.__chunk = []
-        self.__url = self.__get_url()
-        self.__headers = self.__common_headers()
+        self.__url = "{}event/".format(self.config.base_url)
         #
         self.__running_size = 0
         self.__running_length = 0
         self.response = None
 
-    def __get_url(self):
-        url_formatted = "{}event/".format(self.config.base_url)
-        return url_formatted
-
-    def __common_headers(self):
+    def __get_headers(self):
         return {
             "Content-Type": "application/json; charset=utf-8",
             "User-Agent": self.config.user_agent,
-        }
-
-    def __dynamic_headers(self):
-        return {
             "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
         }
 
@@ -123,16 +76,14 @@ class _BulkSubscribersChunk:
         return True
 
     def trigger(self):
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.__get_headers()
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
+        content_txt, sig = get_request_signature(self.__url, "POST", self.__chunk, headers,
                                                  self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
         try:
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = requests.post(self.__url, data=content_txt.encode('utf-8'), headers=headers)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -168,33 +119,34 @@ class _BulkSubscribersChunk:
                 }
 
 
-class BulkSubscribers:
+class BulkUsersEdit:
     def __init__(self, config):
         self.config = config
-        self.__subscribers = []
+        self.__users = []
         self.__pending_records = []
-        self.chunks = []
-        self.response = BulkResponse()
         # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
         self.__invalid_records = []
+        self.chunks = []
+        self.response = BulkResponse()
 
-    def __validate_subscriber_events(self):
-        for sub in self.__subscribers:
+    def __validate_users(self):
+        for u in self.__users:
             try:
                 # -- check if there is any error/warning, if so add it to warnings list of BulkResponse
-                warnings_list = sub.validate_body(is_part_of_bulk=True)
+                warnings_list = u.validate_body()
                 if warnings_list:
                     self.response.warnings.extend(warnings_list)
                 # ---
-                ev = sub.get_event()
-                ev_json, body_size = sub.validate_event_size(ev)
-                self.__pending_records.append((ev_json, body_size))
+                pl = u.get_async_payload()
+                pl_json, pl_size = u.validate_payload_size(pl)
+                self.__pending_records.append((pl_json, pl_size))
             except Exception as ex:
-                inv_rec = invalid_record_json(sub.as_json(), ex)
+                # invalid_record json: {"record": payload-json, "error": error_str, "code": 500}
+                inv_rec = invalid_record_json(u.as_json_async(), ex)
                 self.__invalid_records.append(inv_rec)
 
     def __chunkify(self, start_idx=0):
-        curr_chunk = _BulkSubscribersChunk(self.config)
+        curr_chunk = _BulkUsersEditChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
             is_added = curr_chunk.try_to_add_into_chunk(rec[0], rec[1])
@@ -204,19 +156,16 @@ class BulkSubscribers:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *subscribers):
-        if not subscribers:
+    def append(self, *users):
+        if not users:
             return
-        for sub in subscribers:
-            if sub and isinstance(sub, Subscriber):
-                sub_copy = copy.deepcopy(sub)
-                self.__subscribers.append(sub_copy)
-
-    def trigger(self):
-        return self.save()
+        for u in users:
+            if u and isinstance(u, UserEdit):
+                u_copy = copy.deepcopy(u)
+                self.__users.append(u_copy)
 
     def save(self):
-        self.__validate_subscriber_events()
+        self.__validate_users()
         # --------
         if len(self.__invalid_records) > 0:
             ch_response = BulkResponse.invalid_records_chunk_response(self.__invalid_records)

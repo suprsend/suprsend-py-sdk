@@ -18,7 +18,7 @@ KEY_PREFERRED_LANGUAGE = "$preferred_language"
 KEY_TIMEZONE = "$timezone"
 
 
-class _SubscriberInternalHelper:
+class _ObjectEditInternalHelper:
     """
     Internal helper class
     """
@@ -39,31 +39,31 @@ class _SubscriberInternalHelper:
         self.__errors = []
         self.__info = []
 
-    def get_identity_event(self):
-        evt = self.__form_event()
+    def get_operation_result(self):
+        operation = self.__form_operation()
         ret_val = {
             "errors": self.__errors,
             "info": self.__info,
-            "event": evt,
+            "operation": operation
         }
         self.reset()
         return ret_val
 
-    def __form_event(self):
-        event = {}
+    def __form_operation(self):
+        payload = {}
         if self.__dict_set:
-            event["$set"] = self.__dict_set
+            payload["$set"] = self.__dict_set
         if self.__dict_set_once:
-            event["$set_once"] = self.__dict_set_once
+            payload["$set_once"] = self.__dict_set_once
         if self.__dict_increment:
-            event["$add"] = self.__dict_increment
+            payload["$add"] = self.__dict_increment
         if self.__dict_append:
-            event["$append"] = self.__dict_append
+            payload["$append"] = self.__dict_append
         if self.__dict_remove:
-            event["$remove"] = self.__dict_remove
+            payload["$remove"] = self.__dict_remove
         if self.__list_unset:
-            event["$unset"] = self.__list_unset
-        return event
+            payload["$unset"] = self.__list_unset
+        return payload
 
     # ------------------------
     def __validate_key_basic(self, key: str, caller: str):
@@ -189,11 +189,10 @@ class _SubscriberInternalHelper:
     def _add_email(self, value: str, caller: str):
         self.__dict_append[IDENT_KEY_EMAIL] = value
 
-    def _remove_email(self, value: str, caller: str):
+    def _remove_email(self, value: str, caller):
         self.__dict_remove[IDENT_KEY_EMAIL] = value
 
     # ------------------------ SMS
-
     def _add_sms(self, value: str, caller: str):
         self.__dict_append[IDENT_KEY_SMS] = value
 
@@ -201,7 +200,6 @@ class _SubscriberInternalHelper:
         self.__dict_remove[IDENT_KEY_SMS] = value
 
     # ------------------------ Whatsapp
-
     def _add_whatsapp(self, value: str, caller: str):
         self.__dict_append[IDENT_KEY_WHATSAPP] = value
 
@@ -240,16 +238,16 @@ class _SubscriberInternalHelper:
 
     # ------------------------ Slack
 
-    def _add_slack(self, value, caller: str):
+    def _add_slack(self, value: dict, caller: str):
         self.__dict_append[IDENT_KEY_SLACK] = value
 
-    def _remove_slack(self, value, caller: str):
+    def _remove_slack(self, value: dict, caller: str):
         self.__dict_remove[IDENT_KEY_SLACK] = value
 
     # ------------------------ MS Teams
 
-    def _add_ms_teams(self, value, caller: str):
+    def _add_ms_teams(self, value: dict, caller: str):
         self.__dict_append[IDENT_KEY_MS_TEAMS] = value
 
-    def _remove_ms_teams(self, value, caller: str):
+    def _remove_ms_teams(self, value: dict, caller: str):
         self.__dict_remove[IDENT_KEY_MS_TEAMS] = value
