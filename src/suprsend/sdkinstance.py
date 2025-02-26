@@ -3,7 +3,6 @@ import platform
 from typing import List, Dict
 from warnings import warn
 
-from .object import ObjectsApi
 from .version import __version__
 from .constants import DEFAULT_URL
 from .exception import SuprsendConfigError, InputValueError
@@ -19,6 +18,8 @@ from .subscriber_list import SubscriberListsApi
 from .event import Event, EventCollector
 from .tenant import TenantsApi
 from .brand import BrandsApi
+from .objects_api import ObjectsApi
+from .users_api import UsersApi
 
 
 class Suprsend:
@@ -57,6 +58,7 @@ class Suprsend:
         self.brands = BrandsApi(self)
         self.workflows = WorkflowsApi(self)
         self.objects = ObjectsApi(self)
+        self.users = UsersApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
 

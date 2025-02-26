@@ -23,8 +23,11 @@ class SuprsendAPIException(SuprsendError):
         # -- Get error message
         content_type = response.headers.get("Content-Type")
         if content_type and "application/json" in content_type:
-            rjson = response.json()
-            err_msg = rjson.get("message") or rjson.get("detail")
+            try:
+                rjson = response.json()
+                err_msg = rjson.get("message") or rjson.get("detail")
+            except:
+                err_msg = response.text
         else:
             err_msg = response.text
         message = f"{err_msg}"

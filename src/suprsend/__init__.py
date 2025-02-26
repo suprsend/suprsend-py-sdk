@@ -16,6 +16,9 @@ from .event import Event                    # noqa
 from .workflow import Workflow              # noqa
 from .workflow_request import WorkflowTriggerRequest # noqa
 from .subscriber_list import SubscriberListBroadcast      # noqa
+from .object_edit import ObjectEdit
+from .user_edit import UserEdit
+from .users_edit_bulk import BulkUsersEdit
 
 from .exception import (
     SuprsendError, SuprsendConfigError, SuprsendAPIException, SuprsendValidationError,
