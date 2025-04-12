@@ -51,7 +51,6 @@
       "type": "array",
       "items": {"$ref": "#/definitions/user_setting"},
       "minItems": 1,
-      "maxItems": 100,
       "description": "user object to run workflow for. At least 1 user is required"
     },
     "data": {

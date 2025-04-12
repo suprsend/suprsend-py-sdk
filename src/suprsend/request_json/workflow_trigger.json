@@ -36,7 +36,6 @@
         ]
       },
       "minItems": 1,
-      "maxItems": 100,
       "description": "list of recipient id/object to run workflow for. At least 1 user is required"
     },
     "data": {

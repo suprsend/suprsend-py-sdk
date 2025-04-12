@@ -4,8 +4,6 @@ import copy
 from typing import List, Dict
 
 from .constants import (
-    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
-    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_WORKFLOWS_IN_BULK_API,
@@ -104,9 +102,9 @@ class _BulkWorkflowsChunk:
         if self.__check_limit_reached():
             return False
         # ---
-        if body_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
+        if body_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
             raise InputValueError(f"workflow body too big - {body_size} Bytes, "
-                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # if apparent_size of body crosses limit
         if self.__running_size + body_size > self._chunk_apparent_size_in_bytes:
             return False
