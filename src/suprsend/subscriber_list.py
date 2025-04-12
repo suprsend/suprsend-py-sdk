@@ -8,7 +8,7 @@ import uuid
 from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
 from .constants import (
     HEADER_DATE_FMT,
-    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema)
 from .signature import get_request_signature
@@ -55,9 +55,9 @@ class SubscriberListBroadcast:
         self.body = validate_list_broadcast_body_schema(self.body)
         # ---- Check body size
         apparent_size = get_apparent_list_broadcast_body_size(self.body)
-        if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
+        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
             raise InputValueError(f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
-                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return self.body, apparent_size
 

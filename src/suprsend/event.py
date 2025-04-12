@@ -6,7 +6,7 @@ import uuid
 
 from .constants import (
     HEADER_DATE_FMT,
-    SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES, SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
 from .attachment import get_attachment_json
@@ -102,9 +102,9 @@ class Event:
         event_dict = validate_track_event_schema(event_dict)
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
-        if apparent_size > SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
+        if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
             raise InputValueError(f"Event size too big - {apparent_size} Bytes, "
-                                  f"must not cross {SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
         # ----
         return event_dict, apparent_size
 

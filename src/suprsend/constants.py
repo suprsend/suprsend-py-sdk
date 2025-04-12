@@ -1,10 +1,6 @@
 # Default urls
 DEFAULT_URL = "https://hub.suprsend.com/"
 
-# an Event should not have apparent body size of more than 100KB
-SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES = 100 * 1024  # 100 * 1024
-SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "100KB"
-
 # a API call should not have apparent body size of more than 800KB
 BODY_MAX_APPARENT_SIZE_IN_BYTES = 800 * 1024  # 800 * 1024
 BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE = "800KB"
