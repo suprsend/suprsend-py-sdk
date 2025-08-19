@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 import requests
 import time
@@ -170,17 +171,24 @@ class EventCollector:
             }
         else:
             ok_response = resp.status_code // 100 == 2
+            try:
+                resp_json = resp.json()
+            except json.decoder.JSONDecodeError:
+                resp_json = None
+
             if ok_response:
                 return {
                     "success": True,
                     "status": "success",
                     "status_code": resp.status_code,
-                    "message": resp.text,
+                    "message": resp_json.get("message_id") if resp_json else resp.text,
+                    "raw_response": resp_json or resp.text,
                 }
             else:
                 return {
                     "success": False,
                     "status": "fail",
                     "status_code": resp.status_code,
-                    "message": resp.text,
+                    "message": resp_json.get("error", {}).get("message") if resp_json else resp.text,
+                    "raw_response": resp.text,
                 }

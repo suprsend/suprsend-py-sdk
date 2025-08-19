@@ -79,6 +79,14 @@ class _BulkWorkflowTriggerChunk:
         self.__add_body_to_chunk(body, body_size)
         return True
 
+    def _parse_api_response(self, resp_json: dict):
+        derived_response = {"status": "success", "total": len(resp_json["records"])}
+        derived_response["success"] = sum([1 for rec in resp_json["records"] if rec["status"] == "success"])
+        derived_response["failure"] = derived_response["total"] - derived_response["success"]
+        if derived_response["failure"] > 0:
+            derived_response["status"] = "partial" if derived_response["success"] > 0 else "fail"
+        return derived_response
+
     def trigger(self):
         headers = self.__get_headers()
         # Signature and Authorization-header
@@ -105,15 +113,18 @@ class _BulkWorkflowTriggerChunk:
             ok_response = resp.status_code // 100 == 2
             if ok_response:
                 resp_json = resp.json()
+                parsed_resp = self._parse_api_response(resp_json)
                 self.response = {
-                    "status": resp_json["status"],
+                    "status": parsed_resp["status"],
                     "status_code": resp.status_code,
-                    "total": len(self.__chunk),
-                    "success": resp_json["success"],
-                    "failure": resp_json["failure"],
+                    "total": parsed_resp["total"],
+                    "success": parsed_resp["success"],
+                    "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": self.__chunk[idx], "error": rec["errorMessage"], "code": rec["statusCode"]} for
-                        idx, rec in enumerate(resp_json["records"]) if rec.get("status") == "error"]
+                        {"record": self.__chunk[idx], "error": record["error"]["message"],
+                         "code": record["status_code"]}
+                        for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
+                    "raw_response": resp_json
                 }
             else:
                 error_str = resp.text
