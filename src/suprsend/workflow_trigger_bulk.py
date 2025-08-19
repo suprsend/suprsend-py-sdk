@@ -12,7 +12,7 @@ from .constants import (
 )
 from .exception import InputValueError
 from .signature import get_request_signature
-from .utils import invalid_record_json
+from .utils import invalid_record_json, safe_get
 from .bulk_response import BulkResponse
 from .workflow_request import WorkflowTriggerRequest
 
@@ -79,13 +79,6 @@ class _BulkWorkflowTriggerChunk:
         self.__add_body_to_chunk(body, body_size)
         return True
 
-    def _parse_api_response(self, resp_json: dict):
-        derived_response = {"status": "success", "total": len(resp_json["records"])}
-        derived_response["success"] = sum([1 for rec in resp_json["records"] if rec["status"] == "success"])
-        derived_response["failure"] = derived_response["total"] - derived_response["success"]
-        if derived_response["failure"] > 0:
-            derived_response["status"] = "partial" if derived_response["success"] > 0 else "fail"
-        return derived_response
 
     def trigger(self):
         headers = self.__get_headers()
@@ -106,14 +99,18 @@ class _BulkWorkflowTriggerChunk:
                 "total": len(self.__chunk),
                 "success": 0,
                 "failure": len(self.__chunk),
-                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk]
+                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk],
+                "raw_response": None,
             }
         else:
             # TODO: handle 500/503 errors
             ok_response = resp.status_code // 100 == 2
-            if ok_response:
+            try:
                 resp_json = resp.json()
-                parsed_resp = self._parse_api_response(resp_json)
+            except ValueError:
+                resp_json = None
+            if ok_response:
+                parsed_resp = BulkResponse.parse_bulk_api_v2_response(resp_json)
                 self.response = {
                     "status": parsed_resp["status"],
                     "status_code": resp.status_code,
@@ -121,21 +118,23 @@ class _BulkWorkflowTriggerChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": self.__chunk[idx], "error": record["error"]["message"],
+                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"],
                          "code": record["status_code"]}
                         for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
                     "raw_response": resp_json
                 }
             else:
-                error_str = resp.text
                 self.response = {
                     "status": "fail",
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
                     "success": 0,
                     "failure": len(self.__chunk),
-                    "failed_records": [{"record": c, "error": error_str, "code": resp.status_code}
-                                       for c in self.__chunk]
+                    "failed_records": [
+                        {"record": c, "error": resp_json.get("error", {}).get("message") if resp_json else resp.text,
+                         "code": resp.status_code}
+                        for c in self.__chunk],
+                    "raw_response": resp_json
                 }
 
 

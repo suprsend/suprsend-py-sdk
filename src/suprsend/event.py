@@ -168,27 +168,24 @@ class EventCollector:
                 "status": "fail",
                 "status_code": 500,
                 "message": error_str,
+                "raw_response": None,
             }
         else:
             ok_response = resp.status_code // 100 == 2
-            try:
-                resp_json = resp.json()
-            except json.decoder.JSONDecodeError:
-                resp_json = None
-
+            resp_json = resp.json()
             if ok_response:
                 return {
                     "success": True,
                     "status": "success",
                     "status_code": resp.status_code,
-                    "message": resp_json.get("message_id") if resp_json else resp.text,
-                    "raw_response": resp_json or resp.text,
+                    "message": resp_json.get("message_id"),
+                    "raw_response": resp_json,
                 }
             else:
                 return {
                     "success": False,
                     "status": "fail",
                     "status_code": resp.status_code,
-                    "message": resp_json.get("error", {}).get("message") if resp_json else resp.text,
-                    "raw_response": resp.text,
+                    "message": resp_json.get("error", {}).get("message"),
+                    "raw_response": resp_json,
                 }

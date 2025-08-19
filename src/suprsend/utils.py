@@ -181,3 +181,13 @@ def invalid_record_json(failed_record, err):
     # ------
     rec = {"record": failed_record, "error": err_str, "code": 500}
     return rec
+
+
+def safe_get(lst, index, default=None):
+    """
+    method to safely get element from list
+    """
+    try:
+        return lst[index]
+    except IndexError:
+        return default
