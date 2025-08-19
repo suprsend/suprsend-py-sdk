@@ -19,7 +19,9 @@ class BulkResponse:
         if self.status is None:
             self.status = ch_resp["status"]
         else:
-            if self.status == "success":
+            if ch_resp["status"] == "partial":
+                self.status = "partial"
+            elif self.status == "success":
                 if ch_resp["status"] == "fail":
                     self.status = "partial"
             elif self.status == "fail":

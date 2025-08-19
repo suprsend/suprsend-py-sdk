@@ -104,13 +104,16 @@ class _BulkWorkflowTriggerChunk:
             # TODO: handle 500/503 errors
             ok_response = resp.status_code // 100 == 2
             if ok_response:
+                resp_json = resp.json()
                 self.response = {
-                    "status": "success",
+                    "status": resp_json["status"],
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
-                    "success": len(self.__chunk),
-                    "failure": 0,
-                    "failed_records": []
+                    "success": resp_json["success"],
+                    "failure": resp_json["failure"],
+                    "failed_records": [
+                        {"record": self.__chunk[idx], "error": rec["errorMessage"], "code": rec["statusCode"]} for
+                        idx, rec in enumerate(resp_json["records"]) if rec.get("status") == "error"]
                 }
             else:
                 error_str = resp.text

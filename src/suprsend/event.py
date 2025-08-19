@@ -131,7 +131,7 @@ class EventCollector:
         self.__headers = self.__common_headers()
 
     def __get_url(self):
-        url_formatted = "{}event/".format(self.config.base_url)
+        url_formatted = "{}v2/event/".format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):

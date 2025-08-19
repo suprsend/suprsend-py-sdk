@@ -61,7 +61,7 @@ class _BulkEventsChunk:
         self.response = None
 
     def __get_url(self):
-        url_formatted = "{}event/".format(self.config.base_url)
+        url_formatted = "{}v2/bulk/event/".format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
@@ -141,13 +141,16 @@ class _BulkEventsChunk:
             # TODO: handle 500/503 errors
             ok_response = resp.status_code // 100 == 2
             if ok_response:
+                resp_json = resp.json()
                 self.response = {
-                    "status": "success",
+                    "status": resp_json["status"],
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
-                    "success": len(self.__chunk),
-                    "failure": 0,
-                    "failed_records": []
+                    "success": resp_json["success"],
+                    "failure": resp_json["failure"],
+                    "failed_records": [
+                        {"record": self.__chunk[idx], "error": rec["errorMessage"], "code": rec["statusCode"]} for
+                        idx, rec in enumerate(resp_json["records"]) if rec.get("status") == "error"]
                 }
             else:
                 error_str = resp.text
