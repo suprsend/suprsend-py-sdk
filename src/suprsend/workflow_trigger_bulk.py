@@ -79,7 +79,6 @@ class _BulkWorkflowTriggerChunk:
         self.__add_body_to_chunk(body, body_size)
         return True
 
-
     def trigger(self):
         headers = self.__get_headers()
         # Signature and Authorization-header
@@ -118,8 +117,7 @@ class _BulkWorkflowTriggerChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"],
-                         "code": record["status_code"]}
+                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
                         for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
                     "raw_response": resp_json
                 }

@@ -116,8 +116,6 @@ class _BulkEventsChunk:
         self.__add_event_to_chunk(event, event_size)
         return True
 
-
-
     def trigger(self):
         headers = {**self.__headers, **self.__dynamic_headers()}
         # Signature and Authorization-header
