@@ -19,7 +19,9 @@ class BulkResponse:
         if self.status is None:
             self.status = ch_resp["status"]
         else:
-            if self.status == "success":
+            if ch_resp["status"] == "partial":
+                self.status = "partial"
+            elif self.status == "success":
                 if ch_resp["status"] == "fail":
                     self.status = "partial"
             elif self.status == "fail":
@@ -39,7 +41,8 @@ class BulkResponse:
             "total": 0,
             "success": 0,
             "failure": 0,
-            "failed_records": []
+            "failed_records": [],
+            "raw_response": None,
         }
 
     @classmethod
@@ -50,5 +53,19 @@ class BulkResponse:
             "total": len(invalid_records),
             "success": 0,
             "failure": len(invalid_records),
-            "failed_records": invalid_records
+            "failed_records": invalid_records,
+            "raw_response": None,
+        }
+
+    @classmethod
+    def parse_bulk_api_v2_response(cls, resp_json: dict):
+        total_count = len(resp_json["records"])
+        success_count = sum([1 for _ in resp_json["records"] if _["status"] == "success"])
+        failure_count = total_count - success_count
+        return {
+            "status": ("partial" if success_count > 0 else "fail") if failure_count > 0 else "success",
+            "total": total_count,
+            "success": success_count,
+            "failure": failure_count,
+            "records": resp_json["records"],
         }

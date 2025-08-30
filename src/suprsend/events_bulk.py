@@ -12,7 +12,7 @@ from .constants import (
 )
 from .exception import InputValueError
 from .signature import get_request_signature
-from .utils import invalid_record_json
+from .utils import invalid_record_json, safe_get
 from .bulk_response import BulkResponse
 from .event import Event
 
@@ -61,7 +61,7 @@ class _BulkEventsChunk:
         self.response = None
 
     def __get_url(self):
-        url_formatted = "{}event/".format(self.config.base_url)
+        url_formatted = "{}v2/bulk/event/".format(self.config.base_url)
         return url_formatted
 
     def __common_headers(self):
@@ -135,30 +135,36 @@ class _BulkEventsChunk:
                 "total": len(self.__chunk),
                 "success": 0,
                 "failure": len(self.__chunk),
-                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk]
+                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk],
+                "raw_response": None,
             }
         else:
             # TODO: handle 500/503 errors
             ok_response = resp.status_code // 100 == 2
+            resp_json = resp.json()
+            parsed_resp = BulkResponse.parse_bulk_api_v2_response(resp_json)
             if ok_response:
                 self.response = {
-                    "status": "success",
+                    "status": parsed_resp["status"],
                     "status_code": resp.status_code,
-                    "total": len(self.__chunk),
-                    "success": len(self.__chunk),
-                    "failure": 0,
-                    "failed_records": []
+                    "total": parsed_resp["total"],
+                    "success": parsed_resp["success"],
+                    "failure": parsed_resp["failure"],
+                    "failed_records": [
+                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
+                        for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
+                    "raw_response": resp_json
                 }
             else:
-                error_str = resp.text
                 self.response = {
                     "status": "fail",
                     "status_code": resp.status_code,
                     "total": len(self.__chunk),
                     "success": 0,
                     "failure": len(self.__chunk),
-                    "failed_records": [{"record": c, "error": error_str, "code": resp.status_code}
-                                       for c in self.__chunk]
+                    "failed_records": [{"record": c, "error": resp_json["error"]["message"], "code": resp.status_code}
+                                       for c in self.__chunk],
+                    "raw_response": resp_json
                 }
 
 
