@@ -118,7 +118,7 @@ class _BulkWorkflowTriggerChunk:
                     "failure": parsed_resp["failure"],
                     "failed_records": [
                         {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
-                        for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
+                        for idx, record in enumerate(parsed_resp["records"]) if record["status"] == "error"],
                     "raw_response": resp_json
                 }
             else:
@@ -129,8 +129,7 @@ class _BulkWorkflowTriggerChunk:
                     "success": 0,
                     "failure": len(self.__chunk),
                     "failed_records": [
-                        {"record": c, "error": resp_json.get("error", {}).get("message") if resp_json else resp.text,
-                         "code": resp.status_code}
+                        {"record": c, "error": (resp_json.get("error", {}).get("message") if resp_json else resp.text), "code": resp.status_code}
                         for c in self.__chunk],
                     "raw_response": resp_json
                 }

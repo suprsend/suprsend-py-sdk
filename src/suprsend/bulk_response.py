@@ -59,9 +59,13 @@ class BulkResponse:
 
     @classmethod
     def parse_bulk_api_v2_response(cls, resp_json: dict):
-        derived_response = {"status": "success", "total": len(resp_json["records"]),
-                            "success": sum([1 for rec in resp_json["records"] if rec["status"] == "success"])}
-        derived_response["failure"] = derived_response["total"] - derived_response["success"]
-        if derived_response["failure"] > 0:
-            derived_response["status"] = "partial" if derived_response["success"] > 0 else "fail"
-        return derived_response
+        total_count = len(resp_json["records"])
+        success_count = sum([1 for _ in resp_json["records"] if _["status"] == "success"])
+        failure_count = total_count - success_count
+        return {
+            "status": ("partial" if success_count > 0 else "fail") if failure_count > 0 else "success",
+            "total": total_count,
+            "success": success_count,
+            "failure": failure_count,
+            "records": resp_json["records"],
+        }
