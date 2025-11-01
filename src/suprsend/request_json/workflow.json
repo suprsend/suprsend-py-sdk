@@ -182,6 +182,10 @@
           "type": ["string", "null"],
           "description": "preferred_language: 2-letter language code in ISO 639-1 Alpha-2 code format. e.g en (for English)"
         },
+        "$locale": {
+          "type": ["string", "null"],
+          "description": "locale: e.g en-US"
+        },
         "$timezone": {
           "type": ["string", "null"],
           "description": "timezone: in IANA timezone format e.g 'America/Los_Angeles'"

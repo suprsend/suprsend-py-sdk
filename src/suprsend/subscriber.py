@@ -322,6 +322,16 @@ class Subscriber:
         self._helper._set_preferred_language(lang_code, caller=caller)
         self._collect_event()
 
+    # ------------------------ Locale
+    def set_locale(self, locale_code: str):
+        """
+        :param locale_code:
+        :return:
+        """
+        caller = "set_locale"
+        self._helper._set_locale(locale_code, caller=caller)
+        self._collect_event()
+
     # ------------------------ Timezone
     def set_timezone(self, timezone: str):
         """
