@@ -15,6 +15,7 @@ IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_K
 
 KEY_ID_PROVIDER = "$id_provider"
 KEY_PREFERRED_LANGUAGE = "$preferred_language"
+KEY_LOCALE = "$locale"
 KEY_TIMEZONE = "$timezone"
 
 
@@ -129,6 +130,9 @@ class _ObjectEditInternalHelper:
 
     def _set_preferred_language(self, lang_code: str, caller: str):
         self.__dict_set[KEY_PREFERRED_LANGUAGE] = lang_code
+
+    def _set_locale(self, locale_code: str, caller: str):
+        self.__dict_set[KEY_LOCALE] = locale_code
 
     def _set_timezone(self, timezone: str, caller: str):
         self.__dict_set[KEY_TIMEZONE] = timezone
