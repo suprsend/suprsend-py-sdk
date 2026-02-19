@@ -4,23 +4,18 @@ from http.client import HTTPConnection
 # you will see the REQUEST, including HEADERS and DATA, and RESPONSE with HEADERS but without DATA.
 # the only thing missing will be the response.body which is not logged.
 requests_log = None
+LIBRARY_LOGGER_NAME = "suprsend"
+library_log = logging.getLogger(LIBRARY_LOGGER_NAME)
 
-logging.basicConfig()  # you need to initialize logging, otherwise you will not see anything from requests
 
-
-def set_logging(level=0):
+def set_logging(level=logging.WARN, http_debug = False):
     global requests_log
-    if level > 0:
-        HTTPConnection.debuglevel = 1
-        #
-        logging.getLogger().setLevel(logging.DEBUG)
-        requests_log = logging.getLogger("urllib3")
-        requests_log.setLevel(logging.DEBUG)
-        requests_log.propagate = True
-    else:
-        HTTPConnection.debuglevel = 0
-        #
-        logging.getLogger().setLevel(logging.WARN)
-        requests_log = logging.getLogger("urllib3")
-        requests_log.setLevel(logging.WARN)
-        requests_log.propagate = True
+
+    # set library log level as per given.
+    library_log.setLevel(level=level)
+
+    # Set network log level to either debug or warning.
+    HTTPConnection.debuglevel = 1 if http_debug else 0
+    requests_log = logging.getLogger("urllib3")
+    requests_log.setLevel(logging.DEBUG if http_debug else logging.WARN)
+    requests_log.propagate = True
