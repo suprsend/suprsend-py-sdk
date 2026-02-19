@@ -3,6 +3,7 @@ import requests
 import time
 from typing import List, Dict
 import uuid
+from .logger import library_log
 
 from .constants import (
     HEADER_DATE_FMT,
@@ -64,8 +65,8 @@ class Event:
     def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
         # if properties is not a dict, not raising error while adding attachment.
         if not isinstance(self.properties, (dict,)):
-            print("WARNING: attachment cannot be added. please make sure properties is a dictionary. Event" +
-                  str(self.as_json()))
+            library_log.warning("attachment cannot be added. please make sure properties is a dictionary. "
+                                "Event: %s", str(self.as_json()))
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)

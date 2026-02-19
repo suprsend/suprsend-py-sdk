@@ -10,7 +10,7 @@ from .exception import SuprsendConfigError, InputValueError
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
 from .workflow_api import WorkflowsApi
-from .request_log import set_logging
+from .logger import set_logging
 from .workflows_bulk import BulkWorkflowsFactory
 from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory

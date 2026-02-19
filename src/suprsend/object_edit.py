@@ -1,6 +1,7 @@
 from typing import Any, Dict, Iterable, Union
 
 from .object_edit_internal_helper import _ObjectEditInternalHelper
+from .logger import library_log
 
 
 class ObjectEdit:
@@ -29,10 +30,10 @@ class ObjectEdit:
     def validate_body(self):
         if self.__info:
             msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__info)
-            print(f"WARNING: {msg}")
+            library_log.info("validate_body object: %s", msg)
         if self.__errors:
             msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__errors)
-            print(f"ERROR: {msg}")
+            library_log.error("validate_body object error: %s", msg)
 
     def _collect_operation(self):
         resp = self._helper.get_operation_result()

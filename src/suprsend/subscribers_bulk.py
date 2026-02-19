@@ -15,6 +15,7 @@ from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .subscriber import Subscriber
+from .logger import library_log
 
 
 class BulkSubscribersFactory:
@@ -226,7 +227,7 @@ class BulkSubscribers:
             self.__chunkify()
             for c_idx, ch in enumerate(self.chunks):
                 if self.config.req_log_level > 0:
-                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                    library_log.debug("triggering api call for chunk: %d", c_idx)
                 # do api call
                 ch.trigger()
                 # merge response

@@ -15,6 +15,7 @@ from .signature import get_request_signature
 from .utils import invalid_record_json, safe_get
 from .bulk_response import BulkResponse
 from .workflow_request import WorkflowTriggerRequest
+from .logger import library_log
 
 
 class _BulkWorkflowTriggerChunk:
@@ -184,7 +185,7 @@ class BulkWorkflowTrigger:
             self.__chunkify()
             for c_idx, ch in enumerate(self.chunks):
                 if self.config.req_log_level > 0:
-                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                    library_log.debug("triggering api call for chunk: %d", c_idx)
                 # do api call
                 ch.trigger()
                 # merge response
