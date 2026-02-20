@@ -24,3 +24,15 @@ from .exception import (
     SuprsendError, SuprsendConfigError, SuprsendAPIException, SuprsendValidationError,
     InputValueError,
 )
+
+# preventing leaks to rootLogger, so that the library user can decide what should happen.
+# This sets behaviour to default silent, which is what is generally expected of a library.
+# Propagate defaults to true. 
+# Therefore, setting logging.basicConfig(level=logging.DEBUG) 
+# would automatically give root logger access to suprsend logs due to the 
+# default StreamHandler() added via logging.basicConfig
+# Propagate option by default should be true, so once overwritten, these logs should flow to rootLogger.
+# From where, client can then choose what to do with it.
+
+import logging
+logging.getLogger("suprsend").addHandler(logging.NullHandler())

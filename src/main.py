@@ -37,6 +37,8 @@ def test_request():
     }
     wf = Workflow(body=workflow_body)
     resp = supr_client.trigger_workflow(wf)
+    # Leaving this print statement and not converting it to logger,
+    # as this function is expected to be run manually.
     print(resp)
 
 

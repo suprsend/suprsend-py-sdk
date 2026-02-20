@@ -13,6 +13,7 @@ from .constants import (
 from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema)
 from .signature import get_request_signature
 from .attachment import get_attachment_json
+from .logger import ss_logger
 
 
 class SubscriberListBroadcast:
@@ -29,8 +30,8 @@ class SubscriberListBroadcast:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            print("WARNING: attachment cannot be added. please make sure body['data'] is a dictionary. "
-                  "SubscriberListBroadcast" + str(self.as_json()))
+            ss_logger.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
+                                "SubscriberListBroadcast: %s", str(self.as_json()))
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)

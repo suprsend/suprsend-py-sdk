@@ -15,6 +15,7 @@ from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .subscriber import Subscriber
+from .logger import ss_logger
 
 
 class BulkSubscribersFactory:
@@ -225,8 +226,7 @@ class BulkSubscribers:
         if len(self.__pending_records):
             self.__chunkify()
             for c_idx, ch in enumerate(self.chunks):
-                if self.config.req_log_level > 0:
-                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                ss_logger.debug("triggering api call for chunk: %d", c_idx)
                 # do api call
                 ch.trigger()
                 # merge response

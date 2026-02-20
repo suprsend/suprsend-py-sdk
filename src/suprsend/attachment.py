@@ -2,6 +2,7 @@ import os
 import base64
 import magic
 from typing import Dict
+from .logger import ss_logger
 
 
 def check_is_web_url(file_path: str):
@@ -35,7 +36,8 @@ def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error
             return attach_data
     except OSError as ex:
         if ignore_if_error:
-            print("WARNING: ignoring error while processing attachment file.", ex)
+            ss_logger.warning("Ignoring error while processing attachment file. "
+                                "%s: %s", type(ex).__name__, ex)
             return None
         else:
             raise ex

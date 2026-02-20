@@ -2,6 +2,7 @@ import platform
 
 from typing import List, Dict
 from warnings import warn
+import logging
 
 from .version import __version__
 from .constants import DEFAULT_URL
@@ -9,7 +10,7 @@ from .exception import SuprsendConfigError, InputValueError
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
 from .workflow_api import WorkflowsApi
-from .request_log import set_logging
+from .logger import set_logging
 from .workflows_bulk import BulkWorkflowsFactory
 from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory
@@ -42,8 +43,8 @@ class Suprsend:
         # ---
         self.__validate()
         # --- set logging level for http request
-        self.req_log_level = 1 if debug else 0
-        set_logging(self.req_log_level)
+        self.req_log_level = logging.DEBUG if debug else logging.WARN
+        set_logging(level=self.req_log_level, http_debug= debug)
         #
         self._workflow_trigger = _WorkflowTrigger(self)
         self._eventcollector = EventCollector(self)

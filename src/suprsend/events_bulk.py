@@ -2,6 +2,7 @@ import copy
 from datetime import datetime, timezone
 import requests
 from typing import List, Dict
+from .logger import ss_logger
 
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
@@ -216,8 +217,7 @@ class BulkEvents:
         if len(self.__pending_records):
             self.__chunkify()
             for c_idx, ch in enumerate(self.chunks):
-                if self.config.req_log_level > 0:
-                    print(f"DEBUG: triggering api call for chunk: {c_idx}")
+                ss_logger.debug("triggering api call for chunk: %d", c_idx)
                 # do api call
                 ch.trigger()
                 # merge response
