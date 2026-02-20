@@ -5,14 +5,14 @@ from http.client import HTTPConnection
 # the only thing missing will be the response.body which is not logged.
 requests_log = None
 LIBRARY_LOGGER_NAME = "suprsend"
-library_log = logging.getLogger(LIBRARY_LOGGER_NAME)
+ss_logger = logging.getLogger(LIBRARY_LOGGER_NAME)
 
 
 def set_logging(level=logging.WARN, http_debug = False):
     global requests_log
 
     # set library log level as per given.
-    library_log.setLevel(level=level)
+    ss_logger.setLevel(level=level)
 
     # Set network log level to either debug or warning.
     HTTPConnection.debuglevel = 1 if http_debug else 0

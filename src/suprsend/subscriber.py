@@ -13,7 +13,7 @@ from .exception import InputValueError
 from .signature import get_request_signature
 from .utils import (get_apparent_identity_event_size, )
 from .subscriber_helper import _SubscriberInternalHelper
-from .logger import library_log
+from .logger import ss_logger
 
 
 class SubscriberFactory:
@@ -93,7 +93,7 @@ class Subscriber:
         if self.__info:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
             self.__warnings_list.append(msg)
-            library_log.info("validate body info: %s", msg)
+            ss_logger.warning("validate body info: %s", msg)
 
         if self.__errors:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__errors)
@@ -101,11 +101,11 @@ class Subscriber:
             err_msg = f"ERROR: {msg}"
             if is_part_of_bulk:
                 # print on console in case of bulk-api
-                library_log.error("validate_body error. %s", msg)
+                ss_logger.error("validate_body error. %s", msg)
             else:
                 # raise error in case of single api
                 # raise InputValueError(err_msg)  # Removed exception throwing, let backend handle it
-                library_log.error("validate_body error. %s", msg)
+                ss_logger.error("validate_body error. %s", msg)
         # ------
         return self.__warnings_list
 

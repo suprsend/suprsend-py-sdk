@@ -11,7 +11,7 @@ from .exception import InputValueError
 from .utils import (get_apparent_workflow_body_size, validate_workflow_body_schema)
 from .signature import get_request_signature
 from .attachment import get_attachment_json
-from .logger import library_log
+from .logger import ss_logger
 
 
 class Workflow:
@@ -29,7 +29,7 @@ class Workflow:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            library_log.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
+            ss_logger.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
                                 "Workflow: %s", str(self.as_json()))
             return
         # ---

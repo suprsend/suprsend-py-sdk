@@ -9,7 +9,7 @@ from .constants import (
 from .exception import InputValueError
 from .utils import (get_apparent_identity_event_size, )
 from .user_edit_internal_helper import _UserEditInternalHelper
-from .logger import library_log
+from .logger import ss_logger
 
 
 class UserEdit:
@@ -68,11 +68,11 @@ class UserEdit:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
             self.__warnings_list.append(msg)
             # print on console as well
-            library_log.info("validate_body info: %s", msg)
+            ss_logger.warning("validate_body info: %s", msg)
         if self.__errors:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__errors)
             self.__warnings_list.append(msg)
-            library_log.error("validate_body error: %s", msg)
+            ss_logger.error("validate_body error: %s", msg)
         # ------
         return self.__warnings_list
 

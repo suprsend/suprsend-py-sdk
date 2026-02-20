@@ -4,7 +4,7 @@ from .constants import (
 from .exception import InputValueError
 from .attachment import get_attachment_json
 from .utils import (get_apparent_workflow_body_size, validate_workflow_trigger_body_schema)
-from .logger import library_log
+from .logger import ss_logger
 
 
 class WorkflowTriggerRequest:
@@ -21,7 +21,7 @@ class WorkflowTriggerRequest:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            library_log.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
+            ss_logger.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
                                 "WorkflowTriggerRequest: %s", str(self.as_json()))
             return
         # ---
