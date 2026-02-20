@@ -5,8 +5,14 @@ __pycache__/
 
 .idea
 .DS_Store
+.vscode
 # C extensions
 *.so
+*.so.*
+*.exe
+*.exe~
+*.dll
+*.dylib
 
 # Distribution / packaging
 .Python
