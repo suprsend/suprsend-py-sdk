@@ -7,10 +7,19 @@ with `SuprSend` platform.
 ```bash
 pip install suprsend-py-sdk
 ```
-This SDK depends on a system package called `libmagic`. You can install it as follows:
+
+#### Optional: Better attachment MIME type detection
+When adding file attachments, the SDK needs to detect the file's MIME type (e.g. `application/pdf`, `image/png`).
+By default, it uses Python's built-in `mimetypes` module, which guesses based on the file extension.
+
+For more accurate detection based on actual file content, install with the `magic` extra:
+```bash
+pip install suprsend-py-sdk[magic]
+```
+This requires the `libmagic` system library:
 ```bash
 # On debian based systems
-sudo apt install libmagic
+sudo apt install libmagic1
 
 # If you are using macOS
 brew install libmagic

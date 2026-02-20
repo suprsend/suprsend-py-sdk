@@ -1,8 +1,21 @@
 import os
 import base64
-import magic
+import mimetypes
 from typing import Dict
 from .logger import ss_logger
+
+try:
+    import magic
+    _has_magic = True
+except ImportError:
+    _has_magic = False
+
+
+def _detect_mime_type(file_path: str) -> str:
+    if _has_magic:
+        return magic.from_file(file_path, mime=True)
+    mime_type, _ = mimetypes.guess_type(file_path)
+    return mime_type or "application/octet-stream"
 
 
 def check_is_web_url(file_path: str):
@@ -22,7 +35,7 @@ def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error
             if file_name and file_name.strip():
                 final_file_name = file_name.strip()
             # --
-            mime_type = magic.from_file(abs_path, mime=True)
+            mime_type = _detect_mime_type(abs_path)
             # base64 encoded string
             b64encoded = base64.b64encode(f.read())
             b64data = b64encoded.decode()
