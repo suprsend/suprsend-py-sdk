@@ -2,8 +2,5 @@
 requires = [
     "setuptools",
     "wheel",
-    "jsonschema",
-    "requests",
-    "python-magic",
 ]
 build-backend = "setuptools.build_meta"
