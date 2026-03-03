@@ -110,3 +110,19 @@ class TenantsApi:
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
+
+    def get_all_categories_preference(self, tenant_id: str, limit: int = 20, offset: int = 0, tags: str = "") -> Dict:
+        """GET /v1/tenant/{tenant_id}/category/ — returns all category preferences for a tenant."""
+        tenant_id = self._validate_tenant_id(tenant_id)
+        params = {"limit": limit, "offset": offset}
+        if tags:
+            params["tags"] = tags
+        encoded_params = urllib.parse.urlencode(params)
+        url = f"{self.detail_url(tenant_id)}category/?{encoded_params}"
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
