@@ -90,7 +90,11 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/*
+        files: |
+          dist/*.tar.gz
+          dist/*.whl
+          dist/checksums.txt
+          dist/checksums.txt.sig
         body_path: dist/CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
