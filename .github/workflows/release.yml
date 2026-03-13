@@ -10,26 +10,12 @@ on:
 
 jobs:
   build:
-    permissions:
-      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # Requests AWS credentials using OIDC to assume the specified role
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v4.0.0
-        with:
-          cosign-release: 'v3.0.5'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -45,20 +31,6 @@ jobs:
       - name: Build package
         run: |
           python -m build
-
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum *.tar.gz *.whl > checksums.txt
-
-      - name: sign checksums
-        run: |
-          cd dist
-          cosign sign-blob \
-            --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
-            --bundle checksums.txt.sig \
-            checksums.txt \
-            --yes
 
       - name: Create change log
         run: |
@@ -80,7 +52,9 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
+
     permissions:
+      id-token: write
       contents: write
 
     steps:
@@ -90,6 +64,39 @@ jobs:
         name: python-package-distributions
         path: dist/
 
+    # Requests AWS credentials using OIDC to assume the specified role
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v4.0.0
+      with:
+        cosign-release: 'v3.0.5'
+
+    - name: Generate checksums
+      run: |
+        cd dist
+        sha256sum *.tar.gz *.whl > checksums.txt
+
+    - name: sign checksums
+      run: |
+        cd dist
+        cosign sign-blob \
+          --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+          --bundle checksums.txt.sig \
+          checksums.txt \
+          --yes
+
+    - name: Store public key for signature verification
+      run: |
+        cd dist
+        cosign public-key \
+          --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+          > public_key.pem
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
@@ -98,13 +105,14 @@ jobs:
           dist/*.whl
           dist/checksums.txt
           dist/checksums.txt.sig
+          dist/public_key.pem
         body_path: dist/CHANGELOG.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Remove checksums and signatures from the distribution directory
       run: |
-        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md
+        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md 
 
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -121,10 +129,6 @@ jobs:
       with:
         name: python-package-distributions
         path: dist/
-
-    - name: Remove checksums and signatures from the distribution directory
-      run: |
-        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md
 
     - name: Publish distribution to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
