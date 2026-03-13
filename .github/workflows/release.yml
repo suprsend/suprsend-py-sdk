@@ -111,7 +111,7 @@ jobs:
 
     - name: Remove checksums and signatures from the distribution directory
       run: |
-        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md 
+        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md  dist/public_key.pem
 
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
