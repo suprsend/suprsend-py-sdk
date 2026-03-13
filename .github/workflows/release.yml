@@ -122,9 +122,11 @@ jobs:
     needs:
     - build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
-    - name: Download all the dists
+    - name: Download pkg dists
       uses: actions/download-artifact@v4
       with:
         name: python-package-distributions
