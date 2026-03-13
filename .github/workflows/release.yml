@@ -6,7 +6,6 @@ on:
       - 'v*'
     branches:
       - main
-      - wf/ghactions
 
 jobs:
   build:
