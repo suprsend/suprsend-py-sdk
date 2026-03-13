@@ -132,6 +132,10 @@ jobs:
         name: python-package-distributions
         path: dist/
 
+    - name: clean up pgk dists
+      run: |
+        rm dist/CHANGELOG.md
+    
     - name: Publish distribution to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
