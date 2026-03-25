@@ -219,6 +219,37 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def update_category_preference(
+        self, distinct_id: str, category: str, payload: Dict, options: Dict = None
+    ) -> Dict:
+        """PATCH /v1/user/{distinct_id}/preference/category/{category}/"""
+        distinct_id = self._validate_distinct_id(distinct_id)
+        category_encoded = urllib.parse.quote_plus(category)
+        url = f"{self.detail_url(distinct_id)}preference/category/{category_encoded}/"
+        if options:
+            url = "{}?{}".format(url, urllib.parse.urlencode(options))
+        payload = payload or {}
+        headers = self.__get_headers()
+        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def update_channel_preference(self, distinct_id: str, payload: Dict) -> Dict:
+        """PATCH /v1/user/{distinct_id}/preference/channel_preference/"""
+        distinct_id = self._validate_distinct_id(distinct_id)
+        url = f"{self.detail_url(distinct_id)}preference/channel_preference/"
+        payload = payload or {}
+        headers = self.__get_headers()
+        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def get_edit_instance(self, distinct_id: str) -> UserEdit:
         distinct_id = self._validate_distinct_id(distinct_id)
         return UserEdit(self.config, distinct_id)

@@ -97,6 +97,20 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def update_category_preference(self, tenant_id: str, category: str, payload: Dict) -> Dict:
+        """PATCH /v1/tenant/{tenant_id}/preference/category/{category}/"""
+        tenant_id = self._validate_tenant_id(tenant_id)
+        category_encoded = urllib.parse.quote_plus(category)
+        url = f"{self.detail_url(tenant_id)}preference/category/{category_encoded}/"
+        payload = payload or {}
+        headers = {**self.__headers, **self.__dynamic_headers()}
+        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def delete(self, tenant_id: str):
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
