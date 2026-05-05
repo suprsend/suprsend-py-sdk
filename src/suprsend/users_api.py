@@ -158,6 +158,56 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
 
+    def _validate_tenant_id(self, tenant_id: str) -> str:
+        if not tenant_id or not isinstance(tenant_id, (str,)) or not tenant_id.strip():
+            raise SuprsendValidationError("missing tenant_id")
+        return tenant_id.strip()
+
+    def tenant_base_url(self, distinct_id: str) -> str:
+        return "{}tenant/".format(self.detail_url(distinct_id))
+
+    def tenant_detail_url(self, distinct_id: str, tenant_id: str) -> str:
+        tenant_id = self._validate_tenant_id(tenant_id)
+        tenant_id_encoded = urllib.parse.quote_plus(tenant_id)
+        return "{}{}/".format(self.tenant_base_url(distinct_id), tenant_id_encoded)
+
+    def get_tenants(self, distinct_id: str) -> Dict:
+        url = self.tenant_base_url(distinct_id)
+        headers = self.__get_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def upsert_tenant(self, distinct_id: str, tenant_id: str, payload: Dict = None) -> Dict:
+        url = self.tenant_detail_url(distinct_id, tenant_id)
+        payload = payload or {}
+        headers = self.__get_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def delete_tenant(self, distinct_id: str, tenant_id: str) -> Dict:
+        url = self.tenant_detail_url(distinct_id, tenant_id)
+        headers = self.__get_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return {"success": True, "status_code": resp.status_code}
+
     def get_objects_subscribed_to(self, distinct_id: str, options: Dict = None) -> Dict:
         encoded_options = urllib.parse.urlencode((options or {}))
         _detail_url = self.detail_url(distinct_id)

@@ -23,20 +23,21 @@ class SubscriberFactory:
     def new(self, distinct_id: str = None):
         return self.get_instance(distinct_id)
 
-    def get_instance(self, distinct_id: str = None):
+    def get_instance(self, distinct_id: str = None, tenant_id: str = None):
         if not isinstance(distinct_id, (str,)):
             raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = distinct_id.strip()
         if not distinct_id:
             raise InputValueError("distinct_id must be passed")
         # -----
-        return Subscriber(self.config, distinct_id)
+        return Subscriber(self.config, distinct_id, tenant_id=tenant_id)
 
 
 class Subscriber:
-    def __init__(self, config, distinct_id: str):
+    def __init__(self, config, distinct_id: str, tenant_id: str = None):
         self.config = config
         self.distinct_id = distinct_id
+        self.tenant_id = tenant_id
         self.__url = "{}event/".format(self.config.base_url)
         #
         self.__errors = []
@@ -61,7 +62,7 @@ class Subscriber:
         return self.__errors
 
     def get_event(self):
-        return {
+        event = {
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
@@ -70,6 +71,9 @@ class Subscriber:
             "$user_operations": self.user_operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},
         }
+        if self.tenant_id:
+            event["tenant_id"] = self.tenant_id
+        return event
 
     def as_json(self):
         event_dict = {
