@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install twine setuptools wheel build
+      
+      # use run number as a unique identifier to avoid version conflicts on TestPyPI
+      - name: Patch Version for TestPyPI
+        if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION_FILE="src/suprsend/version.py"
+          CURRENT=$(cat "$VERSION_FILE" | cut -d= -f2 | sed 's/\.dev.*//' | tr -d "' \"")
+          NEW_VERSION="${CURRENT}.dev${{ github.run_number }}"
+          echo "Patching version to $NEW_VERSION for TestPyPI"
+          echo "__version__ = '$NEW_VERSION'" > "$VERSION_FILE"
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Create change log
+        run: |
+          echo "Release ${{ github.ref_name }}" > dist/CHANGELOG.md
+          echo "" >> dist/CHANGELOG.md
+          echo "Changes:" >> dist/CHANGELOG.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> dist/CHANGELOG.md
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-pypi-gh-release:
+    name: >-
+      Publish Python distribution to PyPI
+    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    needs:
+    - build
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    # Requests AWS credentials using OIDC to assume the specified role
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v4.0.0
+      with:
+        cosign-release: 'v3.0.5'
+
+    - name: Generate checksums
+      run: |
+        cd dist
+        sha256sum *.tar.gz *.whl > checksums.txt
+
+    - name: sign checksums
+      run: |
+        cd dist
+        cosign sign-blob \
+          --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+          --bundle checksums.txt.sig \
+          checksums.txt \
+          --yes
+
+    - name: Store public key for signature verification
+      run: |
+        cd dist
+        cosign public-key \
+          --key "awskms:///${{ secrets.AWS_KMS_KEY_ID }}" \
+          > public_key.pem
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/*.tar.gz
+          dist/*.whl
+          dist/checksums.txt
+          dist/checksums.txt.sig
+          dist/public_key.pem
+        body_path: dist/CHANGELOG.md
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Remove checksums and signatures from the distribution directory
+      run: |
+        rm dist/checksums.txt dist/checksums.txt.sig dist/CHANGELOG.md  dist/public_key.pem
+
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-to-testpypi:
+    name: Publish Python distribution to TestPyPI
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download pkg dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+    - name: clean up pgk dists
+      run: |
+        rm dist/CHANGELOG.md
+    
+    - name: Publish distribution to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
