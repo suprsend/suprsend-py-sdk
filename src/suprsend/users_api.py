@@ -183,6 +183,16 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def get_tenant_detail(self, distinct_id: str, tenant_id: str) -> Dict:
+        url = self.tenant_detail_url(distinct_id, tenant_id)
+        headers = self.__get_headers()
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def upsert_tenant(self, distinct_id: str, tenant_id: str, payload: Dict = None) -> Dict:
         url = self.tenant_detail_url(distinct_id, tenant_id)
         payload = payload or {}
