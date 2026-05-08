@@ -62,19 +62,19 @@ class MessagesApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def _validate_message_id(self, message_id: str) -> str:
-        if not message_id or not isinstance(message_id, str) or not message_id.strip():
-            raise SuprsendValidationError("missing message_id")
-        return message_id.strip()
+    # def _validate_message_id(self, message_id: str) -> str:
+    #     if not message_id or not isinstance(message_id, str) or not message_id.strip():
+    #         raise SuprsendValidationError("missing message_id")
+    #     return message_id.strip()
 
-    def get_content(self, message_id: str) -> Dict:
-        message_id = self._validate_message_id(message_id)
-        message_id_encoded = urllib.parse.quote_plus(message_id)
-        url = "{}/{}/content".format(self.__list_url, message_id_encoded)
-        headers = self.__get_headers()
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
+    # def get_content(self, message_id: str) -> Dict:
+    #     message_id = self._validate_message_id(message_id)
+    #     message_id_encoded = urllib.parse.quote_plus(message_id)
+    #     url = "{}/{}/content".format(self.__list_url, message_id_encoded)
+    #     headers = self.__get_headers()
+    #     content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+    #     headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+    #     resp = requests.get(url, headers=headers)
+    #     if resp.status_code >= 400:
+    #         raise SuprsendAPIException(resp)
+    #     return resp.json()
