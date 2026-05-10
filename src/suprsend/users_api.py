@@ -1,11 +1,7 @@
-from datetime import datetime, timezone
 from typing import Dict, Union
 import requests
 import urllib.parse
 
-from .constants import (
-    HEADER_DATE_FMT,
-)
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .user_edit import UserEdit
@@ -18,17 +14,10 @@ class UsersApi:
         self.list_url = "{}v1/user/".format(self.config.base_url)
         self.bulk_url = "{}v1/bulk/user/".format(self.config.base_url)
 
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
-
     def list(self, options: Dict = None) -> Dict:
         encoded_options = urllib.parse.urlencode((options or {}))
         url = "{}{}".format(self.list_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # ---
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
@@ -51,7 +40,7 @@ class UsersApi:
 
     def get(self, distinct_id: str) -> Dict:
         url = self.detail_url(distinct_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -64,7 +53,7 @@ class UsersApi:
     def upsert(self, distinct_id: str, payload: Dict = None) -> Dict:
         url = self.detail_url(distinct_id)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -82,7 +71,7 @@ class UsersApi:
         edit_instance.validate_payload_size(a_payload)
         # --- Signature and Authorization-header
         url = "{}event/".format(self.config.base_url)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "POST", a_payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
@@ -103,7 +92,7 @@ class UsersApi:
             payload = edit_payload or {}
             url = self.detail_url(distinct_id)
         # ----
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -116,7 +105,7 @@ class UsersApi:
     def merge(self, distinct_id: str, from_user_id: str) -> Dict:
         url = "{}merge/".format(self.detail_url(distinct_id))
         payload = {"from_user_id": from_user_id}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # ---
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
@@ -129,7 +118,7 @@ class UsersApi:
 
     def delete(self, distinct_id: str) -> Dict:
         url = self.detail_url(distinct_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # ---
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
@@ -148,7 +137,7 @@ class UsersApi:
         """
         payload = payload or {}
         url = self.bulk_url
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -162,7 +151,7 @@ class UsersApi:
         encoded_options = urllib.parse.urlencode((options or {}))
         _detail_url = self.detail_url(distinct_id)
         url = "{}subscribed_to/object/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -176,7 +165,7 @@ class UsersApi:
         encoded_options = urllib.parse.urlencode((options or {}))
         _detail_url = self.detail_url(distinct_id)
         url = "{}subscribed_to/list/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)

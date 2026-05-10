@@ -1,11 +1,13 @@
+import json
 import platform
+from datetime import datetime, timezone
 
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple, TypedDict
 from warnings import warn
 import logging
 
 from .version import __version__
-from .constants import DEFAULT_URL
+from .constants import DEFAULT_URL, HEADER_DATE_FMT
 from .exception import SuprsendConfigError, InputValueError
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
@@ -32,12 +34,11 @@ class Suprsend:
     - Instance with custom base-url
      supr_client = Suprsend("__workspace_key__", "__workspace_secret__", base_url="https://example.com/", debug=False)
     """
-    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False, **kwargs):
+    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False, app_info: AppInfo = None, **kwargs):
         self.workspace_key = workspace_key
         self.workspace_secret = workspace_secret
         #
-        self.sdk_version = __version__
-        self.user_agent = "suprsend/{};python/{}".format(self.sdk_version, platform.python_version())
+        self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(app_info)
         #
         self.base_url = self.__get_base_url(base_url)
         # ---
@@ -78,6 +79,14 @@ class Suprsend:
     @property
     def user(self):
         return self._user
+
+    def default_headers(self) -> Dict:
+        return {
+            "Content-Type": "application/json; charset=utf-8",
+            "User-Agent": self.user_agent,
+            "X-Suprsend-Client-User-Agent": self.client_user_agent,
+            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
+        }
 
     @staticmethod
     def __get_base_url(base_url):
@@ -181,3 +190,64 @@ class Suprsend:
         if not isinstance(event, Event):
             raise InputValueError("argument must be an instance of suprsend.Event")
         return self._eventcollector.collect(event)
+
+
+class AppInfo(TypedDict):
+    name: str
+    version: Optional[str]
+
+
+def _format_app_info(info: AppInfo):
+    if not info or not info.get("name"):
+        return ""
+    str = info["name"]
+    if info.get("version"):
+        str += "/%s" % (info["version"],)
+    return str
+
+
+class UserAgentBuilder(TypedDict):
+    sdk: str
+    sdk_version: str
+    lang: str
+    lang_version: Optional[str]
+    # server, android, ios, react-native, flutter, browser, macos
+    platform: str
+    # environment: web/mobile/desktop
+    environment: Optional[str]
+    # linux / darwin / windows / android / ios
+    os: Optional[str]
+    os_version: Optional[str]
+    # app_info: optional, can be set by user
+    app_info: Optional[AppInfo]
+    # for mobile only (e.g "Pixel 8")
+    device_model: Optional[str]
+    # For browser (js-sdk only)
+    browser: Optional[str]  # chrome/firebox/safari
+    browser_version: Optional[str]
+
+    @classmethod
+    def build_user_agent(cls, app_info: AppInfo) -> Tuple[str, str]:
+        try:
+            uname = platform.uname()
+            _os, _os_version = (uname.system or ""), (uname.release or "")
+        except Exception:
+            _os, _os_version = "(disabled)", "(disabled)"
+        ins = cls(
+            sdk="suprsend-py-sdk",
+            sdk_version=__version__,
+            lang="python",
+            lang_version=platform.python_version(),
+            platform="server",
+            os=_os,
+            os_version=_os_version,
+            app_info=app_info,
+        )
+        cua = json.dumps(ins)
+        # ---
+        user_agent = "suprsend-py-sdk/{} (python/{}; {})".format(ins["sdk_version"], ins["lang_version"], ins["os"])
+        app_info_str = _format_app_info(app_info)
+        if app_info_str:
+            user_agent += f" ({app_info_str})"
+        # ---
+        return user_agent, cua

@@ -1,10 +1,8 @@
-from datetime import datetime, timezone
 import requests
 from typing import Dict
 import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .constants import HEADER_DATE_FMT
 from .signature import get_request_signature
 
 
@@ -12,23 +10,11 @@ class TenantsApi:
     def __init__(self, config):
         self.config = config
         self.list_url = self.__list_url()
-        self.__headers = self.__common_headers()
 
     def __list_url(self):
         list_uri_template = "{}v1/tenant/"
         list_uri_template = list_uri_template.format(self.config.base_url)
         return list_uri_template
-
-    def __common_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-        }
-
-    def __dynamic_headers(self):
-        return {
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def cleaned_limit_offset(self, limit: int, offset: int):
         # limit must be 0 < x <= 1000
@@ -45,7 +31,7 @@ class TenantsApi:
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -72,7 +58,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -87,7 +73,7 @@ class TenantsApi:
         url = self.detail_url(tenant_id)
         # ---
         tenant_payload = tenant_payload or {}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', tenant_payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -101,7 +87,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)

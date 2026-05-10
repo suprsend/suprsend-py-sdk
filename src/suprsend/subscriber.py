@@ -1,11 +1,9 @@
-from datetime import datetime, timezone
 import requests
 import time
 from typing import Any, Dict, Iterable, Union
 import uuid
 
 from .constants import (
-    HEADER_DATE_FMT,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
@@ -44,13 +42,6 @@ class Subscriber:
         self.user_operations = []
         self._helper = _SubscriberInternalHelper()
         self.__warnings_list = []
-
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-            "User-Agent": self.config.user_agent,
-        }
 
     @property
     def warnings(self):
@@ -112,7 +103,7 @@ class Subscriber:
     def save(self):
         try:
             self.validate_body(is_part_of_bulk=False)
-            headers = self.__get_headers()
+            headers = self.config.default_headers()
             event = self.get_event()
             # --- validate event size
             ev, size = self.validate_event_size(event)
