@@ -97,12 +97,14 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update_category_preference(self, tenant_id: str, category: str, payload: Dict) -> Dict:
+    def update_category_preference(self, tenant_id: str, category: str, payload: Dict, digest_schedule: Dict = None) -> Dict:
         """PATCH /v1/tenant/{tenant_id}/preference/category/{category}/"""
         tenant_id = self._validate_tenant_id(tenant_id)
         category_encoded = urllib.parse.quote_plus(category)
         url = f"{self.detail_url(tenant_id)}preference/category/{category_encoded}/"
         payload = payload or {}
+        if digest_schedule is not None:
+            payload["digest_schedule"] = digest_schedule
         headers = {**self.__headers, **self.__dynamic_headers()}
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)

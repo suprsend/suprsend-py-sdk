@@ -250,7 +250,7 @@ class ObjectsApi:
         return resp.json()
 
     def update_category_preference(
-        self, object_type: str, object_id: str, category: str, payload: Dict, options: Dict = None
+        self, object_type: str, object_id: str, category: str, payload: Dict, digest_schedule: Dict = None, options: Dict = None
     ) -> Dict:
         """PATCH /v1/object/{object_type}/{object_id}/preference/category/{category}/"""
         category_encoded = urllib.parse.quote_plus(category)
@@ -258,6 +258,8 @@ class ObjectsApi:
         if options:
             url = "{}?{}".format(url, urllib.parse.urlencode(options))
         payload = payload or {}
+        if digest_schedule is not None:
+            payload["digest_schedule"] = digest_schedule
         headers = self.__get_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
