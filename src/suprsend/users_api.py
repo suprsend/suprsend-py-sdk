@@ -220,7 +220,8 @@ class UsersApi:
         return resp.json()
 
     def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, digest_schedule: Dict = None, options: Dict = None
+        self, distinct_id: str, category: str, payload: Dict, digest_schedule: Dict = None,
+        preference_conditions: list = None, options: Dict = None
     ) -> Dict:
         """PATCH /v1/user/{distinct_id}/preference/category/{category}/"""
         distinct_id = self._validate_distinct_id(distinct_id)
@@ -231,6 +232,8 @@ class UsersApi:
         payload = payload or {}
         if digest_schedule is not None:
             payload["digest_schedule"] = digest_schedule
+        if preference_conditions is not None:
+            payload["preference_conditions"] = preference_conditions
         headers = self.__get_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
