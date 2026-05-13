@@ -230,7 +230,7 @@ class UserAgentBuilder(TypedDict):
     def build_user_agent(cls, app_info: AppInfo) -> Tuple[str, str]:
         try:
             uname = platform.uname()
-            _os, _os_version = (uname.system or ""), (uname.release or "")
+            _os, _os_version = (uname.system or "").lower(), (uname.release or "").lower()
         except Exception:
             _os, _os_version = "(disabled)", "(disabled)"
         ins = cls(
