@@ -21,6 +21,7 @@ from .tenant import TenantsApi
 from .brand import BrandsApi
 from .objects_api import ObjectsApi
 from .users_api import UsersApi
+from .messages_api import MessagesApi
 
 
 class Suprsend:
@@ -60,6 +61,7 @@ class Suprsend:
         self.workflows = WorkflowsApi(self)
         self.objects = ObjectsApi(self)
         self.users = UsersApi(self)
+        self.messages = MessagesApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
 
