@@ -15,8 +15,8 @@ _MULTI_VALUE_KEYS = ("recipient_id", "status", "category")
 class MessagesApi:
     def __init__(self, config):
         self.config = config
-        self.__list_url = "{}v1/message".format(self.config.base_url)
-        self.__bulk_patch_url = "{}v1/bulk/message".format(self.config.base_url)
+        self.__list_url = "{}v1/message/".format(self.config.base_url)
+        self.__bulk_patch_url = "{}v1/bulk/message/".format(self.config.base_url)
 
     def __get_headers(self):
         return {
@@ -46,7 +46,11 @@ class MessagesApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def bulk_patch(self, messages: List[Dict]) -> Dict:
+    def bulk_update(self, messages: List[Dict]) -> Dict:
+        """
+        list of messages with their id and action. e.g.
+        messages = [{"message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx", "action": "read"}]
+        """
         for i, msg in enumerate(messages):
             if not msg.get("message_id"):
                 raise SuprsendValidationError("messages[{}]: missing message_id".format(i))
