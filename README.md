@@ -458,26 +458,52 @@ print(response)
     "results": [
         {
             "message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx",
-            "status": "delivered",
-            "channel": "email",
-            "category": "transactional",
+            "created_at": "2025-08-27T15:24:38.14Z",
+            "updated_at": "2025-08-27T15:24:41.00Z",
+            "triggered_at": "2025-08-27T15:24:38.29Z",
+            "delivered_at": "2025-08-27T15:24:41.037Z",
+            "seen_at": "2025-08-27T15:24:45.65Z",
+            "clicked_at": None,
+            "dismissed_at": None,
+            "read_at": None,
+            "unread_at": None,
+            "archived_at": None,
+            "unarchived_at": None,
             "is_read": False,
             "is_archived": False,
-            "created_at": "2026-05-14T10:00:00Z",
-            "delivered_at": "2026-05-14T10:00:05Z",
-            "seen_at": None,
+            "status": "seen",
+            "channel": "email",
+            "category": "transactional",
+            "idempotency_key": "8087c3e7-6612-4d16-9660-xxxxxxxx",
+            "failure_reason": "",
             "recipient": {
                 "$type": "user",
                 "distinct_id": "user_123"
             },
+            "parent_entity_id": "__object:TEAMS:teams_1",
+            "parent_entity_type": "object",
+            "vendor": {
+                "name": "amazon_ses",
+                "nickname": "AWS SES"
+            },
+            "execution_id": "dsl_w1_id3741_xxxxxxxx_0_1",
+            "parent_execution_id": "dsl_w1_id3741_xxxxxxxx_0",
+            "is_campaign": False,
+            "tenant_id": "default",
             "workflow": {
                 "slug": "purchase-made",
+                "version_id": "wf_v_01KQVGxxxxxxx_chkp",
                 "name": "Purchase Workflow",
-                "version_id": "01KQVGxxxxxxx",
-                "node_ref": "email_node_1"
+                "node_ref": ""
             },
-            "tenant_id": "default",
-            "execution_id": "01KQVGxxxxxxx",
+            "template": {
+                "name": "Purchase Template",
+                "slug": "amazon_ses",
+                "version_no": 1
+            },
+            "channel_identity": {
+                "email": "user@example.com"
+            },
         }
     ],
     "meta": {
@@ -485,8 +511,8 @@ print(response)
         "limit": 20,        # limit used for this request
         "has_prev": True,   # whether a previous page exists
         "has_next": True,   # whether a next page exists
-        "before": "...",    # cursor for previous page, null if none
-        "after": "...",     # cursor for next page, null if none
+        "before": None,     # cursor for previous page, null if none
+        "after": None,      # cursor for next page, null if none
     }
 }
 ```
