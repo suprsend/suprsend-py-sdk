@@ -455,6 +455,14 @@ print(response)
 ```python
 # Response structure
 {
+    "meta": {
+        "count": 150,       # total matching messages
+        "limit": 20,        # limit used for this request
+        "has_prev": True,   # whether a previous page exists
+        "has_next": True,   # whether a next page exists
+        "before": None,     # cursor for previous page, null if none
+        "after": None,      # cursor for next page, null if none
+    },
     "results": [
         {
             "message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx",
@@ -505,15 +513,7 @@ print(response)
                 "email": "user@example.com"
             },
         }
-    ],
-    "meta": {
-        "count": 150,       # total matching messages
-        "limit": 20,        # limit used for this request
-        "has_prev": True,   # whether a previous page exists
-        "has_next": True,   # whether a next page exists
-        "before": None,     # cursor for previous page, null if none
-        "after": None,      # cursor for next page, null if none
-    }
+    ]
 }
 ```
 
