@@ -429,3 +429,64 @@ response = bulk_ins.trigger()
 print(response)
 
 ```
+
+### Messages API
+
+#### List Messages
+Fetch a paginated list of messages for your workspace. All filter parameters are optional.
+
+```python3
+# Basic call — returns first page with default limit
+response = supr_client.messages.list()
+
+# With filters
+response = supr_client.messages.list({
+    "recipient_id": ["user1", "user2"],   # filter by one or more recipient ids
+    "status": ["sent", "delivered"],       # filter by one or more statuses
+    "category": "transactional",           # filter by notification category
+    "limit": 20,                           # number of records per page (default: 20)
+    "offset": 0,                           # pagination offset
+})
+print(response)
+```
+
+```python
+# Response structure
+{
+    "results": [...],      # list of message objects
+    "count": 20,           # number of records in this page
+    "total_count": 150,    # total matching records
+    "next": "...",         # URL for next page, null if last page
+    "previous": "...",     # URL for previous page, null if first page
+}
+```
+
+#### Bulk Update Message Status
+Update the status of one or more messages in a single call.
+Valid actions: `seen`, `clicked`, `dismissed`, `read`, `unread`, `archived`, `unarchived`.
+
+```python3
+messages = [
+    {"message_id": "__message_id_1__", "action": "read"},
+    {"message_id": "__message_id_2__", "action": "archived"},
+]
+response = supr_client.messages.bulk_patch(messages)
+print(response)
+```
+
+```python
+# Response structure
+{
+    "success": True,
+    "status": "success",
+    "status_code": 200,
+    "message": "OK",
+}
+
+{
+    "success": False,
+    "status": "fail",
+    "status_code": 400/500,
+    "message": "error message",
+}
+```
