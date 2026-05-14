@@ -47,7 +47,7 @@ class MessagesApi:
         return resp.json()
 
 
-    def bulk_patch(self, messages: List[Dict]) -> Dict:
+    def bulk_update(self, messages: List[Dict]) -> Dict:
         """
         list of messages with their id and action. e.g.
         messages = [{"message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx", "action": "read"}]

@@ -470,7 +470,7 @@ messages = [
     {"message_id": "__message_id_1__", "action": "read"},
     {"message_id": "__message_id_2__", "action": "archived"},
 ]
-response = supr_client.messages.bulk_patch(messages)
+response = supr_client.messages.bulk_update(messages)
 print(response)
 ```
 
