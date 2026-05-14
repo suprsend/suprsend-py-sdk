@@ -46,7 +46,6 @@ class MessagesApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-
     def bulk_update(self, messages: List[Dict]) -> Dict:
         """
         list of messages with their id and action. e.g.
