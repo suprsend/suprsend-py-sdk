@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import requests
 import time
 from typing import List, Dict
@@ -7,7 +6,6 @@ import uuid
 
 from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
 from .constants import (
-    HEADER_DATE_FMT,
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema)
@@ -79,19 +77,7 @@ class SubscriberListsApi:
         self.config = config
         self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
         self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_key)
-        self.__headers = self.__common_headers()
         self.non_error_default_response = {"success": True}
-
-    def __common_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-        }
-
-    def __dynamic_headers(self):
-        return {
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def _validate_list_id(self, list_id):
         if not isinstance(list_id, (str,)):
@@ -110,7 +96,7 @@ class SubscriberListsApi:
         list_id = self._validate_list_id(list_id)
         # -----
         payload["list_id"] = list_id
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(self.subscriber_list_url, 'POST', payload, headers,
                                                  self.config.workspace_secret)
@@ -136,7 +122,7 @@ class SubscriberListsApi:
         #
         url = f"{self.subscriber_list_url}?{encoded_params}"
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -157,7 +143,7 @@ class SubscriberListsApi:
         # --------
         url = self.__subscriber_list_detail_url(list_id)
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -175,7 +161,7 @@ class SubscriberListsApi:
             return self.non_error_default_response
         url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
         payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -193,7 +179,7 @@ class SubscriberListsApi:
             return self.non_error_default_response
         url = "{}subscriber/remove/".format(self.__subscriber_list_detail_url(list_id))
         payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -206,7 +192,7 @@ class SubscriberListsApi:
     def delete(self, list_id: str):
         list_id = self._validate_list_id(list_id)
         url = "{}delete/".format(self.__subscriber_list_detail_url(list_id))
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         payload = {}
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
@@ -223,7 +209,7 @@ class SubscriberListsApi:
 
         broadcast_body, body_size = broadcast_instance.get_final_json()
         try:
-            headers = {**self.__headers, **self.__dynamic_headers()}
+            headers = self.config.default_headers()
             # Signature and Authorization-header
             content_txt, sig = get_request_signature(self.broadcast_url, 'POST', broadcast_body,
                                                      headers, self.config.workspace_secret)
@@ -262,7 +248,7 @@ class SubscriberListsApi:
 
         url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
         payload = {}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -294,7 +280,7 @@ class SubscriberListsApi:
         # --------
         url = self.__subscriber_list_url_with_version(list_id, version_id)
         # ---
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -314,7 +300,7 @@ class SubscriberListsApi:
         version_id = self._validate_version_id(version_id)
         url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -333,7 +319,7 @@ class SubscriberListsApi:
         version_id = self._validate_version_id(version_id)
         url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {"distinct_ids": distinct_ids}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -348,7 +334,7 @@ class SubscriberListsApi:
         version_id = self._validate_version_id(version_id)
         url = "{}finish_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         payload = {}
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -363,7 +349,7 @@ class SubscriberListsApi:
         version_id = self._validate_version_id(version_id)
 
         url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         payload = {}
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)

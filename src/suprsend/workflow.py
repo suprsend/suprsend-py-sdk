@@ -1,10 +1,8 @@
-from datetime import datetime, timezone
 import requests
 from typing import Dict
 from warnings import warn
 
 from .constants import (
-    HEADER_DATE_FMT,
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
@@ -81,20 +79,13 @@ class _WorkflowTrigger:
         url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_key)
         return url_formatted
 
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-            "User-Agent": self.config.user_agent,
-        }
-
     def trigger(self, workflow: Workflow) -> Dict:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(workflow_body)
 
     def send(self, workflow_body: Dict) -> Dict:
         try:
-            headers = self.__get_headers()
+            headers = self.config.default_headers()
             # Signature and Authorization-header
             content_txt, sig = get_request_signature(self.url, 'POST', workflow_body,
                                                      headers, self.config.workspace_secret)

@@ -1,11 +1,8 @@
-from datetime import datetime, timezone
 from typing import Dict, List
+
 import requests
 import urllib.parse
 
-from .constants import (
-    HEADER_DATE_FMT,
-)
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 
@@ -17,13 +14,6 @@ class MessagesApi:
         self.config = config
         self.__list_url = "{}v1/message/".format(self.config.base_url)
         self.__bulk_patch_url = "{}v1/bulk/message/".format(self.config.base_url)
-
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def __build_list_params(self, options: Dict) -> Dict:
         params = {}
@@ -38,7 +28,7 @@ class MessagesApi:
         params = self.__build_list_params(options or {})
         encoded_params = urllib.parse.urlencode(params, doseq=True)
         url = "{}{}".format(self.__list_url, ("?{}".format(encoded_params) if encoded_params else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         resp = requests.get(url, headers=headers)
@@ -58,7 +48,7 @@ class MessagesApi:
                 raise SuprsendValidationError("messages[{}]: missing action".format(i))
         payload = {"messages": messages}
         url = self.__bulk_patch_url
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
@@ -75,7 +65,7 @@ class MessagesApi:
     #     message_id = self._validate_message_id(message_id)
     #     message_id_encoded = urllib.parse.quote_plus(message_id)
     #     url = "{}/{}/content".format(self.__list_url, message_id_encoded)
-    #     headers = self.__get_headers()
+    #     headers = self.config.default_headers()
     #     content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
     #     headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
     #     resp = requests.get(url, headers=headers)

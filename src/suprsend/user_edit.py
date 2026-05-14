@@ -356,26 +356,28 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Iospush [providers: apns]
-    def add_iospush(self, value: str, provider: str = None):
+    def add_iospush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id:
         :return:
         """
         caller = "add_iospush"
-        self._helper._add_iospush(value, provider, caller=caller)
+        self._helper._add_iospush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_iospush(self, value: str, provider: str = None):
+    def remove_iospush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id:
         :return:
         """
         caller = "remove_iospush"
-        self._helper._remove_iospush(value, provider, caller=caller)
+        self._helper._remove_iospush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
     # ------------------------ Webpush [providers: vapid]
