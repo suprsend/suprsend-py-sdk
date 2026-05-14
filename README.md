@@ -441,13 +441,43 @@ response = supr_client.messages.list()
 
 # With filters
 response = supr_client.messages.list({
-    "recipient_id": ["user1", "user2"],     # filter by one or more recipient ids
-    # status values: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
-    "status": ["delivered", "seen"],        # filter by one or more statuses
-    "category": ["transactional"],          # filter by one or more notification categories
-    "limit": 20,                            # records per page (default: 10, max: 1000)
+    # Pagination
+    "limit": 20,                            # records per page (default: 1000, max: 1000)
     "after": "__cursor__",                  # cursor for next page (from meta.after)
     "before": "__cursor__",                 # cursor for previous page (from meta.before)
+
+    # Message filters
+    "message_id": "__message_id__",         # filter by a specific message id
+    "idempotency_key": "__idempotency_key__",
+
+    # Recipient filters
+    "recipient_id": ["user1", "user2"],     # recipient_id[] — filter by one or more recipient ids
+    "tenant_id": "default",
+
+    # Object recipient filters (both required together)
+    "object_type": "__object_type__",
+    "object_id": "__object_id__",
+
+    # Workflow / execution filters
+    "workflow_slug": "purchase-made",
+    "execution_id": "__execution_id__",
+
+    # Channel filter
+    # valid: email, sms, whatsapp, androidpush, iospush, webpush, slack, ms_teams
+    "channel": "email",
+
+    # status[] — valid: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
+    "status": ["delivered", "seen"],
+
+    # category[] filter
+    "category": ["transactional"],
+
+    # Campaign filter
+    "is_campaign": False,
+
+    # Date range filters (RFC3339 format)
+    "created_at_gte": "2026-01-01T00:00:00Z",
+    "created_at_lte": "2026-12-31T23:59:59Z",
 })
 print(response)
 ```
