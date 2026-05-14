@@ -441,11 +441,13 @@ response = supr_client.messages.list()
 
 # With filters
 response = supr_client.messages.list({
-    "recipient_id": ["user1", "user2"],   # filter by one or more recipient ids
-    "status": ["sent", "delivered"],       # filter by one or more statuses
-    "category": "transactional",           # filter by notification category
-    "limit": 20,                           # number of records per page (default: 20)
-    "offset": 0,                           # pagination offset
+    "recipient_id": ["user1", "user2"],     # filter by one or more recipient ids
+    # status values: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
+    "status": ["delivered", "seen"],        # filter by one or more statuses
+    "category": ["transactional"],          # filter by one or more notification categories
+    "limit": 20,                            # records per page (default: 10, max: 1000)
+    "after": "__cursor__",                  # cursor for next page (from meta.after)
+    "before": "__cursor__",                 # cursor for previous page (from meta.before)
 })
 print(response)
 ```
@@ -453,11 +455,39 @@ print(response)
 ```python
 # Response structure
 {
-    "results": [...],      # list of message objects
-    "count": 20,           # number of records in this page
-    "total_count": 150,    # total matching records
-    "next": "...",         # URL for next page, null if last page
-    "previous": "...",     # URL for previous page, null if first page
+    "results": [
+        {
+            "message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx",
+            "status": "delivered",
+            "channel": "email",
+            "category": "transactional",
+            "is_read": False,
+            "is_archived": False,
+            "created_at": "2026-05-14T10:00:00Z",
+            "delivered_at": "2026-05-14T10:00:05Z",
+            "seen_at": None,
+            "recipient": {
+                "$type": "user",
+                "distinct_id": "user_123"
+            },
+            "workflow": {
+                "slug": "purchase-made",
+                "name": "Purchase Workflow",
+                "version_id": "01KQVGxxxxxxx",
+                "node_ref": "email_node_1"
+            },
+            "tenant_id": "default",
+            "execution_id": "01KQVGxxxxxxx",
+        }
+    ],
+    "meta": {
+        "count": 150,       # total matching messages
+        "limit": 20,        # limit used for this request
+        "has_prev": True,   # whether a previous page exists
+        "has_next": True,   # whether a next page exists
+        "before": "...",    # cursor for previous page, null if none
+        "after": "...",     # cursor for next page, null if none
+    }
 }
 ```
 
@@ -475,18 +505,19 @@ print(response)
 ```
 
 ```python
-# Response structure
+# Response structure — 202 Accepted
+# Per-record result; check status_code per message_id
 {
-    "success": True,
-    "status": "success",
-    "status_code": 200,
-    "message": "OK",
-}
-
-{
-    "success": False,
-    "status": "fail",
-    "status_code": 400/500,
-    "message": "error message",
+    "records": [
+        {
+            "message_id": "__message_id_1__",
+            "status_code": 202,     # 202 success, 404 not found, 422 action not supported, 500 error
+            "error": {              # present only on failure
+                "type": "not_found",
+                "message": "message not found"
+            }
+        },
+        ...
+    ]
 }
 ```
