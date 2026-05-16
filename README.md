@@ -429,3 +429,151 @@ response = bulk_ins.trigger()
 print(response)
 
 ```
+
+### Messages API
+
+#### List Messages
+Fetch a paginated list of messages for your workspace. All filter parameters are optional.
+
+```python3
+# Basic call — returns first page with default limit
+response = supr_client.messages.list()
+
+# With filters
+response = supr_client.messages.list({
+    # Pagination
+    "limit": 20,                            # records per page (default: 1000, max: 1000)
+    "after": "__cursor__",                  # cursor for next page (from meta.after)
+    "before": "__cursor__",                 # cursor for previous page (from meta.before)
+
+    # Message filters
+    "message_id": "__message_id__",         # filter by a specific message id
+    "idempotency_key": "__idempotency_key__",
+
+    # Recipient filters
+    "recipient_id": ["user1", "user2"],     # recipient_id[] — filter by one or more recipient ids
+    "tenant_id": "default",
+
+    # Object recipient filters (both required together)
+    "object_type": "__object_type__",
+    "object_id": "__object_id__",
+
+    # Workflow / execution filters
+    "workflow_slug": "purchase-made",
+    "execution_id": "__execution_id__",
+
+    # Channel filter
+    # valid: email, sms, whatsapp, androidpush, iospush, webpush, slack, ms_teams
+    "channel": "email",
+
+    # status[] — valid: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
+    "status": ["delivered", "seen"],
+
+    # category[] filter
+    "category": ["transactional"],
+
+    # Campaign filter
+    "is_campaign": False,
+
+    # Date range filters (RFC3339 format)
+    "created_at_gte": "2026-01-01T00:00:00Z",
+    "created_at_lte": "2026-12-31T23:59:59Z",
+})
+print(response)
+```
+
+```python
+# Response structure
+{
+    "meta": {
+        "count": 150,       # total matching messages
+        "limit": 20,        # limit used for this request
+        "has_prev": True,   # whether a previous page exists
+        "has_next": True,   # whether a next page exists
+        "before": None,     # cursor for previous page, null if none
+        "after": None,      # cursor for next page, null if none
+    },
+    "results": [
+        {
+            "message_id": "01KQVGPW9ZJKH6T5TSxxxxxxx",
+            "created_at": "2025-08-27T15:24:38.14Z",
+            "updated_at": "2025-08-27T15:24:41.00Z",
+            "triggered_at": "2025-08-27T15:24:38.29Z",
+            "delivered_at": "2025-08-27T15:24:41.037Z",
+            "seen_at": "2025-08-27T15:24:45.65Z",
+            "clicked_at": None,
+            "dismissed_at": None,
+            "read_at": None,
+            "unread_at": None,
+            "archived_at": None,
+            "unarchived_at": None,
+            "is_read": False,
+            "is_archived": False,
+            "status": "seen",
+            "channel": "email",
+            "category": "transactional",
+            "idempotency_key": "8087c3e7-6612-4d16-9660-xxxxxxxx",
+            "failure_reason": "",
+            "recipient": {
+                "$type": "user",
+                "distinct_id": "user_123"
+            },
+            "parent_entity_id": "__object:TEAMS:teams_1",
+            "parent_entity_type": "object",
+            "vendor": {
+                "name": "amazon_ses",
+                "nickname": "AWS SES"
+            },
+            "execution_id": "dsl_w1_id3741_xxxxxxxx_0_1",
+            "parent_execution_id": "dsl_w1_id3741_xxxxxxxx_0",
+            "is_campaign": False,
+            "tenant_id": "default",
+            "workflow": {
+                "slug": "purchase-made",
+                "version_id": "wf_v_01KQVGxxxxxxx_chkp",
+                "name": "Purchase Workflow",
+                "node_ref": ""
+            },
+            "template": {
+                "name": "Purchase Template",
+                "slug": "amazon_ses",
+                "version_no": 1
+            },
+            "channel_identity": {
+                "email": "user@example.com"
+            },
+        }
+    ]
+}
+```
+
+#### Bulk Update Message Status
+Update the status of one or more messages in a single call.
+Valid actions: `seen`, `clicked`, `dismissed`, `read`, `unread`, `archived`, `unarchived`.
+
+```python3
+messages = [
+    {"message_id": "__message_id_1__", "action": "read"},
+    {"message_id": "__message_id_2__", "action": "archived"},
+]
+response = supr_client.messages.bulk_update(messages)
+print(response)
+```
+
+```python
+# Response structure — 202 Accepted
+# Per-record result; check status_code per message_id
+{
+    "records": [
+        {
+            "message_id": "__message_id_1__",
+            "status_code": 202,     # 202 success, 404 not found, 422 action not supported, 500 error
+            "error": {              # present only on failure
+                "type": "not_found",
+                "message": "message not found"
+            }
+        },
+        ...
+    ]
+}
+```
