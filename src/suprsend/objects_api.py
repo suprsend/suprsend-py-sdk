@@ -1,12 +1,8 @@
-from datetime import datetime, timezone
 from typing import Dict, Union
 
 import requests
 import urllib.parse
 
-from .constants import (
-    HEADER_DATE_FMT,
-)
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .object_edit import ObjectEdit
@@ -17,13 +13,6 @@ class ObjectsApi:
         self.config = config
         self.list_url = "{}v1/object/".format(self.config.base_url)
         self.bulk_url = "{}v1/bulk/object/".format(self.config.base_url)
-
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def _validate_object_type(self, object_type: str):
         if not object_type or not isinstance(object_type, (str,)) or not object_type.strip():
@@ -41,7 +30,7 @@ class ObjectsApi:
         encoded_options = urllib.parse.urlencode((options or {}))
         #
         url = "{}{}/{}".format(self.list_url, object_type_encoded, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # ---
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
@@ -64,7 +53,7 @@ class ObjectsApi:
 
     def get(self, object_type: str, object_id: str) -> Dict:
         url = self.detail_url(object_type, object_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -77,7 +66,7 @@ class ObjectsApi:
     def upsert(self, object_type: str, object_id: str, payload: Dict = None) -> Dict:
         url = self.detail_url(object_type, object_id)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -98,7 +87,7 @@ class ObjectsApi:
             payload = edit_payload or {}
             url = self.detail_url(object_type, object_id)
         # ---
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -110,7 +99,7 @@ class ObjectsApi:
 
     def delete(self, object_type: str, object_id: str) -> Dict:
         url = self.detail_url(object_type, object_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -131,7 +120,7 @@ class ObjectsApi:
         object_type_encoded = urllib.parse.quote_plus(object_type)
         url = "{}{}/".format(self.bulk_url, object_type_encoded)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -145,7 +134,7 @@ class ObjectsApi:
         encoded_options = urllib.parse.urlencode((options or {}))
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -169,7 +158,7 @@ class ObjectsApi:
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/".format(_detail_url)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -192,7 +181,7 @@ class ObjectsApi:
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/".format(_detail_url)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -206,7 +195,7 @@ class ObjectsApi:
         encoded_options = urllib.parse.urlencode((options or {}))
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscribed_to/object/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
