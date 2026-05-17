@@ -6,6 +6,7 @@ import urllib.parse
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .object_edit import ObjectEdit
+from .utils import urlencode_query
 
 
 class ObjectsApi:
@@ -27,7 +28,7 @@ class ObjectsApi:
     def list(self, object_type: str, options: Dict = None) -> Dict:
         object_type = self._validate_object_type(object_type)
         object_type_encoded = urllib.parse.quote_plus(object_type)
-        encoded_options = urllib.parse.urlencode((options or {}))
+        encoded_options = urlencode_query(options or {})
         #
         url = "{}{}/{}".format(self.list_url, object_type_encoded, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
@@ -131,7 +132,7 @@ class ObjectsApi:
         return {"success": True, "status_code": resp.status_code}
 
     def get_subscriptions(self, object_type: str, object_id: str, options: Dict = None) -> Dict:
-        encoded_options = urllib.parse.urlencode((options or {}))
+        encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
@@ -192,7 +193,7 @@ class ObjectsApi:
         return {"success": True, "status_code": resp.status_code}
 
     def get_objects_subscribed_to(self, object_type: str, object_id: str, options: Dict = None) -> Dict:
-        encoded_options = urllib.parse.urlencode((options or {}))
+        encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscribed_to/object/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
@@ -209,3 +210,90 @@ class ObjectsApi:
         object_type = self._validate_object_type(object_type)
         object_id = self._validate_object_id(object_id)
         return ObjectEdit(self.config, object_type, object_id)
+
+    def get_full_preference(self, object_type: str, object_id: str, options: Dict = None) -> Dict:
+        """
+        options: {"tenant_id": "", "show_opt_out_channels": false, "tags": "", "locale": ""}
+        """
+        _detail_url = self.detail_url(object_type, object_id)
+        encoded_options = urlencode_query(options or {})
+        url = "{}preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
+        # ----
+        headers = self.config.default_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def update_global_channels_preference(self, object_type: str, object_id: str, payload: Dict, options: Dict = None) -> Dict:
+        """
+        PATCH /v1/object/{object_type}/{object_id}/preference/channel_preference/
+        payload: {
+            "channel_preferences": [
+                {"channel": "email", "is_restricted": true},
+                ...
+            ]
+        }
+        options: {"tenant_id": ""}
+        """
+        _detail_url = self.detail_url(object_type, object_id)
+        encoded_options = urlencode_query(options or {})
+        url = "{}preference/channel_preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
+        # ----
+        payload = payload or {}
+        headers = self.config.default_headers()
+        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # ----
+        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def get_category_preference(self, object_type: str, object_id: str, category: str, options: Dict = None) -> Dict:
+        """
+        options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
+        """
+        if not category or not isinstance(category, (str,)) or not category.strip():
+            raise SuprsendValidationError("missing category")
+        category_encoded = urllib.parse.quote_plus(category.strip())
+        encoded_options = urlencode_query(options or {})
+        _detail_url = self.detail_url(object_type, object_id)
+        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        # ----
+        headers = self.config.default_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def update_category_preference(
+        self, object_type: str, object_id: str, category: str, payload: Dict, options: Dict = None
+    ) -> Dict:
+        """
+        PATCH /v1/object/{object_type}/{object_id}/preference/category/{category}/
+        payload: {"preference": "", "opt_out_channels": []}
+        options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
+        """
+        _detail_url = self.detail_url(object_type, object_id)
+        category_encoded = urllib.parse.quote_plus(category)
+        encoded_options = urlencode_query(options or {})
+        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        # ----
+        payload = payload or {}
+        headers = self.config.default_headers()
+        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # ----
+        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()

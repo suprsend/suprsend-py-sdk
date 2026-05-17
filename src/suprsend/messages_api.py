@@ -5,6 +5,7 @@ import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
+from .utils import urlencode_query
 
 _MULTI_VALUE_KEYS = ("recipient_id", "status", "category")
 
@@ -26,7 +27,7 @@ class MessagesApi:
 
     def list(self, options: Dict = None) -> Dict:
         params = self.__build_list_params(options or {})
-        encoded_params = urllib.parse.urlencode(params, doseq=True)
+        encoded_params = urlencode_query(params, doseq=True)
         url = "{}{}".format(self.__list_url, ("?{}".format(encoded_params) if encoded_params else ""))
         headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
