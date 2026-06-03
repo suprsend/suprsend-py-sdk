@@ -7,7 +7,7 @@ from .logger import ss_logger
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
-from .exception import InputValueError
+from .exception import InputValueError, SuprsendAPIException
 from .attachment import get_attachment_json
 from .signature import get_request_signature
 from .utils import (validate_track_event_schema, get_apparent_event_size, )
@@ -175,3 +175,19 @@ class EventCollector:
                     "message": resp_json.get("error", {}).get("message"),
                     "raw_response": resp_json,
                 }
+
+
+class EventsApi:
+    def __init__(self, config):
+        self.config = config
+
+    def create(self, name: str, description: str = "") -> Dict:
+        url = "{}v1/staging/event/".format(self.config.base_url)
+        payload = {"name": name, "description": description}
+        headers = self.config.default_headers()
+        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.post(url, data=content_txt.encode("utf-8"), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()

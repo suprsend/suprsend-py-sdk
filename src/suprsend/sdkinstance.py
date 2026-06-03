@@ -19,7 +19,7 @@ from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
 from .subscriber_sync_api import SubscriberSyncApi
-from .event import Event, EventCollector
+from .event import Event, EventCollector, EventsApi
 from .tenant import TenantsApi
 from .brand import BrandsApi
 from .objects_api import ObjectsApi
@@ -112,6 +112,7 @@ class Suprsend:
         #
         self._workflow_trigger = _WorkflowTrigger(self)
         self._eventcollector = EventCollector(self)
+        self.events = EventsApi(self)
         # -- bulk instances
         self._bulk_workflows = BulkWorkflowsFactory(self)
         self._bulk_events = BulkEventsFactory(self)

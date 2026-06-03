@@ -41,9 +41,13 @@ class SubscriberSyncApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    # ── Schema ────────────────────────────────────────────────────────────────
+
     def get_schema(self) -> Dict:
         url = "{}v1/subscriber_sync_task/schema/".format(self.config.base_url)
         return self._get(url)
+
+    # ── Subscriber list ───────────────────────────────────────────────────────
 
     def create_list(
         self,
@@ -83,29 +87,33 @@ class SubscriberSyncApi:
         url = "{}v1/subscriber_list/{}/subscriber/".format(self.config.base_url, encoded_id)
         return self._get(url, params={"limit": limit})
 
-    def dry_run(self, list_id: str, query_text: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
-        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/".format(self.config.base_url, encoded_id)
-        return self._post(url, {"query_text": query_text})
+    # ── Sync task lifecycle ───────────────────────────────────────────────────
 
-    def dry_run_count(self, list_id: str, query_text: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
-        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/count/".format(self.config.base_url, encoded_id)
-        return self._post(url, {"query_text": query_text})
+    def create_sync_task(self, name: str, list_id: str) -> Dict:
+        url = "{}v1/subscriber_sync_task/".format(self.config.base_url)
+        return self._post(url, {"name": name, "list_id": list_id})
 
     def get_task(self, list_id: str) -> Dict:
         encoded_id = urllib.parse.quote_plus(list_id)
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
+    def toggle_task(self, list_id: str, is_enabled: bool) -> Dict:
+        encoded_id = urllib.parse.quote_plus(list_id)
+        url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
+        return self._patch(url, {"is_enabled": is_enabled})
+
+    # ── Task version ─────────────────────────────────────────────────────────
+
     def get_task_draft(self, list_id: str) -> Dict:
         encoded_id = urllib.parse.quote_plus(list_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
-    def get_task_executions(self, list_id: str, limit: int = 10) -> Dict:
-        url = "{}v1/task_request/".format(self.config.base_url)
-        return self._get(url, params={"list_id": list_id, "limit": limit})
+    def get_task_active_version(self, list_id: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(list_id)
+        url = "{}v1/subscriber_sync_task/{}/version/active/".format(self.config.base_url, encoded_id)
+        return self._get(url)
 
     def update_task_draft(
         self,
@@ -138,12 +146,25 @@ class SubscriberSyncApi:
             "status": "active",
         })
 
+    # ── Dry run ───────────────────────────────────────────────────────────────
+
+    def dry_run(self, list_id: str, query_text: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(list_id)
+        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/".format(self.config.base_url, encoded_id)
+        return self._post(url, {"query_text": query_text})
+
+    def dry_run_count(self, list_id: str, query_text: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(list_id)
+        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/count/".format(self.config.base_url, encoded_id)
+        return self._post(url, {"query_text": query_text})
+
+    # ── Execution ─────────────────────────────────────────────────────────────
+
     def run_now(self, list_id: str) -> Dict:
         encoded_id = urllib.parse.quote_plus(list_id)
         url = "{}v1/subscriber_sync_task/{}/schedule_now/".format(self.config.base_url, encoded_id)
         return self._post(url, {})
 
-    def toggle_task(self, list_id: str, is_enabled: bool) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
-        url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
-        return self._patch(url, {"is_enabled": is_enabled})
+    def get_task_executions(self, list_id: str, limit: int = 10) -> Dict:
+        url = "{}v1/task_request/".format(self.config.base_url)
+        return self._get(url, params={"list_id": list_id, "limit": limit})
