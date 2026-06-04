@@ -133,18 +133,18 @@ class SubscriberSyncApi:
     def publish_task(
         self,
         list_id: str,
-        query_text: str,
+        query_text: str = "",
         update_type: str = "replace",
         column_mappings: List = None,
     ) -> Dict:
         encoded_id = urllib.parse.quote_plus(list_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
-        return self._patch(url, {
-            "query_text": query_text,
-            "update_type": update_type,
-            "column_mappings": column_mappings or [],
-            "status": "active",
-        })
+        payload = {"status": "active"}
+        if query_text:
+            payload["query_text"] = query_text
+            payload["update_type"] = update_type
+            payload["column_mappings"] = column_mappings or []
+        return self._patch(url, payload)
 
     # ── Dry run ───────────────────────────────────────────────────────────────
 
