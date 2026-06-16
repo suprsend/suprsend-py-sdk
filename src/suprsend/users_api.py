@@ -176,68 +176,12 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def get_full_preference(self, distinct_id: str, options: Dict = None) -> Dict:
-        encoded_options = urllib.parse.urlencode((options or {}))
-        _detail_url = self.detail_url(distinct_id)
-        url = "{}preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.__get_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def get_category_preference(self, distinct_id: str, category: str, options: Dict = None) -> Dict:
-        if not category or not isinstance(category, (str,)) or not category.strip():
-            raise SuprsendValidationError("missing category")
-        category_encoded = urllib.parse.quote_plus(category.strip())
-        encoded_options = urllib.parse.urlencode((options or {}))
-        _detail_url = self.detail_url(distinct_id)
-        url = "{}preference/category/{}/{}".format(
-            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
-        )
-        headers = self.__get_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
-    def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, digest_schedule: Dict = None,
-        preference_conditions: list = None, options: Dict = None
-    ) -> Dict:
-        """PATCH /v1/user/{distinct_id}/preference/category/{category}/"""
-        distinct_id = self._validate_distinct_id(distinct_id)
-        category_encoded = urllib.parse.quote_plus(category)
-        url = f"{self.detail_url(distinct_id)}preference/category/{category_encoded}/"
-        if options:
-            url = "{}?{}".format(url, urllib.parse.urlencode(options))
-        payload = payload or {}
-        if digest_schedule is not None:
-            payload["digest_schedule"] = digest_schedule
-        if preference_conditions is not None:
-            payload["preference_conditions"] = preference_conditions
-        headers = self.__get_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
     def update_channel_preference(self, distinct_id: str, payload: Dict) -> Dict:
         """PATCH /v1/user/{distinct_id}/preference/channel_preference/"""
         distinct_id = self._validate_distinct_id(distinct_id)
         url = f"{self.detail_url(distinct_id)}preference/channel_preference/"
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
@@ -317,7 +261,8 @@ class UsersApi:
         return resp.json()
 
     def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, options: Dict = None
+        self, distinct_id: str, category: str, payload: Dict, digest_schedule: Dict = None,
+        preference_conditions: list = None, options: Dict = None
     ) -> Dict:
         """
         PATCH /v1/user/{distinct_id}/preference/category/{category}/
@@ -330,6 +275,10 @@ class UsersApi:
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----
         payload = payload or {}
+        if digest_schedule is not None:
+            payload["digest_schedule"] = digest_schedule
+        if preference_conditions is not None:
+            payload["preference_conditions"] = preference_conditions
         headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
