@@ -1,5 +1,4 @@
 import copy
-from datetime import datetime, timezone
 import requests
 from typing import List, Dict
 from .logger import ss_logger
@@ -9,7 +8,6 @@ from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_EVENTS_IN_BULK_API,
     ALLOW_ATTACHMENTS_IN_BULK_API,
-    HEADER_DATE_FMT,
 )
 from .exception import InputValueError
 from .signature import get_request_signature
@@ -55,7 +53,6 @@ class _BulkEventsChunk:
         self.config = config
         self.__chunk = []
         self.__url = self.__get_url()
-        self.__headers = self.__common_headers()
         #
         self.__running_size = 0
         self.__running_length = 0
@@ -64,17 +61,6 @@ class _BulkEventsChunk:
     def __get_url(self):
         url_formatted = "{}v2/bulk/event/".format(self.config.base_url)
         return url_formatted
-
-    def __common_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-        }
-
-    def __dynamic_headers(self):
-        return {
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def __add_event_to_chunk(self, event, event_size):
         # First add size, then event to reduce effects of race condition
@@ -118,7 +104,7 @@ class _BulkEventsChunk:
         return True
 
     def trigger(self):
-        headers = {**self.__headers, **self.__dynamic_headers()}
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
                                                  self.config.workspace_secret)

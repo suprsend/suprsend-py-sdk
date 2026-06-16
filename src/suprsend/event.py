@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import requests
 import time
 from typing import List, Dict
@@ -6,7 +5,6 @@ import uuid
 from .logger import ss_logger
 
 from .constants import (
-    HEADER_DATE_FMT,
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
@@ -129,22 +127,10 @@ class EventCollector:
     def __init__(self, config):
         self.config = config
         self.__url = self.__get_url()
-        self.__headers = self.__common_headers()
 
     def __get_url(self):
         url_formatted = "{}v2/event/".format(self.config.base_url)
         return url_formatted
-
-    def __common_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": self.config.user_agent,
-        }
-
-    def __dynamic_headers(self):
-        return {
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-        }
 
     def collect(self, event: Event) -> Dict:
         event_dict, event_size = event.get_final_json(self.config, is_part_of_bulk=False)
@@ -152,7 +138,7 @@ class EventCollector:
 
     def send(self, event: Dict) -> Dict:
         try:
-            headers = {**self.__headers, **self.__dynamic_headers()}
+            headers = self.config.default_headers()
             # Signature and Authorization-header
             content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
                                                      self.config.workspace_secret)
