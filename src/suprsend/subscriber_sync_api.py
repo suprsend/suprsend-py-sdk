@@ -44,7 +44,7 @@ class SubscriberSyncApi:
     # ── Schema ────────────────────────────────────────────────────────────────
 
     def get_schema(self) -> Dict:
-        url = "{}v1/subscriber_sync_task/schema/".format(self.config.base_url)
+        url = "{}v1/subscriber_sync_task_schema/".format(self.config.base_url)
         return self._get(url)
 
     # ── Subscriber list ───────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ class SubscriberSyncApi:
         track_user_entry: bool = False,
         track_user_exit: bool = False,
     ) -> Dict:
-        url = "{}v1/client_subscriber_list/".format(self.config.base_url)
+        url = "{}v1/subscriber_list/".format(self.config.base_url)
         payload: Dict = {
             "list_id": list_id,
             "list_name": list_name,
@@ -75,11 +75,19 @@ class SubscriberSyncApi:
         limit: int = 20,
         offset: int = 0,
         list_id: str = "",
+        is_enabled: str = "",
     ) -> Dict:
-        url = "{}v1/client_subscriber_list/".format(self.config.base_url)
-        params: Dict = {"list_type": list_type, "limit": limit, "offset": offset}
+        # NOTE: the BasicAuth subscriber_list endpoint does not support a
+        # list_type filter (that param exists only on the JWT
+        # client_subscriber_list path). list_type is kept in the signature for
+        # backward compatibility but is not sent to the server, so results may
+        # include non-dynamic lists.
+        url = "{}v1/subscriber_list/".format(self.config.base_url)
+        params: Dict = {"limit": limit, "offset": offset}
         if list_id:
             params["list_id"] = list_id
+        if is_enabled:
+            params["is_enabled"] = is_enabled
         return self._get(url, params=params)
 
     def get_list_subscribers(self, list_id: str, limit: int = 20) -> Dict:
@@ -148,14 +156,12 @@ class SubscriberSyncApi:
 
     # ── Dry run ───────────────────────────────────────────────────────────────
 
-    def dry_run(self, list_id: str, query_text: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
-        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/".format(self.config.base_url, encoded_id)
+    def dry_run(self, query_text: str) -> Dict:
+        url = "{}v1/subscriber_list/dry_run/".format(self.config.base_url)
         return self._post(url, {"query_text": query_text})
 
-    def dry_run_count(self, list_id: str, query_text: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
-        url = "{}v1/subscriber_sync_task/{}/version/_/dry_run/count/".format(self.config.base_url, encoded_id)
+    def dry_run_count(self, query_text: str) -> Dict:
+        url = "{}v1/subscriber_list/dry_run/count/".format(self.config.base_url)
         return self._post(url, {"query_text": query_text})
 
     # ── Execution ─────────────────────────────────────────────────────────────
