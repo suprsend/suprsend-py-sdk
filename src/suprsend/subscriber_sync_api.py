@@ -157,11 +157,11 @@ class SubscriberSyncApi:
     # ── Dry run ───────────────────────────────────────────────────────────────
 
     def dry_run(self, query_text: str) -> Dict:
-        url = "{}v1/subscriber_list/dry_run/".format(self.config.base_url)
+        url = "{}v1/subscriber_list/~/dry_run/".format(self.config.base_url)
         return self._post(url, {"query_text": query_text})
 
     def dry_run_count(self, query_text: str) -> Dict:
-        url = "{}v1/subscriber_list/dry_run/count/".format(self.config.base_url)
+        url = "{}v1/subscriber_list/~/dry_run/count/".format(self.config.base_url)
         return self._post(url, {"query_text": query_text})
 
     # ── Execution ─────────────────────────────────────────────────────────────
