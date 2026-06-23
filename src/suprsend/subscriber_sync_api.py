@@ -101,36 +101,36 @@ class SubscriberSyncApi:
         url = "{}v1/subscriber_sync_task/".format(self.config.base_url)
         return self._post(url, {"name": name, "list_id": list_id})
 
-    def get_task(self, list_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+    def get_task(self, sync_task_id: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
-    def toggle_task(self, list_id: str, is_enabled: bool) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+    def toggle_task(self, sync_task_id: str, is_enabled: bool) -> Dict:
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._patch(url, {"is_enabled": is_enabled})
 
     # ── Task version ─────────────────────────────────────────────────────────
 
-    def get_task_draft(self, list_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+    def get_task_draft(self, sync_task_id: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
-    def get_task_active_version(self, list_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+    def get_task_active_version(self, sync_task_id: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/active/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
     def update_task_draft(
         self,
-        list_id: str,
+        sync_task_id: str,
         query_text: str,
         update_type: str = "replace",
         column_mappings: List = None,
     ) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         return self._patch(url, {
             "query_text": query_text,
@@ -140,12 +140,12 @@ class SubscriberSyncApi:
 
     def publish_task(
         self,
-        list_id: str,
+        sync_task_id: str,
         query_text: str = "",
         update_type: str = "replace",
         column_mappings: List = None,
     ) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         payload = {"status": "active"}
         if query_text:
@@ -166,8 +166,8 @@ class SubscriberSyncApi:
 
     # ── Execution ─────────────────────────────────────────────────────────────
 
-    def run_now(self, list_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+    def run_now(self, sync_task_id: str) -> Dict:
+        encoded_id = urllib.parse.quote_plus(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/schedule_now/".format(self.config.base_url, encoded_id)
         return self._post(url, {})
 
