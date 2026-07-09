@@ -176,19 +176,6 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update_channel_preference(self, distinct_id: str, payload: Dict) -> Dict:
-        """PATCH /v1/user/{distinct_id}/preference/channel_preference/"""
-        distinct_id = self._validate_distinct_id(distinct_id)
-        url = f"{self.detail_url(distinct_id)}preference/channel_preference/"
-        payload = payload or {}
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
     def get_edit_instance(self, distinct_id: str) -> UserEdit:
         distinct_id = self._validate_distinct_id(distinct_id)
         return UserEdit(self.config, distinct_id)
@@ -261,12 +248,11 @@ class UsersApi:
         return resp.json()
 
     def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, digest_schedule: Dict = None,
-        preference_conditions: list = None, options: Dict = None
+        self, distinct_id: str, category: str, payload: Dict, options: Dict = None
     ) -> Dict:
         """
         PATCH /v1/user/{distinct_id}/preference/category/{category}/
-        payload: {"preference": "", "opt_out_channels": []}
+        payload: {"preference": "", "opt_out_channels": [], "digest_schedule": null, "properties": null/[]}
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(distinct_id)
@@ -275,10 +261,6 @@ class UsersApi:
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----
         payload = payload or {}
-        if digest_schedule is not None:
-            payload["digest_schedule"] = digest_schedule
-        if preference_conditions is not None:
-            payload["preference_conditions"] = preference_conditions
         headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)

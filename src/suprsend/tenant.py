@@ -84,27 +84,6 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update_category_preference(
-        self, tenant_id: str, category: str, payload: Dict, digest_schedule: Dict = None,
-        preference_conditions: list = None
-    ) -> Dict:
-        """PATCH /v1/tenant/{tenant_id}/preference/category/{category}/"""
-        tenant_id = self._validate_tenant_id(tenant_id)
-        category_encoded = urllib.parse.quote_plus(category)
-        url = f"{self.detail_url(tenant_id)}preference/category/{category_encoded}/"
-        payload = payload or {}
-        if digest_schedule is not None:
-            payload["digest_schedule"] = digest_schedule
-        if preference_conditions is not None:
-            payload["preference_conditions"] = preference_conditions
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
-
     def delete(self, tenant_id: str):
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
@@ -118,22 +97,6 @@ class TenantsApi:
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
-
-    def get_all_categories_preference(self, tenant_id: str, limit: int = 20, offset: int = 0, tags: str = "") -> Dict:
-        """GET /v1/tenant/{tenant_id}/category/ — returns all category preferences for a tenant."""
-        tenant_id = self._validate_tenant_id(tenant_id)
-        params = {"limit": limit, "offset": offset}
-        if tags:
-            params["tags"] = tags
-        encoded_params = urllib.parse.urlencode(params)
-        url = f"{self.detail_url(tenant_id)}category/?{encoded_params}"
-        headers = {**self.__headers, **self.__dynamic_headers()}
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
 
     def list_preference_categories(self, tenant_id: str, options: Dict = None) -> Dict:
         """
@@ -153,6 +116,24 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def get_preference_category(self, tenant_id: str, category: str, options: Dict = None) -> Dict:
+        """
+        GET /v1/tenant/{tenant_id}/preference/category/{category}/?locale=xx
+        options: {"locale": ""}
+        """
+        tenant_id = self._validate_tenant_id(tenant_id)
+        category_encoded = urllib.parse.quote_plus(category)
+        encoded_options = urlencode_query(options or {})
+        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        # -----
+        headers = self.config.default_headers()
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
 
     def update_preference_category(self, tenant_id: str, category: str, payload: Dict, options: Dict = None) -> Dict:
         """
@@ -164,7 +145,9 @@ class TenantsApi:
             "visible_to_subscriber": null/bool,
             "preference": "",
             "mandatory_channels": [],
-            "opt_in_channels": []
+            "opt_in_channels": [],
+            "digest_schedule": null,
+            "properties": null/[],
         }
         """
         tenant_id = self._validate_tenant_id(tenant_id)
