@@ -280,7 +280,7 @@ class ObjectsApi:
     ) -> Dict:
         """
         PATCH /v1/object/{object_type}/{object_id}/preference/category/{category}/
-        payload: {"preference": "", "opt_out_channels": []}
+        payload: {"preference": "", "opt_out_channels": [], "digest_schedule": null, "properties": null/[]}
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(object_type, object_id)

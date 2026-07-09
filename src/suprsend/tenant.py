@@ -116,6 +116,25 @@ class TenantsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
+    def get_preference_category(self, tenant_id: str, category: str, options: Dict = None) -> Dict:
+        """
+        GET /v1/tenant/{tenant_id}/preference/category/{category}/?locale=xx
+        options: {"locale": ""}
+        """
+        tenant_id = self._validate_tenant_id(tenant_id)
+        category_encoded = urllib.parse.quote_plus(category)
+        encoded_options = urlencode_query(options or {})
+        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        # -----
+        headers = self.config.default_headers()
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
     def update_preference_category(self, tenant_id: str, category: str, payload: Dict, options: Dict = None) -> Dict:
         """
         PATCH /v1/tenant/{tenant_id}/preference/category/{category}/?locale=xx
@@ -126,7 +145,9 @@ class TenantsApi:
             "visible_to_subscriber": null/bool,
             "preference": "",
             "mandatory_channels": [],
-            "opt_in_channels": []
+            "opt_in_channels": [],
+            "digest_schedule": null,
+            "properties": null/[],
         }
         """
         tenant_id = self._validate_tenant_id(tenant_id)
