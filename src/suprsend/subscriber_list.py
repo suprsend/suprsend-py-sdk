@@ -204,19 +204,17 @@ class SubscriberListsApi:
         list_id = self._validate_list_id(list_id)
         # --
         encoded_options = urlencode_query(options or {})
-        url = "{}delete/".format(self.__subscriber_list_detail_url(list_id))
+        url = self.__subscriber_list_detail_url(list_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
-        # --
-        payload = {}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return {"success": True, "status_code": resp.status_code}
 
     def broadcast(self, broadcast_instance: SubscriberListBroadcast) -> Dict:
         if not isinstance(broadcast_instance, SubscriberListBroadcast):
@@ -379,16 +377,15 @@ class SubscriberListsApi:
         version_id = self._validate_version_id(version_id)
         # --
         encoded_options = urlencode_query(options or {})
-        url = "{}delete/".format(self.__subscriber_list_url_with_version(list_id, version_id))
+        url = self.__subscriber_list_url_with_version(list_id, version_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
         # --
-        payload = {}
         # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
+        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return {"success": True, "status_code": resp.status_code}
