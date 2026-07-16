@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
 import requests
 from typing import Dict
 
-from .constants import HEADER_DATE_FMT
 from .signature import get_request_signature
 from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
@@ -13,17 +11,10 @@ class WorkflowsApi:
         self.config = config
         self.metadata = {"User-Agent": self.config.user_agent}
 
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-            "User-Agent": self.config.user_agent,
-        }
-
     def trigger(self, workflow: WorkflowTriggerRequest) -> Dict:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
-            headers = self.__get_headers()
+            headers = self.config.default_headers()
             url = "{}trigger/".format(self.config.base_url)
             # Signature and Authorization-header
             content_txt, sig = get_request_signature(url, 'POST', workflow_body,

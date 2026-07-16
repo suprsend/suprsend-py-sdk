@@ -1,11 +1,9 @@
-from datetime import datetime, timezone
 import requests
 import time
 from typing import Any, Dict, Iterable, Union
 import uuid
 
 from .constants import (
-    HEADER_DATE_FMT,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
@@ -45,13 +43,6 @@ class Subscriber:
         self.user_operations = []
         self._helper = _SubscriberInternalHelper()
         self.__warnings_list = []
-
-    def __get_headers(self):
-        return {
-            "Content-Type": "application/json; charset=utf-8",
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
-            "User-Agent": self.config.user_agent,
-        }
 
     @property
     def warnings(self):
@@ -116,7 +107,7 @@ class Subscriber:
     def save(self):
         try:
             self.validate_body(is_part_of_bulk=False)
-            headers = self.__get_headers()
+            headers = self.config.default_headers()
             event = self.get_event()
             # --- validate event size
             ev, size = self.validate_event_size(event)
@@ -434,26 +425,28 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Iospush [providers: apns]
-    def add_iospush(self, value: str, provider: str = None):
+    def add_iospush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id:
         :return:
         """
         caller = "add_iospush"
-        self._helper._add_iospush(value, provider, caller=caller)
+        self._helper._add_iospush(value, provider, bundle_id, caller=caller)
         self._collect_event()
 
-    def remove_iospush(self, value: str, provider: str = None):
+    def remove_iospush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id:
         :return:
         """
         caller = "remove_iospush"
-        self._helper._remove_iospush(value, provider, caller=caller)
+        self._helper._remove_iospush(value, provider, bundle_id, caller=caller)
         self._collect_event()
 
     # ------------------------ Webpush [providers: vapid]

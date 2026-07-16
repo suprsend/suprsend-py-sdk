@@ -3,6 +3,7 @@ import copy
 import json
 import jsonschema
 import traceback
+import urllib.parse
 
 from .constants import (
     WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES,
@@ -191,3 +192,30 @@ def safe_get(lst, index, default=None):
         return lst[index]
     except IndexError:
         return default
+
+
+def urlencode_query(params: Dict, doseq: bool = False) -> str:
+    """
+    URL-encode query params with JSON-standard bool serialization.
+    Python's urllib.parse.urlencode renders bools via str() as "True"/"False";
+    APIs that parse query values as JSON expect lowercase "true"/"false".
+    """
+    if not params:
+        return ""
+    normalized = {}
+    for key, val in params.items():
+        if val is None:
+            continue
+        if isinstance(val, bool):
+            normalized[key] = "true" if val else "false"
+        elif isinstance(val, list):
+            filtered = [v for v in val if v is not None]
+            if not filtered:
+                continue
+            normalized[key] = [
+                ("true" if v else "false") if isinstance(v, bool) else v
+                for v in filtered
+            ]
+        else:
+            normalized[key] = val
+    return urllib.parse.urlencode(normalized, doseq=doseq)
