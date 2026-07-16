@@ -6,7 +6,7 @@ import urllib.parse
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .object_edit import ObjectEdit
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 
 class ObjectsApi:
@@ -27,7 +27,7 @@ class ObjectsApi:
 
     def list(self, object_type: str, options: Dict = None) -> Dict:
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         encoded_options = urlencode_query(options or {})
         #
         url = "{}{}/{}".format(self.list_url, object_type_encoded, (f"?{encoded_options}" if encoded_options else ""))
@@ -44,10 +44,10 @@ class ObjectsApi:
 
     def detail_url(self, object_type: str, object_id: str) -> str:
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         # --
         object_id = self._validate_object_id(object_id)
-        object_id_encoded = urllib.parse.quote_plus(object_id)
+        object_id_encoded = urlencode_path_param(object_id)
         # --
         url = f"{self.list_url}{object_type_encoded}/{object_id_encoded}/"
         return url
@@ -118,7 +118,7 @@ class ObjectsApi:
         :return:
         """
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         url = "{}{}/".format(self.bulk_url, object_type_encoded)
         payload = payload or {}
         headers = self.config.default_headers()
@@ -260,7 +260,7 @@ class ObjectsApi:
         """
         if not category or not isinstance(category, (str,)) or not category.strip():
             raise SuprsendValidationError("missing category")
-        category_encoded = urllib.parse.quote_plus(category.strip())
+        category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
@@ -284,7 +284,7 @@ class ObjectsApi:
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(object_type, object_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----

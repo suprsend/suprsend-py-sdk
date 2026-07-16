@@ -8,7 +8,7 @@ from .exception import InputValueError, SuprsendAPIException, SuprsendValidation
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
-from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema, urlencode_query)
+from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema, urlencode_query, urlencode_path_param)
 from .signature import get_request_signature
 from .attachment import get_attachment_json
 from .logger import ss_logger
@@ -136,7 +136,7 @@ class SubscriberListsApi:
 
     def __subscriber_list_detail_url(self, list_id: str):
         list_id = str(list_id).strip()
-        list_id_encoded = urllib.parse.quote_plus(list_id)
+        list_id_encoded = urlencode_path_param(list_id)
         url = f"{self.subscriber_list_url}{list_id_encoded}/"
         return url
 
@@ -284,9 +284,9 @@ class SubscriberListsApi:
 
     def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
         list_id = str(list_id).strip()
-        list_id_encoded = urllib.parse.quote_plus(list_id)
+        list_id_encoded = urlencode_path_param(list_id)
         version_id = str(version_id).strip()
-        version_id_encoded = urllib.parse.quote_plus(version_id)
+        version_id_encoded = urlencode_path_param(version_id)
         url = f"{self.subscriber_list_url}{list_id_encoded}/version/{version_id_encoded}/"
         return url
 

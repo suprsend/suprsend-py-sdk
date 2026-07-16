@@ -6,7 +6,7 @@ from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .user_edit import UserEdit
 from .users_edit_bulk import BulkUsersEdit
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 
 class UsersApi:
@@ -36,7 +36,7 @@ class UsersApi:
 
     def detail_url(self, distinct_id: str) -> str:
         distinct_id = self._validate_distinct_id(distinct_id)
-        distinct_id_encoded = urllib.parse.quote_plus(distinct_id)
+        distinct_id_encoded = urlencode_path_param(distinct_id)
         return f"{self.list_url}{distinct_id_encoded}/"
 
     def get(self, distinct_id: str) -> Dict:
@@ -158,12 +158,12 @@ class UsersApi:
 
     def tenant_detail_url(self, distinct_id: str, tenant_id: str) -> str:
         tenant_id = self._validate_tenant_id(tenant_id)
-        tenant_id_encoded = urllib.parse.quote_plus(tenant_id)
+        tenant_id_encoded = urlencode_path_param(tenant_id)
         return "{}{}/".format(self.tenant_base_url(distinct_id), tenant_id_encoded)
 
     def get_tenants(self, distinct_id: str) -> Dict:
         url = self.tenant_base_url(distinct_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -175,7 +175,7 @@ class UsersApi:
 
     def get_tenant_detail(self, distinct_id: str, tenant_id: str) -> Dict:
         url = self.tenant_detail_url(distinct_id, tenant_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
         resp = requests.get(url, headers=headers)
@@ -186,7 +186,7 @@ class UsersApi:
     def upsert_tenant(self, distinct_id: str, tenant_id: str, payload: Dict = None) -> Dict:
         url = self.tenant_detail_url(distinct_id, tenant_id)
         payload = payload or {}
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -198,7 +198,7 @@ class UsersApi:
 
     def delete_tenant(self, distinct_id: str, tenant_id: str) -> Dict:
         url = self.tenant_detail_url(distinct_id, tenant_id)
-        headers = self.__get_headers()
+        headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -292,7 +292,7 @@ class UsersApi:
         """
         if not category or not isinstance(category, (str,)) or not category.strip():
             raise SuprsendValidationError("missing category")
-        category_encoded = urllib.parse.quote_plus(category.strip())
+        category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
@@ -316,7 +316,7 @@ class UsersApi:
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(distinct_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----

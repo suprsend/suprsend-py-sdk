@@ -4,7 +4,7 @@ import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 
 class TenantsApi:
@@ -51,7 +51,7 @@ class TenantsApi:
         return tenant_id
 
     def detail_url(self, tenant_id: str):
-        tenant_id_encoded = urllib.parse.quote_plus(tenant_id)
+        tenant_id_encoded = urlencode_path_param(tenant_id)
         url = f"{self.list_url}{tenant_id_encoded}/"
         return url
 
@@ -122,7 +122,7 @@ class TenantsApi:
         options: {"locale": ""}
         """
         tenant_id = self._validate_tenant_id(tenant_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # -----
@@ -151,7 +151,7 @@ class TenantsApi:
         }
         """
         tenant_id = self._validate_tenant_id(tenant_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # -----
