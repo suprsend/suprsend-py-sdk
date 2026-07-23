@@ -1,11 +1,10 @@
 from typing import Dict, List
 
 import requests
-import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 _MULTI_VALUE_KEYS = ("recipient_id", "status", "category")
 
@@ -64,7 +63,7 @@ class MessagesApi:
 
     # def get_content(self, message_id: str) -> Dict:
     #     message_id = self._validate_message_id(message_id)
-    #     message_id_encoded = urllib.parse.quote_plus(message_id)
+    #     message_id_encoded = urlencode_path_param(message_id)
     #     url = "{}/{}/content".format(self.__list_url, message_id_encoded)
     #     headers = self.config.default_headers()
     #     content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)

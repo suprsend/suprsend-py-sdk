@@ -1,12 +1,11 @@
 from typing import Dict, Union
 import requests
-import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
 from .user_edit import UserEdit
 from .users_edit_bulk import BulkUsersEdit
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 
 class UsersApi:
@@ -36,11 +35,13 @@ class UsersApi:
 
     def detail_url(self, distinct_id: str) -> str:
         distinct_id = self._validate_distinct_id(distinct_id)
-        distinct_id_encoded = urllib.parse.quote_plus(distinct_id)
+        distinct_id_encoded = urlencode_path_param(distinct_id)
         return f"{self.list_url}{distinct_id_encoded}/"
 
-    def get(self, distinct_id: str) -> Dict:
+    def get(self, distinct_id: str, options: Dict = None) -> Dict:
         url = self.detail_url(distinct_id)
+        encoded_options = urlencode_query(options or {})
+        url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
@@ -51,10 +52,13 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def upsert(self, distinct_id: str, payload: Dict = None) -> Dict:
+    def upsert(self, distinct_id: str, payload: Dict = None, options: Dict = None) -> Dict:
         url = self.detail_url(distinct_id)
-        payload = payload or {}
+        encoded_options = urlencode_query(options or {})
+        url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
+        # ---
+        payload = payload or {}
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
         headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
@@ -82,17 +86,26 @@ class UsersApi:
         # if no error, return success response
         return {"success": True, "status": "success", "status_code": resp.status_code, "message": resp.text}
 
-    def edit(self, edit_ins_or_distinct_id: Union[UserEdit, str], edit_payload: Dict = None) -> Dict:
+    def edit(self, edit_ins_or_distinct_id: Union[UserEdit, str], edit_payload: Dict = None, tenant_id: str = None, options: Dict = None) -> Dict:
         if isinstance(edit_ins_or_distinct_id, UserEdit):
             edit_ins = edit_ins_or_distinct_id
             edit_ins.validate_body()
             payload = edit_ins.get_payload()
-            url = self.detail_url(edit_ins.distinct_id)
+            if edit_ins.tenant_id:
+                url = self.detail_url_for_tenant(edit_ins.distinct_id, edit_ins.tenant_id)
+            else:
+                url = self.detail_url(edit_ins.distinct_id)
         else:
             distinct_id = edit_ins_or_distinct_id
             payload = edit_payload or {}
             url = self.detail_url(distinct_id)
+            if tenant_id:
+                url = self.detail_url_for_tenant(distinct_id, tenant_id)
+            else:
+                url = self.detail_url(distinct_id)
         # ----
+        encoded_options = urlencode_query(options or {})
+        url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         headers = self.config.default_headers()
         # Signature and Authorization-header
         content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
@@ -148,6 +161,74 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
 
+    # ----------- Linked Tenant APIs ----------
+
+    def list_associated_tenants(self, distinct_id: str, options: Dict = None) -> Dict:
+        encoded_options = urlencode_query(options or {})
+        url = "{}associated_tenant/{}".format(self.detail_url(distinct_id), (f"?{encoded_options}" if encoded_options else ""))
+        headers = self.config.default_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def _validate_tenant_id(self, tenant_id: str) -> str:
+        if not tenant_id or not isinstance(tenant_id, (str,)) or not tenant_id.strip():
+            raise SuprsendValidationError("missing tenant_id")
+        return tenant_id.strip()
+
+    def detail_url_for_tenant(self, distinct_id: str, tenant_id: str) -> str:
+        tenant_id = self._validate_tenant_id(tenant_id)
+        tenant_id_encoded = urlencode_path_param(tenant_id)
+        return "{}tenant/{}/".format(self.detail_url(distinct_id), tenant_id_encoded)
+
+    def get_for_tenant(self, distinct_id: str, tenant_id: str, options: Dict = None) -> Dict:
+        url = self.detail_url_for_tenant(distinct_id, tenant_id)
+        encoded_options = urlencode_query(options or {})
+        url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
+        headers = self.config.default_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        resp = requests.get(url, headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def upsert_for_tenant(self, distinct_id: str, tenant_id: str, payload: Dict = None, options: Dict = None) -> Dict:
+        url = self.detail_url_for_tenant(distinct_id, tenant_id)
+        encoded_options = urlencode_query(options or {})
+        url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
+        headers = self.config.default_headers()
+        # ---
+        payload = payload or {}
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
+
+    def unlink_tenant(self, distinct_id: str, tenant_id: str) -> Dict:
+        url = self.detail_url_for_tenant(distinct_id, tenant_id)
+        headers = self.config.default_headers()
+        # Signature and Authorization-header
+        content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
+        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+        # -----
+        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return {"success": True, "status_code": resp.status_code}
+
+    # ---------------------
+    
     def get_objects_subscribed_to(self, distinct_id: str, options: Dict = None) -> Dict:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
@@ -176,9 +257,11 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def get_edit_instance(self, distinct_id: str) -> UserEdit:
+    def get_edit_instance(self, distinct_id: str, tenant_id: str = None) -> UserEdit:
         distinct_id = self._validate_distinct_id(distinct_id)
-        return UserEdit(self.config, distinct_id)
+        if tenant_id:
+            tenant_id = self._validate_tenant_id(tenant_id)
+        return UserEdit(self.config, distinct_id, tenant_id)
 
     def get_bulk_edit_instance(self) -> BulkUsersEdit:
         return BulkUsersEdit(self.config)
@@ -232,7 +315,7 @@ class UsersApi:
         """
         if not category or not isinstance(category, (str,)) or not category.strip():
             raise SuprsendValidationError("missing category")
-        category_encoded = urllib.parse.quote_plus(category.strip())
+        category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
@@ -256,7 +339,7 @@ class UsersApi:
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(distinct_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----

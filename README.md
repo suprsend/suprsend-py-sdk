@@ -185,7 +185,7 @@ All associated channels in User profile will be automatically picked when execut
 ```python
 distinct_id = "__uniq_user_id__"  # Unique id of user in your application
 # Instantiate User profile
-user = supr_client.user.get_instance(distinct_id=distinct_id)
+user = supr_client.users.get_edit_instance(distinct_id=distinct_id)
 ```
 - To add channel details to this user (viz. email, sms, whatsapp, androidpush, iospush etc)
   use `user.add_*` method(s) as shown in the example below.
@@ -214,8 +214,8 @@ user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficm
 user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"})  # - DM user using team user id
 user.add_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
 
-# After setting the channel details on user-instance, call save()
-response = user.save()
+# After setting the channel details on user-instance, call edit()/async_edit()
+response = supr_client.users.edit(user)
 print(response)
 ```
 ```python
@@ -258,7 +258,7 @@ user.remove_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.traff
 user.remove_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
 
 # save
-response = user.save()
+response = supr_client.users.edit(user)
 print(response)
 ```
 
@@ -268,7 +268,7 @@ print(response)
 ```python
 # --- To delete all emails associated with user
 user.unset("$email")
-response = user.save()
+response = supr_client.users.async_edit(user)
 print(response)
 
 # what value to pass to unset channels
@@ -283,7 +283,7 @@ print(response)
 
 # --- multiple channels can also be deleted in one call by passing argument as a list
 user.unset(["$email", "$sms", "$whatsapp"])
-user.save()
+response = supr_client.users.async_edit(user)
 ```
 
 - You can also set preferred language of user using `set_preferred_language(lang_code)`. Value for lang_code
@@ -292,7 +292,7 @@ user.save()
 ```python
 # --- Set 2-letter language code in "ISO 639-1 Alpha-2" format
 user.set_preferred_language("en")
-response = user.save()
+response = supr_client.users.async_edit(user)
 print(response)
 ```
 
@@ -302,11 +302,11 @@ print(response)
 ```python
 # --- Set timezone property at user level in IANA timezone format
 user.set_timezone("America/Los_Angeles")
-response = user.save()
+response = supr_client.users.async_edit(user)
 print(response)
 ```
 
-- Note: After calling `add_*`/`remove_*`/`unset`/`set_*` methods, don't forget to call `user.save()`. On call of save(),
+- Note: After calling `add_*`/`remove_*`/`unset`/`set_*` methods, don't forget to call `edit()/async_edit()`. On call of edit()/async_edit(),
 SDK sends the request to SuprSend platform to update the User-Profile.
 
 Once channels details are set at User profile, you only have to mention the user's distinct_id
@@ -342,16 +342,16 @@ response = supr_client.workflows.trigger(wf)
 print(response)
 ```
 #### Bulk API for Users
-You can send multiple subscriber requests in one call. Use `.append()` on bulk_users instance
+You can send multiple user requests in one call. Use `.append()` on bulk_users instance
 to add however-many-records to call in bulk.
 ```python3
-bulk_ins = supr_client.bulk_users.new_instance()
+bulk_ins = supr_client.users.get_bulk_edit_instance()
 # Prepare multiple users
-u1 = supr_client.user.get_instance("distinct_id_1") # User 1
-u1.set_email("u1@example.com")
+u1 = supr_client.users.get_edit_instance("distinct_id_1") # User 1
+u1.add_email("u1@example.com")
 
-u2 = supr_client.user.get_instance("distinct_id_2") # User 2
-u2.set_email("u2@example.com")
+u2 = supr_client.users.get_edit_instance("distinct_id_2") # User 2
+u2.add_email("u2@example.com")
 
 # --- use .append on bulk instance to add one or more records
 bulk_ins.append(u1)

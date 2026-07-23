@@ -1,9 +1,9 @@
 import requests
 from typing import List, Dict
-import urllib.parse
 
 from .exception import SuprsendAPIException
 from .signature import get_request_signature
+from .utils import urlencode_query, urlencode_path_param
 
 
 class BrandsApi:
@@ -27,7 +27,7 @@ class BrandsApi:
     def list(self, limit: int = 20, offset: int = 0):
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
-        encoded_params = urllib.parse.urlencode(params)
+        encoded_params = urlencode_query(params)
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
@@ -43,7 +43,7 @@ class BrandsApi:
 
     def detail_url(self, brand_id: str):
         brand_id = str(brand_id).strip()
-        brand_id_encoded = urllib.parse.quote_plus(brand_id)
+        brand_id_encoded = urlencode_path_param(brand_id)
         url = f"{self.list_url}{brand_id_encoded}/"
         return url
 
