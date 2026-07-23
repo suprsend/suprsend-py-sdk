@@ -35,10 +35,7 @@ class UserEdit:
         return self.__errors
 
     def get_payload(self):
-        ev = {"operations": self.operations}
-        if self.tenant_id:
-            ev["tenant_id"] = self.tenant_id
-        return ev
+        return {"operations": self.operations}
 
     def get_async_payload(self):
         ev = {
