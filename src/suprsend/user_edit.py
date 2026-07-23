@@ -13,9 +13,10 @@ from .logger import ss_logger
 
 
 class UserEdit:
-    def __init__(self, config, distinct_id: str):
+    def __init__(self, config, distinct_id: str, tenant_id: str = None):
         self.config = config
         self.distinct_id = distinct_id
+        self.tenant_id = tenant_id
         #
         self.__errors = []
         self.__info = []
@@ -34,10 +35,13 @@ class UserEdit:
         return self.__errors
 
     def get_payload(self):
-        return {"operations": self.operations}
+        ev = {"operations": self.operations}
+        if self.tenant_id:
+            ev["tenant_id"] = self.tenant_id
+        return ev
 
     def get_async_payload(self):
-        return {
+        ev = {
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
@@ -46,13 +50,19 @@ class UserEdit:
             "$user_operations": self.operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},
         }
+        if self.tenant_id:
+            ev["tenant_id"] = self.tenant_id
+        return ev
 
     def as_json_async(self):
-        return {
+        ev = {
             "distinct_id": self.distinct_id,
             "$user_operations": self.operations,
             "warnings": self.__warnings_list,
         }
+        if self.tenant_id:
+            ev["tenant_id"] = self.tenant_id
+        return ev
 
     def validate_payload_size(self, payload: Dict):
         apparent_size = get_apparent_identity_event_size(payload)
