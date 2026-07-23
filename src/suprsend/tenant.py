@@ -1,6 +1,5 @@
 import requests
 from typing import Dict
-import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature
@@ -28,7 +27,7 @@ class TenantsApi:
     def list(self, limit: int = 20, offset: int = 0):
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
-        encoded_params = urllib.parse.urlencode(params)
+        encoded_params = urlencode_query(params)
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---

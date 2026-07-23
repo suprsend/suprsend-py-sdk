@@ -1,7 +1,6 @@
 import requests
 import time
 from typing import List, Dict
-import urllib.parse
 import uuid
 
 from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError

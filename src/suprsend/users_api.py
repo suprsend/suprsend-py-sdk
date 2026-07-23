@@ -1,6 +1,5 @@
 from typing import Dict, Union
 import requests
-import urllib.parse
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .signature import get_request_signature

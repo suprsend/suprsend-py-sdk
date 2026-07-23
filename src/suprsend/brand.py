@@ -1,10 +1,9 @@
 import requests
 from typing import List, Dict
-import urllib.parse
 
 from .exception import SuprsendAPIException
 from .signature import get_request_signature
-from .utils import urlencode_path_param
+from .utils import urlencode_query, urlencode_path_param
 
 
 class BrandsApi:
@@ -28,7 +27,7 @@ class BrandsApi:
     def list(self, limit: int = 20, offset: int = 0):
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
-        encoded_params = urllib.parse.urlencode(params)
+        encoded_params = urlencode_query(params)
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
