@@ -144,7 +144,8 @@
           "type": "string", "enum": ["fcm", "xiaomi", "oppo"],
           "description": "androidpush token provider(fcm/xiaomi)"
         },
-        "device_id":  {"type": ["string", "null"]}
+        "device_id":  {"type": ["string", "null"]},
+        "bundle_id":  {"type": ["string", "null"], "description": "FCM app package name"}
       },
       "required": ["token", "provider"],
       "additionalProperties": false
