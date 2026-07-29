@@ -286,24 +286,26 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Androidpush
-    def add_androidpush(self, value: str, provider: str = None):
+    def add_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
         """
         :param value:
         :param provider:
+        :param bundle_id: Android package name
         :return:
         """
         caller = "add_androidpush"
-        self._helper._add_androidpush(value, provider, caller=caller)
+        self._helper._add_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_androidpush(self, value: str, provider: str = None):
+    def remove_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
         """
         :param value:
         :param provider:
+        :param bundle_id: Android package name
         :return:
         """
         caller = "remove_androidpush"
-        self._helper._remove_androidpush(value, provider, caller=caller)
+        self._helper._remove_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
     # ------------------------ Iospush [providers: apns]
