@@ -28,14 +28,16 @@ jobs:
           python -m pip install twine setuptools wheel build
       
       # use run number as a unique identifier to avoid version conflicts on TestPyPI
-      - name: Patch Version for TestPyPI
+      - name: Set TestPyPI version
         if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION_FILE="src/suprsend/version.py"
-          CURRENT=$(cat "$VERSION_FILE" | cut -d= -f2 | sed 's/\.dev.*//' | tr -d "' \"")
-          NEW_VERSION="${CURRENT}.dev${{ github.run_number }}"
-          echo "Patching version to $NEW_VERSION for TestPyPI"
-          echo "__version__ = '$NEW_VERSION'" > "$VERSION_FILE"
+          python -m pip install "setuptools-scm>=8"
+          SCM_VERSION=$(python -m setuptools_scm)
+          BASE=${SCM_VERSION%%+*}
+          BASE=${BASE%%.dev*}
+          NEW_VERSION="${BASE}.dev${{ github.run_number }}"
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
+          echo "Patched TestPyPI version to $NEW_VERSION (scm: $SCM_VERSION)"
 
       - name: Build package
         run: |

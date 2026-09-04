@@ -26,12 +26,23 @@ brew install libmagic
 ```
 
 ### Usage
-Initialize the SuprSend SDK
+Initialize the SuprSend SDK with workspace key and secret (HMAC). You can get both from
+SuprSend dashboard -> Developers -> API Keys.
 ```python3
 from suprsend import Suprsend
 # Initialize SDK
 supr_client = Suprsend("workspace_key", "workspace_secret")
 ```
+
+Alternatively, authenticate with an HTTP API Key (Bearer token). Get the workspace UID from
+SuprSend dashboard -> Settings -> General -> Workspace UID, and the API Key from
+SuprSend dashboard -> Developers -> API Keys.
+```python3
+from suprsend import Suprsend
+supr_client = Suprsend.with_workspace_api_key("workspace_uid", "api_key")
+```
+Both constructors accept the same optional kwargs (`base_url`, `debug`, `app_info`). After
+initialization, the rest of the SDK API is the same.
 
 Following example shows a sample request for triggering a workflow.
 It triggers a pre-created workflow `purchase-made` to a recipient with id: `distinct_id`,

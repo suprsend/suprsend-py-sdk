@@ -1,5 +1,4 @@
-import requests
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 from warnings import warn
 
 from .constants import (
@@ -7,9 +6,11 @@ from .constants import (
 )
 from .exception import InputValueError
 from .utils import (get_apparent_workflow_body_size, validate_workflow_body_schema)
-from .signature import get_request_signature
 from .attachment import get_attachment_json
 from .logger import ss_logger
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class Workflow:
@@ -40,7 +41,7 @@ class Workflow:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config, is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
         # add idempotency key in body if present
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key
@@ -71,12 +72,12 @@ class Workflow:
 
 
 class _WorkflowTrigger:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.url = self.__get_url()
 
     def __get_url(self):
-        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_key)
+        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier)
         return url_formatted
 
     def trigger(self, workflow: Workflow) -> Dict:
@@ -85,15 +86,7 @@ class _WorkflowTrigger:
 
     def send(self, workflow_body: Dict) -> Dict:
         try:
-            headers = self.config.default_headers()
-            # Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.url, 'POST', workflow_body,
-                                                     headers, self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            # -----
-            resp = requests.post(self.url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.url, workflow_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {

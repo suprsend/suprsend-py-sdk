@@ -1,6 +1,5 @@
 import copy
-import requests
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 from .logger import ss_logger
 
 from .constants import (
@@ -10,15 +9,17 @@ from .constants import (
     ALLOW_ATTACHMENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .signature import get_request_signature
 from .utils import invalid_record_json, safe_get
 from .bulk_response import BulkResponse
 from .event import Event
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class BulkEventsFactory:
 
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
 
     def new_instance(self):
@@ -49,7 +50,7 @@ class _BulkEventsChunk:
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
     _max_records_in_chunk = MAX_EVENTS_IN_BULK_API
 
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__chunk = []
         self.__url = self.__get_url()
@@ -104,16 +105,8 @@ class _BulkEventsChunk:
         return True
 
     def trigger(self):
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
-                                                 self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
         try:
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -156,7 +149,7 @@ class _BulkEventsChunk:
 
 
 class BulkEvents:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__events = []
         self.__pending_records = []

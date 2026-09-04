@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import time
 import uuid
 
@@ -11,9 +11,12 @@ from .utils import (get_apparent_identity_event_size, )
 from .user_edit_internal_helper import _UserEditInternalHelper
 from .logger import ss_logger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class UserEdit:
-    def __init__(self, config, distinct_id: str, tenant_id: str = None):
+    def __init__(self, config: "Suprsend", distinct_id: str, tenant_id: str = None):
         self.config = config
         self.distinct_id = distinct_id
         self.tenant_id = tenant_id
@@ -42,7 +45,7 @@ class UserEdit:
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
-            "env": self.config.workspace_key,
+            "env": self.config.workspace_identifier,
             "distinct_id": self.distinct_id,
             "$user_operations": self.operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},

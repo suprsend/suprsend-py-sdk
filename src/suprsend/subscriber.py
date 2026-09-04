@@ -1,6 +1,5 @@
-import requests
 import time
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import uuid
 
 from .constants import (
@@ -8,14 +7,16 @@ from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .signature import get_request_signature
 from .utils import (get_apparent_identity_event_size, )
 from .subscriber_helper import _SubscriberInternalHelper
 from .logger import ss_logger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class SubscriberFactory:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
 
     def new(self, distinct_id: str = None):
@@ -32,7 +33,7 @@ class SubscriberFactory:
 
 
 class Subscriber:
-    def __init__(self, config, distinct_id: str):
+    def __init__(self, config: "Suprsend", distinct_id: str):
         self.config = config
         self.distinct_id = distinct_id
         self.__url = "{}event/".format(self.config.base_url)
@@ -56,7 +57,7 @@ class Subscriber:
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
-            "env": self.config.workspace_key,
+            "env": self.config.workspace_identifier,
             "distinct_id": self.distinct_id,
             "$user_operations": self.user_operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},
@@ -103,19 +104,10 @@ class Subscriber:
     def save(self):
         try:
             self.validate_body(is_part_of_bulk=False)
-            headers = self.config.default_headers()
             event = self.get_event()
             # --- validate event size
             ev, size = self.validate_event_size(event)
-
-            # --- Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
-                                                     self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            # -----
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.__url, event)
         except Exception as ex:
             error_str = ex.__str__()
             return {

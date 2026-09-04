@@ -1,6 +1,5 @@
 import copy
-import requests
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
@@ -9,16 +8,18 @@ from .constants import (
     MAX_IDENTITY_EVENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .signature import get_request_signature
 from .utils import invalid_record_json
 from .bulk_response import BulkResponse
 from .subscriber import Subscriber
 from .logger import ss_logger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class BulkSubscribersFactory:
 
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
 
     def new_instance(self):
@@ -58,7 +59,7 @@ class _BulkSubscribersChunk:
     _chunk_apparent_size_in_bytes = BODY_MAX_APPARENT_SIZE_IN_BYTES
     _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__chunk = []
         self.__url = self.__get_url()
@@ -110,16 +111,8 @@ class _BulkSubscribersChunk:
         return True
 
     def trigger(self):
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
-                                                 self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
         try:
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -156,7 +149,7 @@ class _BulkSubscribersChunk:
 
 
 class BulkSubscribers:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__subscribers = []
         self.__pending_records = []

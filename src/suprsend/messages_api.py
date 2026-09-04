@@ -1,16 +1,16 @@
-from typing import Dict, List
-
-import requests
+from typing import Dict, List, TYPE_CHECKING
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .signature import get_request_signature
 from .utils import urlencode_query, urlencode_path_param
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 _MULTI_VALUE_KEYS = ("recipient_id", "status", "category")
 
 
 class MessagesApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__list_url = "{}v1/message/".format(self.config.base_url)
         self.__bulk_patch_url = "{}v1/bulk/message/".format(self.config.base_url)
@@ -28,10 +28,7 @@ class MessagesApi:
         params = self.__build_list_params(options or {})
         encoded_params = urlencode_query(params, doseq=True)
         url = "{}{}".format(self.__list_url, ("?{}".format(encoded_params) if encoded_params else ""))
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -48,10 +45,7 @@ class MessagesApi:
                 raise SuprsendValidationError("messages[{}]: missing action".format(i))
         payload = {"messages": messages}
         url = self.__bulk_patch_url
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -65,9 +59,7 @@ class MessagesApi:
     #     message_id = self._validate_message_id(message_id)
     #     message_id_encoded = urlencode_path_param(message_id)
     #     url = "{}/{}/content".format(self.__list_url, message_id_encoded)
-    #     headers = self.config.default_headers()
-    #     content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-    #     headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
+    #     headers, content_txt = self.config.prepare_request("GET", url, None)
     #     resp = requests.get(url, headers=headers)
     #     if resp.status_code >= 400:
     #         raise SuprsendAPIException(resp)

@@ -1,11 +1,14 @@
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 
 from .object_edit_internal_helper import _ObjectEditInternalHelper
 from .logger import ss_logger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class ObjectEdit:
-    def __init__(self, config, object_type: str, object_id: str):
+    def __init__(self, config: "Suprsend", object_type: str, object_id: str):
         self.config = config
         self.object_type = object_type
         self.object_id = object_id

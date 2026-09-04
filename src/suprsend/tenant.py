@@ -1,13 +1,14 @@
-import requests
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .signature import get_request_signature
 from .utils import urlencode_query, urlencode_path_param
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class TenantsApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.list_url = self.__list_url()
 
@@ -31,12 +32,7 @@ class TenantsApi:
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -58,12 +54,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -73,12 +64,7 @@ class TenantsApi:
         url = self.detail_url(tenant_id)
         # ---
         tenant_payload = tenant_payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', tenant_payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, tenant_payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -87,12 +73,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('DELETE', url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -106,11 +87,7 @@ class TenantsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}".format(self.detail_url(tenant_id), (f"?{encoded_options}" if encoded_options else ""))
         # -----
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -125,11 +102,7 @@ class TenantsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # -----
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -155,11 +128,7 @@ class TenantsApi:
         url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # -----
         payload = payload or {}
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
