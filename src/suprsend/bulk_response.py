@@ -1,12 +1,14 @@
+from typing import Dict, List, Optional
+
 
 class BulkResponse:
     def __init__(self):
-        self.status = None
-        self.failed_records = []
-        self.total = 0
-        self.success = 0
-        self.failure = 0
-        self.warnings = []
+        self.status: Optional[str] = None
+        self.failed_records: List[Dict] = []
+        self.total: int = 0
+        self.success: int = 0
+        self.failure: int = 0
+        self.warnings: List[str] = []
 
     def __str__(self):
         return f"BulkResponse<status: {self.status} | total: {self.total} | success: {self.success} | " \

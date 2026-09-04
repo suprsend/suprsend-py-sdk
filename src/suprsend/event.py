@@ -1,6 +1,5 @@
-import requests
 import time
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 import uuid
 from .logger import ss_logger
 
@@ -9,8 +8,10 @@ from .constants import (
 )
 from .exception import InputValueError
 from .attachment import get_attachment_json
-from .signature import get_request_signature
 from .utils import (validate_track_event_schema, get_apparent_event_size, )
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 RESERVED_EVENT_NAMES = [
@@ -76,7 +77,7 @@ class Event:
         # -----
         self.properties["$attachments"].append(attachment)
 
-    def get_final_json(self, config, is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
         # --- validate
         self.__validate_distinct_id()
         self.__validate_event_name()
@@ -87,7 +88,7 @@ class Event:
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
             "event": self.event_name,
-            "env": config.workspace_key,
+            "env": config.workspace_identifier(),
             "distinct_id": self.distinct_id,
             "properties": {**self.properties, **super_props}
         }
@@ -124,7 +125,7 @@ class Event:
 
 
 class EventCollector:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.__url = self.__get_url()
 
@@ -138,15 +139,7 @@ class EventCollector:
 
     def send(self, event: Dict) -> Dict:
         try:
-            headers = self.config.default_headers()
-            # Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.__url, 'POST', event, headers,
-                                                     self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            # -----
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.__url, event)
         except Exception as ex:
             error_str = ex.__str__()
             return {

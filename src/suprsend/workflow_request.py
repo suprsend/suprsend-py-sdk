@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
@@ -5,6 +7,9 @@ from .exception import InputValueError
 from .attachment import get_attachment_json
 from .utils import (get_apparent_workflow_body_size, validate_workflow_trigger_body_schema)
 from .logger import ss_logger
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class WorkflowTriggerRequest:
@@ -34,7 +39,7 @@ class WorkflowTriggerRequest:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config, is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
         # add idempotency key in body if present
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key

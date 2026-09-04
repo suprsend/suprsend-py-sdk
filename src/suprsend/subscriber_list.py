@@ -1,6 +1,5 @@
-import requests
 import time
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 import uuid
 
 from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
@@ -8,9 +7,11 @@ from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema, urlencode_query, urlencode_path_param)
-from .signature import get_request_signature
 from .attachment import get_attachment_json
 from .logger import ss_logger
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class SubscriberListBroadcast:
@@ -72,10 +73,10 @@ class SubscriberListBroadcast:
 
 
 class SubscriberListsApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
-        self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_key)
+        self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_identifier())
         self.non_error_default_response = {"success": True}
 
     def _validate_list_id(self, list_id):
@@ -98,12 +99,7 @@ class SubscriberListsApi:
         #
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(self.subscriber_list_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -122,13 +118,8 @@ class SubscriberListsApi:
         params.update((options or {}))
         encoded_options = urlencode_query(params)
         url = "{}{}".format(self.subscriber_list_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # ---
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -144,13 +135,8 @@ class SubscriberListsApi:
         # --------
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(self.__subscriber_list_detail_url(list_id), (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # ---
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -165,14 +151,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}subscriber/add/".format(self.__subscriber_list_detail_url(list_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # ---
         payload = {"distinct_ids": distinct_ids}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -187,14 +168,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}subscriber/remove/".format(self.__subscriber_list_detail_url(list_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # ---
         payload = {"distinct_ids": distinct_ids}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -205,12 +181,7 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = self.__subscriber_list_detail_url(list_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('DELETE', url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -221,15 +192,7 @@ class SubscriberListsApi:
 
         broadcast_body, body_size = broadcast_instance.get_final_json()
         try:
-            headers = self.config.default_headers()
-            # Signature and Authorization-header
-            content_txt, sig = get_request_signature(self.broadcast_url, 'POST', broadcast_body,
-                                                     headers, self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            # -----
-            resp = requests.post(self.broadcast_url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.broadcast_url, broadcast_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {
@@ -261,14 +224,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # --
         payload = {}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -296,12 +254,7 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = self.__subscriber_list_url_with_version(list_id, version_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -317,14 +270,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}subscriber/add/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # --
         payload = {"distinct_ids": distinct_ids}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -340,14 +288,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}subscriber/remove/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # --
         payload = {"distinct_ids": distinct_ids}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -359,14 +302,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}finish_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # 
         payload = {}
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'PATCH', payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('PATCH', url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -378,13 +316,8 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = self.__subscriber_list_url_with_version(list_id, version_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # --
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'DELETE', "", headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('DELETE', url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}

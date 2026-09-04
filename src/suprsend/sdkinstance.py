@@ -4,15 +4,17 @@ from datetime import datetime, timezone
 
 from typing import List, Dict, Optional, Tuple, TypedDict
 from warnings import warn
-import logging
+
+import requests
 
 from .version import __version__
 from .constants import DEFAULT_URL, HEADER_DATE_FMT
 from .exception import SuprsendConfigError, InputValueError
+from .signature import get_request_signature
 from .attachment import get_attachment_json
 from .workflow import Workflow, _WorkflowTrigger
 from .workflow_api import WorkflowsApi
-from .logger import set_logging
+from .logger import log_http_exchange, set_logging
 from .workflows_bulk import BulkWorkflowsFactory
 from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory
@@ -89,25 +91,67 @@ class UserAgentBuilder(TypedDict):
 
 class Suprsend:
     """
-    - Basic instance
+    - Workspace key + secret (HMAC)
      supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
+    - HTTP API Key (Bearer)
+     supr_client = Suprsend.with_workspace_api_key("__workspace_uid__", "__api_key__")
     - Instance with debug on
      supr_client = Suprsend("__workspace_key__", "__workspace_secret__", debug=True)
     - Instance with custom base-url
      supr_client = Suprsend("__workspace_key__", "__workspace_secret__", base_url="https://example.com/", debug=False)
     """
-    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False, app_info: AppInfo = None, **kwargs):
+    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False,
+                 app_info: AppInfo = None, **kwargs):
+        self._init(
+            "ws_key_secret",
+            workspace_key=workspace_key,
+            workspace_secret=workspace_secret,
+            base_url=base_url,
+            debug=debug,
+            app_info=app_info,
+            **kwargs,
+        )
+
+    @classmethod
+    def with_workspace_api_key(cls, workspace_uid: str, api_key: str, base_url: str = None, debug: bool = False,
+                               app_info: AppInfo = None, **kwargs):
+        """
+        Authenticate with an HTTP API Key (Bearer token).
+
+        Workspace UID: SuprSend dashboard -> Settings -> General -> Workspace UID.
+        API Key: SuprSend dashboard -> Developers -> API Keys.
+        """
+        inst = cls.__new__(cls)
+        inst._init(
+            "api_key",
+            workspace_uid=workspace_uid,
+            api_key=api_key,
+            base_url=base_url,
+            debug=debug,
+            app_info=app_info,
+            **kwargs,
+        )
+        return inst
+
+    def _init(self, auth_method: str, *, workspace_key: str = None, workspace_secret: str = None,
+              workspace_uid: str = None, api_key: str = None, base_url: str = None, debug: bool = False,
+              app_info: AppInfo = None, **kwargs):
+        self.auth_method = auth_method
         self.workspace_key = workspace_key
         self.workspace_secret = workspace_secret
+        self.workspace_uid = workspace_uid
+        self.api_key = api_key
+        self.__do_init(base_url=base_url, debug=debug, app_info=app_info, **kwargs)
+
+    def __do_init(self, *, base_url: str, debug: bool, app_info: AppInfo, **kwargs):
         #
         self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(app_info)
         #
         self.base_url = self.__get_base_url(base_url)
         # ---
         self.__validate()
-        # --- set logging level for http request
-        self.req_log_level = logging.DEBUG if debug else logging.WARN
-        set_logging(level=self.req_log_level, http_debug= debug)
+        self.debug = bool(debug)
+        set_logging(self.debug)
         #
         self._workflow_trigger = _WorkflowTrigger(self)
         self._eventcollector = EventCollector(self)
@@ -143,13 +187,51 @@ class Suprsend:
     def user(self):
         return self._user
 
+    def workspace_identifier(self) -> str:
+        if self.auth_method == "ws_key_secret":
+            return self.workspace_key
+        elif self.auth_method == "api_key":
+            return self.workspace_uid
+        else:
+            return ""
+
     def default_headers(self) -> Dict:
         return {
             "Content-Type": "application/json; charset=utf-8",
             "User-Agent": self.user_agent,
             "X-Suprsend-Client-User-Agent": self.client_user_agent,
-            "Date": datetime.now(timezone.utc).strftime(HEADER_DATE_FMT),
         }
+
+    def prepare_request(self, method: str, url: str, body=None) -> Tuple[Dict, str]:
+        headers = self.default_headers()
+        if self.auth_method == "ws_key_secret":
+            headers["Date"] = datetime.now(timezone.utc).strftime(HEADER_DATE_FMT)
+            content_txt, sig = get_request_signature(url, method, body, headers, self.workspace_secret)
+            headers["Authorization"] = "{}:{}".format(self.workspace_key, sig)
+        elif self.auth_method == "api_key":
+            if method == "GET" or body == "" or body is None:
+                content_txt = ""
+            else:
+                content_txt = json.dumps(body, ensure_ascii=False)
+            headers["Authorization"] = "Bearer {}".format(self.api_key)
+        else:
+            raise SuprsendConfigError("Invalid auth_method")
+        return headers, content_txt
+
+    def request(self, method: str, url: str, body=None):
+        headers, content_txt = self.prepare_request(method, url, body)
+        method_u = method.upper()
+        kwargs = {"headers": headers}
+        if method_u not in ("GET", "HEAD"):
+            kwargs["data"] = content_txt.encode("utf-8")
+        # ---
+        try:
+            resp = requests.request(method_u, url, **kwargs)
+        except Exception as ex:
+            log_http_exchange(method_u, url, headers, content_txt, error=ex)
+            raise
+        log_http_exchange(method_u, url, headers, content_txt, resp=resp)
+        return resp
 
     @staticmethod
     def __get_base_url(base_url):
@@ -166,10 +248,18 @@ class Suprsend:
         return base_url
 
     def __validate(self):
-        if not self.workspace_key:
-            raise SuprsendConfigError("Missing workspace_key")
-        if not self.workspace_secret:
-            raise SuprsendConfigError("Missing workspace_secret")
+        if self.auth_method == "ws_key_secret":
+            if not self.workspace_key:
+                raise SuprsendConfigError("Missing workspace_key")
+            if not self.workspace_secret:
+                raise SuprsendConfigError("Missing workspace_secret")
+        elif self.auth_method == "api_key":
+            if not self.workspace_uid:
+                raise SuprsendConfigError("Missing workspace_uid")
+            if not self.api_key:
+                raise SuprsendConfigError("Missing api_key")
+        else:
+            raise SuprsendConfigError("Invalid auth_method")
         if not self.base_url:
             raise SuprsendConfigError("Missing base_url")
 

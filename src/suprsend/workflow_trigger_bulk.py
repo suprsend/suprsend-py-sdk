@@ -1,6 +1,5 @@
-import requests
 import copy
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
@@ -9,11 +8,13 @@ from .constants import (
     ALLOW_ATTACHMENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .signature import get_request_signature
 from .utils import invalid_record_json, safe_get
 from .bulk_response import BulkResponse
 from .workflow_request import WorkflowTriggerRequest
 from .logger import ss_logger
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class _BulkWorkflowTriggerChunk:
@@ -21,14 +22,15 @@ class _BulkWorkflowTriggerChunk:
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
     _max_records_in_chunk = MAX_WORKFLOWS_IN_BULK_API
 
-    def __init__(self, config):
-        self.config = config
-        self.__url = self.url = "{}trigger/".format(self.config.base_url)
-        self.__chunk = []
+    def __init__(self, config: "Suprsend"):
+        self.config: "Suprsend" = config
+        self.__url: str = "{}trigger/".format(self.config.base_url)
+        self.url: str = self.__url
+        self.__chunk: List[Dict] = []
         #
-        self.__running_size = 0
-        self.__running_length = 0
-        self.response = None
+        self.__running_size: int = 0
+        self.__running_length: int = 0
+        self.response: Optional[Dict] = None
 
     def __add_body_to_chunk(self, body, body_size):
         # First add size, then body to reduce effects of race condition
@@ -72,16 +74,8 @@ class _BulkWorkflowTriggerChunk:
         return True
 
     def trigger(self):
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(self.__url, 'POST', self.__chunk, headers,
-                                                 self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
         try:
-            resp = requests.post(self.__url,
-                                 data=content_txt.encode('utf-8'),
-                                 headers=headers)
+            resp = self.config.request('POST', self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -128,14 +122,14 @@ class _BulkWorkflowTriggerChunk:
 
 
 class BulkWorkflowTrigger:
-    def __init__(self, config):
-        self.config = config
-        self.__workflows = []
-        self.__pending_records = []
-        self.chunks = []
-        self.response = BulkResponse()
+    def __init__(self, config: "Suprsend"):
+        self.config: "Suprsend" = config
+        self.__workflows: List[WorkflowTriggerRequest] = []
+        self.__pending_records: List[Tuple[Dict, int]] = []
+        self.chunks: List[_BulkWorkflowTriggerChunk] = []
+        self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": workflow-json, "error": error_str, "code": 500}
-        self.__invalid_records = []
+        self.__invalid_records: List[Dict] = []
 
     def __validate_workflows(self):
         for wf in self.__workflows:

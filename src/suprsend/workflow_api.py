@@ -1,27 +1,22 @@
-import requests
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
-from .signature import get_request_signature
 from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class WorkflowsApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.metadata = {"User-Agent": self.config.user_agent}
 
     def trigger(self, workflow: WorkflowTriggerRequest) -> Dict:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
-            headers = self.config.default_headers()
             url = "{}trigger/".format(self.config.base_url)
-            # Signature and Authorization-header
-            content_txt, sig = get_request_signature(url, 'POST', workflow_body,
-                                                     headers, self.config.workspace_secret)
-            headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-            # -----
-            resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+            resp = self.config.request('POST', url, workflow_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {
