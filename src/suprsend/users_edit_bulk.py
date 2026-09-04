@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, Union, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
@@ -22,13 +22,13 @@ class _BulkUsersEditChunk:
     _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
     def __init__(self, config: "Suprsend"):
-        self.config = config
-        self.__chunk = []
-        self.__url = "{}event/".format(self.config.base_url)
+        self.config: "Suprsend" = config
+        self.__chunk: List[Dict] = []
+        self.__url: str = "{}event/".format(self.config.base_url)
         #
-        self.__running_size = 0
-        self.__running_length = 0
-        self.response = None
+        self.__running_size: int = 0
+        self.__running_length: int = 0
+        self.response: Optional[Dict] = None
 
     def __add_event_to_chunk(self, event, event_size):
         # First add size, then event to reduce effects of race condition
@@ -108,13 +108,13 @@ class _BulkUsersEditChunk:
 
 class BulkUsersEdit:
     def __init__(self, config: "Suprsend"):
-        self.config = config
-        self.__users = []
-        self.__pending_records = []
+        self.config: "Suprsend" = config
+        self.__users: List[UserEdit] = []
+        self.__pending_records: List[Tuple[Dict, int]] = []
         # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
-        self.__invalid_records = []
-        self.chunks = []
-        self.response = BulkResponse()
+        self.__invalid_records: List[Dict] = []
+        self.chunks: List[_BulkUsersEditChunk] = []
+        self.response: BulkResponse = BulkResponse()
 
     def __validate_users(self):
         for u in self.__users:

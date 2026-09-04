@@ -57,7 +57,7 @@ class Subscriber:
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
-            "env": self.config.workspace_identifier,
+            "env": self.config.workspace_identifier(),
             "distinct_id": self.distinct_id,
             "$user_operations": self.user_operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},

@@ -77,7 +77,7 @@ class _WorkflowTrigger:
         self.url = self.__get_url()
 
     def __get_url(self):
-        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier)
+        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier())
         return url_formatted
 
     def trigger(self, workflow: Workflow) -> Dict:

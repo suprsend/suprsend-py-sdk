@@ -141,9 +141,9 @@ class Suprsend:
         self.workspace_secret = workspace_secret
         self.workspace_uid = workspace_uid
         self.api_key = api_key
-        self.__do_init(base_url, debug, app_info, **kwargs)
+        self.__do_init(base_url=base_url, debug=debug, app_info=app_info, **kwargs)
 
-    def __do_init(self, base_url: str, debug: bool, app_info: AppInfo, **kwargs):
+    def __do_init(self, *, base_url: str, debug: bool, app_info: AppInfo, **kwargs):
         #
         self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(app_info)
         #
@@ -187,7 +187,6 @@ class Suprsend:
     def user(self):
         return self._user
 
-    @property
     def workspace_identifier(self) -> str:
         if self.auth_method == "ws_key_secret":
             return self.workspace_key
@@ -225,6 +224,7 @@ class Suprsend:
         kwargs = {"headers": headers}
         if method_u not in ("GET", "HEAD"):
             kwargs["data"] = content_txt.encode("utf-8")
+        # ---
         try:
             resp = requests.request(method_u, url, **kwargs)
         except Exception as ex:

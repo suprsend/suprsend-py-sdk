@@ -73,7 +73,7 @@ def log_http_exchange(method: str, url: str, req_headers=None, req_body=None, re
             "HTTP ------------------",
             "METHOD:\t%s" % method,
             "URL:\t%s" % url,
-            "HEADER\t%s" % sanitized_headers(req_headers),
+            "HEADER:\t%s" % sanitized_headers(req_headers),
             "BODY:\t%s" % ("" if req_body is None else req_body),
         ]
         if error is not None:
@@ -85,7 +85,7 @@ def log_http_exchange(method: str, url: str, req_headers=None, req_body=None, re
                 resp_body = "<unavailable>"
             lines.extend([
                 "STATUS:\t%s" % getattr(resp, "status_code", ""),
-                "RESP_HEADER\t%s" % sanitized_headers(getattr(resp, "headers", None)),
+                # "RESP_HEADER:\t%s" % sanitized_headers(getattr(resp, "headers", None)),
                 "RESP_BODY:\t%s" % resp_body,
             ])
         lines.append("------------------")

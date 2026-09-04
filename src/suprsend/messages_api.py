@@ -59,8 +59,7 @@ class MessagesApi:
     #     message_id = self._validate_message_id(message_id)
     #     message_id_encoded = urlencode_path_param(message_id)
     #     url = "{}/{}/content".format(self.__list_url, message_id_encoded)
-    #     headers, content_txt = self.config.prepare_request("GET", url, None)
-    #     resp = requests.get(url, headers=headers)
+    #     resp = self.config.request("GET", url, None)
     #     if resp.status_code >= 400:
     #         raise SuprsendAPIException(resp)
     #     return resp.json()

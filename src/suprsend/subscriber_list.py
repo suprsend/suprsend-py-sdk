@@ -76,7 +76,7 @@ class SubscriberListsApi:
     def __init__(self, config: "Suprsend"):
         self.config = config
         self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
-        self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_identifier)
+        self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_identifier())
         self.non_error_default_response = {"success": True}
 
     def _validate_list_id(self, list_id):

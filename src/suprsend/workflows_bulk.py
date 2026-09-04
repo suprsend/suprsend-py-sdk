@@ -1,5 +1,5 @@
 import copy
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 
 from .constants import (
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class BulkWorkflowsFactory:
 
     def __init__(self, config: "Suprsend"):
-        self.config = config
+        self.config: "Suprsend" = config
 
     def new_instance(self):
         """
@@ -51,16 +51,16 @@ class _BulkWorkflowsChunk:
     _max_records_in_chunk = MAX_WORKFLOWS_IN_BULK_API
 
     def __init__(self, config: "Suprsend"):
-        self.config = config
-        self.__chunk = []
-        self.__url = self.__get_url()
+        self.config: "Suprsend" = config
+        self.__chunk: List[Dict] = []
+        self.__url: str = self.__get_url()
         #
-        self.__running_size = 0
-        self.__running_length = 0
-        self.response = None
+        self.__running_size: int = 0
+        self.__running_length: int = 0
+        self.response: Optional[Dict] = None
 
     def __get_url(self):
-        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier)
+        url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier())
         return url_formatted
 
     def __add_body_to_chunk(self, body, body_size):
@@ -144,13 +144,13 @@ class _BulkWorkflowsChunk:
 
 class BulkWorkflows:
     def __init__(self, config: "Suprsend"):
-        self.config = config
-        self.__workflows = []
-        self.__pending_records = []
-        self.chunks = []
-        self.response = BulkResponse()
+        self.config: "Suprsend" = config
+        self.__workflows: List[Workflow] = []
+        self.__pending_records: List[Tuple[Dict, int]] = []
+        self.chunks: List[_BulkWorkflowsChunk] = []
+        self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": workflow-json, "error": error_str, "code": 500}
-        self.__invalid_records = []
+        self.__invalid_records: List[Dict] = []
 
     def __validate_workflows(self):
         for wf in self.__workflows:

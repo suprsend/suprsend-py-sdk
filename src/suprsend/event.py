@@ -88,7 +88,7 @@ class Event:
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
             "event": self.event_name,
-            "env": config.workspace_identifier,
+            "env": config.workspace_identifier(),
             "distinct_id": self.distinct_id,
             "properties": {**self.properties, **super_props}
         }
