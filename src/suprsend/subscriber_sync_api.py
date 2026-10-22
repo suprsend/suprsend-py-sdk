@@ -60,23 +60,6 @@ class SubscriberSyncApi:
             payload["list_description"] = list_description
         return self._post(url, payload)
 
-    def list_lists(
-        self,
-        limit: int = 20,
-        offset: int = 0,
-        list_id: str = "",
-        is_enabled: str = "",
-    ) -> Dict:
-        # NOTE: the subscriber_list endpoint does not filter by list_type, so results include
-        # static and dynamic lists. Filter on each item's "list_type" if needed.
-        url = "{}v1/subscriber_list/".format(self.config.base_url)
-        params: Dict = {"limit": limit, "offset": offset}
-        if list_id:
-            params["list_id"] = list_id
-        if is_enabled:
-            params["is_enabled"] = is_enabled
-        return self._get(url, params=params)
-
     def get_list_subscribers(self, list_id: str, limit: int = 20) -> Dict:
         encoded_id = urlencode_path_param(list_id)
         url = "{}v1/subscriber_list/{}/subscriber/".format(self.config.base_url, encoded_id)
