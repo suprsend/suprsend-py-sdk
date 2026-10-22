@@ -1,13 +1,14 @@
-import requests
-from typing import List, Dict
-import urllib.parse
+from typing import List, Dict, TYPE_CHECKING
 
 from .exception import SuprsendAPIException
-from .signature import get_request_signature
+from .utils import urlencode_query, urlencode_path_param
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class BrandsApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.list_url = self.__list_url()
 
@@ -27,35 +28,25 @@ class BrandsApi:
     def list(self, limit: int = 20, offset: int = 0):
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
-        encoded_params = urllib.parse.urlencode(params)
+        encoded_params = urlencode_query(params)
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
 
     def detail_url(self, brand_id: str):
         brand_id = str(brand_id).strip()
-        brand_id_encoded = urllib.parse.quote_plus(brand_id)
+        brand_id_encoded = urlencode_path_param(brand_id)
         url = f"{self.list_url}{brand_id_encoded}/"
         return url
 
     def get(self, brand_id: str):
         url = self.detail_url(brand_id)
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'GET', None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request('GET', url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -64,12 +55,7 @@ class BrandsApi:
         url = self.detail_url(brand_id)
         # ---
         brand_payload = brand_payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, 'POST', brand_payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request('POST', url, brand_payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()

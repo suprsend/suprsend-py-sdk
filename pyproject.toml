@@ -1,6 +1,10 @@
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=64",
+    "setuptools-scm>=8",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_file = "src/suprsend/_version.py"

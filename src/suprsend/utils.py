@@ -219,3 +219,10 @@ def urlencode_query(params: Dict, doseq: bool = False) -> str:
         else:
             normalized[key] = val
     return urllib.parse.urlencode(normalized, doseq=doseq)
+
+
+def urlencode_path_param(param: str) -> str:
+    """
+    URL-encode path param
+    """
+    return urllib.parse.quote(param, safe="")

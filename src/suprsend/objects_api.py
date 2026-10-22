@@ -1,16 +1,15 @@
-from typing import Dict, Union
-
-import requests
-import urllib.parse
+from typing import Dict, Union, TYPE_CHECKING
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .signature import get_request_signature
 from .object_edit import ObjectEdit
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class ObjectsApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
         self.list_url = "{}v1/object/".format(self.config.base_url)
         self.bulk_url = "{}v1/bulk/object/".format(self.config.base_url)
@@ -27,39 +26,29 @@ class ObjectsApi:
 
     def list(self, object_type: str, options: Dict = None) -> Dict:
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         encoded_options = urlencode_query(options or {})
         #
         url = "{}{}/{}".format(self.list_url, object_type_encoded, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
         # ---
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
 
     def detail_url(self, object_type: str, object_id: str) -> str:
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         # --
         object_id = self._validate_object_id(object_id)
-        object_id_encoded = urllib.parse.quote_plus(object_id)
+        object_id_encoded = urlencode_path_param(object_id)
         # --
         url = f"{self.list_url}{object_type_encoded}/{object_id_encoded}/"
         return url
 
     def get(self, object_type: str, object_id: str) -> Dict:
         url = self.detail_url(object_type, object_id)
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -67,12 +56,7 @@ class ObjectsApi:
     def upsert(self, object_type: str, object_id: str, payload: Dict = None) -> Dict:
         url = self.detail_url(object_type, object_id)
         payload = payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -88,24 +72,14 @@ class ObjectsApi:
             payload = edit_payload or {}
             url = self.detail_url(object_type, object_id)
         # ---
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.patch(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
 
     def delete(self, object_type: str, object_id: str) -> Dict:
         url = self.detail_url(object_type, object_id)
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "DELETE", "", headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -118,15 +92,10 @@ class ObjectsApi:
         :return:
         """
         object_type = self._validate_object_type(object_type)
-        object_type_encoded = urllib.parse.quote_plus(object_type)
+        object_type_encoded = urlencode_path_param(object_type)
         url = "{}{}/".format(self.bulk_url, object_type_encoded)
         payload = payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "DELETE", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("DELETE", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -135,12 +104,7 @@ class ObjectsApi:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -159,12 +123,7 @@ class ObjectsApi:
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/".format(_detail_url)
         payload = payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.post(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -182,12 +141,7 @@ class ObjectsApi:
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscription/".format(_detail_url)
         payload = payload or {}
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "DELETE", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.delete(url, data=content_txt.encode('utf-8'), headers=headers)
+        resp = self.config.request("DELETE", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -196,12 +150,7 @@ class ObjectsApi:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}subscribed_to/object/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -219,12 +168,7 @@ class ObjectsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         # ----
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -245,11 +189,7 @@ class ObjectsApi:
         url = "{}preference/channel_preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         # ----
         payload = payload or {}
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # ----
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -260,17 +200,12 @@ class ObjectsApi:
         """
         if not category or not isinstance(category, (str,)) or not category.strip():
             raise SuprsendValidationError("missing category")
-        category_encoded = urllib.parse.quote_plus(category.strip())
+        category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----
-        headers = self.config.default_headers()
-        # Signature and Authorization-header
-        content_txt, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # -----
-        resp = requests.get(url, headers=headers)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -280,20 +215,16 @@ class ObjectsApi:
     ) -> Dict:
         """
         PATCH /v1/object/{object_type}/{object_id}/preference/category/{category}/
-        payload: {"preference": "", "opt_out_channels": []}
+        payload: {"preference": "", "opt_out_channels": [], "digest_schedule": null, "properties": null/[]}
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
         _detail_url = self.detail_url(object_type, object_id)
-        category_encoded = urllib.parse.quote_plus(category)
+        category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
         url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
         # ----
         payload = payload or {}
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        # ----
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import time
 import uuid
 
@@ -11,11 +11,15 @@ from .utils import (get_apparent_identity_event_size, )
 from .user_edit_internal_helper import _UserEditInternalHelper
 from .logger import ss_logger
 
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
+
 
 class UserEdit:
-    def __init__(self, config, distinct_id: str):
+    def __init__(self, config: "Suprsend", distinct_id: str, tenant_id: str = None):
         self.config = config
         self.distinct_id = distinct_id
+        self.tenant_id = tenant_id
         #
         self.__errors = []
         self.__info = []
@@ -37,22 +41,28 @@ class UserEdit:
         return {"operations": self.operations}
 
     def get_async_payload(self):
-        return {
+        ev = {
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
             "$time": int(time.time() * 1000),
-            "env": self.config.workspace_key,
+            "env": self.config.workspace_identifier(),
             "distinct_id": self.distinct_id,
             "$user_operations": self.operations,
             "properties": {"$ss_sdk_version": self.config.user_agent},
         }
+        if self.tenant_id:
+            ev["tenant_id"] = self.tenant_id
+        return ev
 
     def as_json_async(self):
-        return {
+        ev = {
             "distinct_id": self.distinct_id,
             "$user_operations": self.operations,
             "warnings": self.__warnings_list,
         }
+        if self.tenant_id:
+            ev["tenant_id"] = self.tenant_id
+        return ev
 
     def validate_payload_size(self, payload: Dict):
         apparent_size = get_apparent_identity_event_size(payload)
@@ -333,26 +343,28 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Androidpush
-    def add_androidpush(self, value: str, provider: str = None):
+    def add_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id: Android package name
         :return:
         """
         caller = "add_androidpush"
-        self._helper._add_androidpush(value, provider, caller=caller)
+        self._helper._add_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_androidpush(self, value: str, provider: str = None):
+    def remove_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
         """
 
         :param value:
         :param provider:
+        :param bundle_id: Android package name
         :return:
         """
         caller = "remove_androidpush"
-        self._helper._remove_androidpush(value, provider, caller=caller)
+        self._helper._remove_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
     # ------------------------ Iospush [providers: apns]

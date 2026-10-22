@@ -14,7 +14,7 @@ IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_K
                   IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK, IDENT_KEY_MS_TEAMS]
 
 KEY_ID_PROVIDER = "$id_provider"
-IOS_BUNDLE_ID = "$bundle_id"
+KEY_BUNDLE_ID = "$bundle_id"
 KEY_PREFERRED_LANGUAGE = "$preferred_language"
 KEY_LOCALE = "$locale"
 KEY_TIMEZONE = "$timezone"
@@ -150,10 +150,10 @@ class _ObjectEditInternalHelper:
             self._add_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._add_androidpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
+            self._add_androidpush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(KEY_BUNDLE_ID), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._add_iospush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(IOS_BUNDLE_ID), caller=new_caller)
+            self._add_iospush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(KEY_BUNDLE_ID), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
             self._add_webpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
@@ -176,10 +176,10 @@ class _ObjectEditInternalHelper:
             self._remove_whatsapp(val, caller=new_caller)
 
         elif key == IDENT_KEY_ANDROIDPUSH:
-            self._remove_androidpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
+            self._remove_androidpush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(KEY_BUNDLE_ID), caller=new_caller)
 
         elif key == IDENT_KEY_IOSPUSH:
-            self._remove_iospush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(IOS_BUNDLE_ID), caller=new_caller)
+            self._remove_iospush(val, kwargs.get(KEY_ID_PROVIDER), kwargs.get(KEY_BUNDLE_ID), caller=new_caller)
 
         elif key == IDENT_KEY_WEBPUSH:
             self._remove_webpush(val, kwargs.get(KEY_ID_PROVIDER), caller=new_caller)
@@ -213,13 +213,17 @@ class _ObjectEditInternalHelper:
 
     # ------------------------ Androidpush
 
-    def _add_androidpush(self, value: str, provider: str, caller: str):
+    def _add_androidpush(self, value: str, provider: str, bundle_id: str, caller: str):
         self.__dict_append[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
+        if bundle_id:
+            self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
-    def _remove_androidpush(self, value: str, provider: str, caller: str):
+    def _remove_androidpush(self, value: str, provider: str, bundle_id: str, caller: str):
         self.__dict_remove[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
+        if bundle_id:
+            self.__dict_remove[KEY_BUNDLE_ID] = bundle_id
 
     # ------------------------ Iospush
 
@@ -227,13 +231,13 @@ class _ObjectEditInternalHelper:
         self.__dict_append[IDENT_KEY_IOSPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
         if bundle_id:
-            self.__dict_append[IOS_BUNDLE_ID] = bundle_id
+            self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
     def _remove_iospush(self, value: str, provider: str, bundle_id: str, caller: str):
         self.__dict_remove[IDENT_KEY_IOSPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
         if bundle_id:
-            self.__dict_remove[IOS_BUNDLE_ID] = bundle_id
+            self.__dict_remove[KEY_BUNDLE_ID] = bundle_id
 
     # ------------------------ Webpush
 
