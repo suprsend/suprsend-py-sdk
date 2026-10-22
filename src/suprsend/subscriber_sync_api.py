@@ -1,53 +1,45 @@
-import requests
 import urllib.parse
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 
+from .constants import DEFAULT_API_TIMEOUT_SECONDS
 from .exception import SuprsendAPIException
-from .signature import get_request_signature
+from .utils import urlencode_query
+
+if TYPE_CHECKING:
+    from .sdkinstance import Suprsend
 
 
 class SubscriberSyncApi:
-    def __init__(self, config):
+    def __init__(self, config: "Suprsend"):
         self.config = config
+        # seconds; dry runs execute caller-supplied SQL, so never wait forever
+        self.timeout = DEFAULT_API_TIMEOUT_SECONDS
+
+    def _request(self, method: str, url: str, body=None) -> Dict:
+        resp = self.config.request(method, url, body, timeout=self.timeout)
+        if resp.status_code >= 400:
+            raise SuprsendAPIException(resp)
+        return resp.json()
 
     def _get(self, url: str, params: Dict = None) -> Dict:
-        if params:
-            encoded = urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
-            if encoded:
-                url = f"{url}?{encoded}"
-        headers = self.config.default_headers()
-        _, sig = get_request_signature(url, "GET", None, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.get(url, headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
+        encoded = urlencode_query(params)
+        if encoded:
+            url = f"{url}?{encoded}"
+        return self._request("GET", url)
 
     def _post(self, url: str, payload: Dict) -> Dict:
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "POST", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.post(url, data=content_txt.encode("utf-8"), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
+        return self._request("POST", url, payload)
 
     def _patch(self, url: str, payload: Dict) -> Dict:
-        headers = self.config.default_headers()
-        content_txt, sig = get_request_signature(url, "PATCH", payload, headers, self.config.workspace_secret)
-        headers["Authorization"] = "{}:{}".format(self.config.workspace_key, sig)
-        resp = requests.patch(url, data=content_txt.encode("utf-8"), headers=headers)
-        if resp.status_code >= 400:
-            raise SuprsendAPIException(resp)
-        return resp.json()
+        return self._request("PATCH", url, payload)
 
-    # ── Schema ────────────────────────────────────────────────────────────────
+    # -- Schema
 
     def get_schema(self) -> Dict:
         url = "{}v1/subscriber_sync_task_schema/".format(self.config.base_url)
         return self._get(url)
 
-    # ── Subscriber list ───────────────────────────────────────────────────────
+    # -- Subscriber list
 
     def create_list(
         self,
@@ -71,17 +63,13 @@ class SubscriberSyncApi:
 
     def list_lists(
         self,
-        list_type: str = "dynamic_list",
         limit: int = 20,
         offset: int = 0,
         list_id: str = "",
         is_enabled: str = "",
     ) -> Dict:
-        # NOTE: the BasicAuth subscriber_list endpoint does not support a
-        # list_type filter (that param exists only on the JWT
-        # client_subscriber_list path). list_type is kept in the signature for
-        # backward compatibility but is not sent to the server, so results may
-        # include non-dynamic lists.
+        # NOTE: the subscriber_list endpoint does not filter by list_type, so results include
+        # static and dynamic lists. Filter on each item's "list_type" if needed.
         url = "{}v1/subscriber_list/".format(self.config.base_url)
         params: Dict = {"limit": limit, "offset": offset}
         if list_id:
@@ -95,7 +83,7 @@ class SubscriberSyncApi:
         url = "{}v1/subscriber_list/{}/subscriber/".format(self.config.base_url, encoded_id)
         return self._get(url, params={"limit": limit})
 
-    # ── Sync task lifecycle ───────────────────────────────────────────────────
+    # -- Sync task lifecycle
 
     def create_sync_task(self, name: str, list_id: str) -> Dict:
         url = "{}v1/subscriber_sync_task/".format(self.config.base_url)
@@ -111,7 +99,7 @@ class SubscriberSyncApi:
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._patch(url, {"is_enabled": is_enabled})
 
-    # ── Task version ─────────────────────────────────────────────────────────
+    # -- Task version
 
     def get_task_draft(self, sync_task_id: str) -> Dict:
         encoded_id = urllib.parse.quote_plus(sync_task_id)
@@ -154,7 +142,7 @@ class SubscriberSyncApi:
             payload["column_mappings"] = column_mappings or []
         return self._patch(url, payload)
 
-    # ── Dry run ───────────────────────────────────────────────────────────────
+    # -- Dry run
 
     def dry_run(self, query_text: str) -> Dict:
         url = "{}v1/subscriber_list/~/dry_run/".format(self.config.base_url)
@@ -164,7 +152,7 @@ class SubscriberSyncApi:
         url = "{}v1/subscriber_list/~/dry_run/count/".format(self.config.base_url)
         return self._post(url, {"query_text": query_text})
 
-    # ── Execution ─────────────────────────────────────────────────────────────
+    # -- Execution
 
     def run_now(self, sync_task_id: str) -> Dict:
         encoded_id = urllib.parse.quote_plus(sync_task_id)

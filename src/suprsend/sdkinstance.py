@@ -221,12 +221,14 @@ class Suprsend:
             raise SuprsendConfigError("Invalid auth_method")
         return headers, content_txt
 
-    def request(self, method: str, url: str, body=None):
+    def request(self, method: str, url: str, body=None, timeout: float = None):
         headers, content_txt = self.prepare_request(method, url, body)
         method_u = method.upper()
         kwargs = {"headers": headers}
         if method_u not in ("GET", "HEAD"):
             kwargs["data"] = content_txt.encode("utf-8")
+        if timeout is not None:
+            kwargs["timeout"] = timeout
         # ---
         try:
             resp = requests.request(method_u, url, **kwargs)
