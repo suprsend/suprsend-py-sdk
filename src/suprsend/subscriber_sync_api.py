@@ -1,9 +1,8 @@
-import urllib.parse
 from typing import Dict, List, TYPE_CHECKING
 
 from .constants import DEFAULT_API_TIMEOUT_SECONDS
 from .exception import SuprsendAPIException
-from .utils import urlencode_query
+from .utils import urlencode_query, urlencode_path_param
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -79,7 +78,7 @@ class SubscriberSyncApi:
         return self._get(url, params=params)
 
     def get_list_subscribers(self, list_id: str, limit: int = 20) -> Dict:
-        encoded_id = urllib.parse.quote_plus(list_id)
+        encoded_id = urlencode_path_param(list_id)
         url = "{}v1/subscriber_list/{}/subscriber/".format(self.config.base_url, encoded_id)
         return self._get(url, params={"limit": limit})
 
@@ -90,24 +89,24 @@ class SubscriberSyncApi:
         return self._post(url, {"name": name, "list_id": list_id})
 
     def get_task(self, sync_task_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
     def toggle_task(self, sync_task_id: str, is_enabled: bool) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/".format(self.config.base_url, encoded_id)
         return self._patch(url, {"is_enabled": is_enabled})
 
     # -- Task version
 
     def get_task_draft(self, sync_task_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
     def get_task_active_version(self, sync_task_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/active/".format(self.config.base_url, encoded_id)
         return self._get(url)
 
@@ -118,7 +117,7 @@ class SubscriberSyncApi:
         update_type: str = "replace",
         column_mappings: List = None,
     ) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         return self._patch(url, {
             "query_text": query_text,
@@ -133,7 +132,7 @@ class SubscriberSyncApi:
         update_type: str = "replace",
         column_mappings: List = None,
     ) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/version/_/".format(self.config.base_url, encoded_id)
         payload = {"status": "active"}
         if query_text:
@@ -155,7 +154,7 @@ class SubscriberSyncApi:
     # -- Execution
 
     def run_now(self, sync_task_id: str) -> Dict:
-        encoded_id = urllib.parse.quote_plus(sync_task_id)
+        encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/schedule_now/".format(self.config.base_url, encoded_id)
         return self._post(url, {})
 
