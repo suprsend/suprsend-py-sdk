@@ -28,5 +28,5 @@ MAX_IDENTITY_EVENTS_IN_BULK_API = 400
 # In TZ Format: "%a, %d %b %Y %H:%M:%S %Z"
 HEADER_DATE_FMT = "%a, %d %b %Y %H:%M:%S GMT"
 
-# request timeout (seconds) for subscriber-sync and event-management APIs
+# request timeout (seconds) for subscriber-sync APIs
 DEFAULT_API_TIMEOUT_SECONDS = 60

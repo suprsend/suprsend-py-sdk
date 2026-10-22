@@ -140,7 +140,3 @@ class SubscriberSyncApi:
         encoded_id = urlencode_path_param(sync_task_id)
         url = "{}v1/subscriber_sync_task/{}/schedule_now/".format(self.config.base_url, encoded_id)
         return self._post(url, {})
-
-    def get_task_executions(self, list_id: str, limit: int = 10) -> Dict:
-        url = "{}v1/task_request/".format(self.config.base_url)
-        return self._get(url, params={"list_id": list_id, "limit": limit})
