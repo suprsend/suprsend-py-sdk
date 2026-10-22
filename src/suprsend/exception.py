@@ -18,18 +18,30 @@ class SuprsendError(Exception):
 class SuprsendAPIException(SuprsendError):
     response = None
     message = "unknown error"
+    # max chars of a raw (non-JSON) response body kept in the message
+    MAX_RAW_TEXT_LEN = 1000
 
     def __init__(self, response):
         # -- Get error message
-        content_type = response.headers.get("Content-Type")
-        if content_type and "application/json" in content_type:
+        err_msg = None
+        content_type = response.headers.get("Content-Type") or ""
+        if "application/json" in content_type:
             try:
                 rjson = response.json()
-                err_msg = rjson.get("message") or rjson.get("detail")
-            except:
-                err_msg = response.text
-        else:
-            err_msg = response.text
+            except Exception:
+                rjson = None
+            if isinstance(rjson, dict):
+                err = rjson.get("error")
+                if isinstance(err, dict):
+                    err = err.get("message")
+                err_msg = rjson.get("message") or rjson.get("detail") or err
+        # -- HTML bodies (e.g. gateway error pages) carry no useful message
+        if not err_msg and "text/html" not in content_type:
+            err_msg = (response.text or "").strip()
+            if len(err_msg) > self.MAX_RAW_TEXT_LEN:
+                err_msg = err_msg[:self.MAX_RAW_TEXT_LEN] + "..."
+        if not err_msg:
+            err_msg = getattr(response, "reason", None) or "unknown error"
         message = f"{err_msg}"
         # --
         super().__init__(message=message, status_code=response.status_code)

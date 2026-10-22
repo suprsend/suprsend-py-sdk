@@ -20,6 +20,7 @@ from .events_bulk import BulkEventsFactory
 from .subscribers_bulk import BulkSubscribersFactory
 from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
+from .subscriber_sync_api import SubscriberSyncApi
 from .event import Event, EventCollector
 from .tenant import TenantsApi
 from .brand import BrandsApi
@@ -170,6 +171,7 @@ class Suprsend:
         self.messages = MessagesApi(self)
         # --
         self.subscriber_lists = SubscriberListsApi(self)
+        self.subscriber_sync = SubscriberSyncApi(self)
 
     @property
     def bulk_workflows(self):
@@ -218,12 +220,14 @@ class Suprsend:
             raise SuprsendConfigError("Invalid auth_method")
         return headers, content_txt
 
-    def request(self, method: str, url: str, body=None):
+    def request(self, method: str, url: str, body=None, timeout: float = None):
         headers, content_txt = self.prepare_request(method, url, body)
         method_u = method.upper()
         kwargs = {"headers": headers}
         if method_u not in ("GET", "HEAD"):
             kwargs["data"] = content_txt.encode("utf-8")
+        if timeout is not None:
+            kwargs["timeout"] = timeout
         # ---
         try:
             resp = requests.request(method_u, url, **kwargs)
