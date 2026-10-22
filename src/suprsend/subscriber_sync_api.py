@@ -40,26 +40,6 @@ class SubscriberSyncApi:
 
     # -- Subscriber list
 
-    def create_list(
-        self,
-        list_id: str,
-        list_name: str,
-        list_description: str = "",
-        track_user_entry: bool = False,
-        track_user_exit: bool = False,
-    ) -> Dict:
-        url = "{}v1/subscriber_list/".format(self.config.base_url)
-        payload: Dict = {
-            "list_id": list_id,
-            "list_name": list_name,
-            "list_type": "dynamic_list",
-            "track_user_entry": track_user_entry,
-            "track_user_exit": track_user_exit,
-        }
-        if list_description:
-            payload["list_description"] = list_description
-        return self._post(url, payload)
-
     def get_list_subscribers(self, list_id: str, limit: int = 20) -> Dict:
         encoded_id = urlencode_path_param(list_id)
         url = "{}v1/subscriber_list/{}/subscriber/".format(self.config.base_url, encoded_id)
