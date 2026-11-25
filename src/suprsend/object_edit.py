@@ -1,7 +1,7 @@
-from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
 
-from .object_edit_internal_helper import _ObjectEditInternalHelper
 from .logger import ss_logger
+from .object_edit_internal_helper import _ObjectEditInternalHelper
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend

@@ -1,8 +1,9 @@
-import os
 import json
-import jsonschema
-from .exception import SuprsendMissingSchema, SuprsendInvalidSchema
+import os
 
+import jsonschema
+
+from .exception import SuprsendInvalidSchema, SuprsendMissingSchema
 
 # Cached json schema
 __JSON_SCHEMAS = dict()

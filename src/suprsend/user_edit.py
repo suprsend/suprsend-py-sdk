@@ -1,15 +1,17 @@
-from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import time
 import uuid
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .utils import (get_apparent_identity_event_size, )
-from .user_edit_internal_helper import _UserEditInternalHelper
 from .logger import ss_logger
+from .user_edit_internal_helper import _UserEditInternalHelper
+from .utils import (
+    get_apparent_identity_event_size,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -67,8 +69,10 @@ class UserEdit:
     def validate_payload_size(self, payload: Dict):
         apparent_size = get_apparent_identity_event_size(payload)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"User Payload size too big - {apparent_size} Bytes, "
-                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"User Payload size too big - {apparent_size} Bytes, "
+                f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return payload, apparent_size
 

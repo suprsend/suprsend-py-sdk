@@ -1,31 +1,30 @@
 import json
 import platform
 from datetime import datetime, timezone
-
-from typing import List, Dict, Optional, Tuple, TypedDict
+from typing import Dict, Optional, Tuple, TypedDict
 from warnings import warn
 
 import requests
 
-from .version import __version__
-from .constants import DEFAULT_URL, HEADER_DATE_FMT
-from .exception import SuprsendConfigError, InputValueError
-from .signature import get_request_signature
 from .attachment import get_attachment_json
-from .workflow import Workflow, _WorkflowTrigger
-from .workflow_api import WorkflowsApi
-from .logger import log_http_exchange, set_logging
-from .workflows_bulk import BulkWorkflowsFactory
+from .brand import BrandsApi
+from .constants import DEFAULT_URL, HEADER_DATE_FMT
+from .event import Event, EventCollector
 from .events_bulk import BulkEventsFactory
-from .subscribers_bulk import BulkSubscribersFactory
+from .exception import InputValueError, SuprsendConfigError
+from .logger import log_http_exchange, set_logging
+from .messages_api import MessagesApi
+from .objects_api import ObjectsApi
+from .signature import get_request_signature
 from .subscriber import SubscriberFactory
 from .subscriber_list import SubscriberListsApi
-from .event import Event, EventCollector
+from .subscribers_bulk import BulkSubscribersFactory
 from .tenant import TenantsApi
-from .brand import BrandsApi
-from .objects_api import ObjectsApi
 from .users_api import UsersApi
-from .messages_api import MessagesApi
+from .version import __version__
+from .workflow import Workflow, _WorkflowTrigger
+from .workflow_api import WorkflowsApi
+from .workflows_bulk import BulkWorkflowsFactory
 
 
 class AppInfo(TypedDict):
@@ -100,8 +99,16 @@ class Suprsend:
     - Instance with custom base-url
      supr_client = Suprsend("__workspace_key__", "__workspace_secret__", base_url="https://example.com/", debug=False)
     """
-    def __init__(self, workspace_key: str, workspace_secret: str, base_url: str = None, debug: bool = False,
-                 app_info: AppInfo = None, **kwargs):
+
+    def __init__(
+        self,
+        workspace_key: str,
+        workspace_secret: str,
+        base_url: str = None,
+        debug: bool = False,
+        app_info: AppInfo = None,
+        **kwargs,
+    ):
         self._init(
             "ws_key_secret",
             workspace_key=workspace_key,
@@ -113,8 +120,15 @@ class Suprsend:
         )
 
     @classmethod
-    def with_workspace_api_key(cls, workspace_uid: str, api_key: str, base_url: str = None, debug: bool = False,
-                               app_info: AppInfo = None, **kwargs):
+    def with_workspace_api_key(
+        cls,
+        workspace_uid: str,
+        api_key: str,
+        base_url: str = None,
+        debug: bool = False,
+        app_info: AppInfo = None,
+        **kwargs,
+    ):
         """
         Authenticate with an HTTP API Key (Bearer token).
 
@@ -133,9 +147,19 @@ class Suprsend:
         )
         return inst
 
-    def _init(self, auth_method: str, *, workspace_key: str = None, workspace_secret: str = None,
-              workspace_uid: str = None, api_key: str = None, base_url: str = None, debug: bool = False,
-              app_info: AppInfo = None, **kwargs):
+    def _init(
+        self,
+        auth_method: str,
+        *,
+        workspace_key: str = None,
+        workspace_secret: str = None,
+        workspace_uid: str = None,
+        api_key: str = None,
+        base_url: str = None,
+        debug: bool = False,
+        app_info: AppInfo = None,
+        **kwargs,
+    ):
         self.auth_method = auth_method
         self.workspace_key = workspace_key
         self.workspace_secret = workspace_secret
@@ -264,8 +288,11 @@ class Suprsend:
             raise SuprsendConfigError("Missing base_url")
 
     def add_attachment(self, body: Dict, file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
-        warn('This method is deprecated. Use "WorkflowTriggerRequest.add_attachment()" instead',
-             DeprecationWarning, stacklevel=2)
+        warn(
+            'This method is deprecated. Use "WorkflowTriggerRequest.add_attachment()" instead',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # if data key not present, add it and set value={}.
         if body.get("data") is None:
             body["data"] = {}
@@ -301,8 +328,15 @@ class Suprsend:
         # -----
         return self._workflow_trigger.trigger(wf_ins)
 
-    def track(self, distinct_id: str, event_name: str, properties: Dict = None,
-              idempotency_key: str = None, tenant_id: str = None, brand_id: str = None) -> Dict:
+    def track(
+        self,
+        distinct_id: str,
+        event_name: str,
+        properties: Dict = None,
+        idempotency_key: str = None,
+        tenant_id: str = None,
+        brand_id: str = None,
+    ) -> Dict:
         """
         :param distinct_id:
         :param event_name:

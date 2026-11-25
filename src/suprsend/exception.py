@@ -2,14 +2,15 @@ class SuprsendError(Exception):
     """
     A base class for all Suprsend exceptions.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.message = kwargs.get('message')
+        self.message = kwargs.get("message")
         if self.message is None and self.args and self.args[0]:
             self.message = self.args[0]
         elif self.message is None:
             self.message = None
-        self.status_code = kwargs.get('status_code', 500)
+        self.status_code = kwargs.get("status_code", 500)
 
     def __str__(self):
         return f"[code: {self.status_code}] {self.message}"

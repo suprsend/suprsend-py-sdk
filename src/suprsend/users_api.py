@@ -1,9 +1,9 @@
-from typing import Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Union
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .user_edit import UserEdit
 from .users_edit_bulk import BulkUsersEdit
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -68,7 +68,13 @@ class UsersApi:
         # if no error, return success response
         return {"success": True, "status": "success", "status_code": resp.status_code, "message": resp.text}
 
-    def edit(self, edit_ins_or_distinct_id: Union[UserEdit, str], edit_payload: Dict = None, tenant_id: str = None, options: Dict = None) -> Dict:
+    def edit(
+        self,
+        edit_ins_or_distinct_id: Union[UserEdit, str],
+        edit_payload: Dict = None,
+        tenant_id: str = None,
+        options: Dict = None,
+    ) -> Dict:
         if isinstance(edit_ins_or_distinct_id, UserEdit):
             edit_ins = edit_ins_or_distinct_id
             edit_ins.validate_body()
@@ -127,7 +133,9 @@ class UsersApi:
 
     def list_associated_tenants(self, distinct_id: str, options: Dict = None) -> Dict:
         encoded_options = urlencode_query(options or {})
-        url = "{}associated_tenant/{}".format(self.detail_url(distinct_id), (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}associated_tenant/{}".format(
+            self.detail_url(distinct_id), (f"?{encoded_options}" if encoded_options else "")
+        )
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
@@ -171,7 +179,7 @@ class UsersApi:
         return {"success": True, "status_code": resp.status_code}
 
     # ---------------------
-    
+
     def get_objects_subscribed_to(self, distinct_id: str, options: Dict = None) -> Dict:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
@@ -225,7 +233,9 @@ class UsersApi:
         """
         _detail_url = self.detail_url(distinct_id)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/channel_preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/channel_preference/{}".format(
+            _detail_url, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
@@ -242,16 +252,16 @@ class UsersApi:
         category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, options: Dict = None
-    ) -> Dict:
+    def update_category_preference(self, distinct_id: str, category: str, payload: Dict, options: Dict = None) -> Dict:
         """
         PATCH /v1/user/{distinct_id}/preference/category/{category}/
         payload: {"preference": "", "opt_out_channels": [], "digest_schedule": null, "properties": null/[]}
@@ -260,7 +270,9 @@ class UsersApi:
         _detail_url = self.detail_url(distinct_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)

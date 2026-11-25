@@ -6,12 +6,14 @@ ss_logger = logging.getLogger(LIBRARY_LOGGER_NAME)
 
 _REDACTED = "[REDACTED]"
 _BEARER_PREFIX = "Bearer "
-_SENSITIVE_HEADERS = frozenset({
-    "authorization",
-    "proxy-authorization",
-    "cookie",
-    "set-cookie",
-})
+_SENSITIVE_HEADERS = frozenset(
+    {
+        "authorization",
+        "proxy-authorization",
+        "cookie",
+        "set-cookie",
+    }
+)
 
 
 def redact_header_value(name: str, value: str) -> str:
@@ -19,8 +21,8 @@ def redact_header_value(name: str, value: str) -> str:
     if not isinstance(value, str):
         value = str(value)
     if key in ("authorization", "proxy-authorization"):
-        if len(value) >= len(_BEARER_PREFIX) and value[:len(_BEARER_PREFIX)].lower() == _BEARER_PREFIX.lower():
-            return value[:len(_BEARER_PREFIX)] + _REDACTED
+        if len(value) >= len(_BEARER_PREFIX) and value[: len(_BEARER_PREFIX)].lower() == _BEARER_PREFIX.lower():
+            return value[: len(_BEARER_PREFIX)] + _REDACTED
         return _REDACTED
     if key in _SENSITIVE_HEADERS:
         return _REDACTED
@@ -83,11 +85,13 @@ def log_http_exchange(method: str, url: str, req_headers=None, req_body=None, re
                 resp_body = resp.text
             except Exception:
                 resp_body = "<unavailable>"
-            lines.extend([
-                "STATUS:\t%s" % getattr(resp, "status_code", ""),
-                # "RESP_HEADER:\t%s" % sanitized_headers(getattr(resp, "headers", None)),
-                "RESP_BODY:\t%s" % resp_body,
-            ])
+            lines.extend(
+                [
+                    "STATUS:\t%s" % getattr(resp, "status_code", ""),
+                    # "RESP_HEADER:\t%s" % sanitized_headers(getattr(resp, "headers", None)),
+                    "RESP_BODY:\t%s" % resp_body,
+                ]
+            )
         lines.append("------------------")
         dump = "\n".join(lines)
     except Exception:

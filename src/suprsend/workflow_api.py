@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
@@ -16,7 +16,7 @@ class WorkflowsApi:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
             url = "{}trigger/".format(self.config.base_url)
-            resp = self.config.request('POST', url, workflow_body)
+            resp = self.config.request("POST", url, workflow_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {

@@ -10,8 +10,16 @@ IDENT_KEY_WEBPUSH = "$webpush"
 IDENT_KEY_SLACK = "$slack"
 IDENT_KEY_MS_TEAMS = "$ms_teams"
 
-IDENT_KEYS_ALL = [IDENT_KEY_EMAIL, IDENT_KEY_SMS, IDENT_KEY_ANDROIDPUSH, IDENT_KEY_IOSPUSH,
-                  IDENT_KEY_WHATSAPP, IDENT_KEY_WEBPUSH, IDENT_KEY_SLACK, IDENT_KEY_MS_TEAMS]
+IDENT_KEYS_ALL = [
+    IDENT_KEY_EMAIL,
+    IDENT_KEY_SMS,
+    IDENT_KEY_ANDROIDPUSH,
+    IDENT_KEY_IOSPUSH,
+    IDENT_KEY_WHATSAPP,
+    IDENT_KEY_WEBPUSH,
+    IDENT_KEY_SLACK,
+    IDENT_KEY_MS_TEAMS,
+]
 
 KEY_ID_PROVIDER = "$id_provider"
 KEY_BUNDLE_ID = "$bundle_id"
@@ -24,6 +32,7 @@ class _SubscriberInternalHelper:
     """
     Internal helper class
     """
+
     def __init__(self):
         self.__dict_set = {}
         self.__dict_set_once = {}

@@ -1,14 +1,18 @@
 import time
-from typing import List, Dict, TYPE_CHECKING
 import uuid
-from .logger import ss_logger
+from typing import TYPE_CHECKING, Dict
 
+from .attachment import get_attachment_json
 from .constants import (
-    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .attachment import get_attachment_json
-from .utils import (validate_track_event_schema, get_apparent_event_size, )
+from .logger import ss_logger
+from .utils import (
+    get_apparent_event_size,
+    validate_track_event_schema,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -16,14 +20,25 @@ if TYPE_CHECKING:
 
 RESERVED_EVENT_NAMES = [
     "$identify",
-    "$notification_delivered", "$notification_dismiss", "$notification_clicked",
-    "$app_launched", "$user_login", "$user_logout",
+    "$notification_delivered",
+    "$notification_dismiss",
+    "$notification_clicked",
+    "$app_launched",
+    "$user_login",
+    "$user_logout",
 ]
 
 
 class Event:
-    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None,
-                 idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+    def __init__(
+        self,
+        distinct_id: str,
+        event_name: str,
+        properties: Dict = None,
+        idempotency_key: str = None,
+        tenant_id: str = None,
+        brand_id: str = None,
+    ):
         self.distinct_id = distinct_id
         self.event_name = event_name
         self.properties = properties
@@ -64,8 +79,10 @@ class Event:
     def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
         # if properties is not a dict, not raising error while adding attachment.
         if not isinstance(self.properties, (dict,)):
-            ss_logger.warning("attachment cannot be added. please make sure properties is a dictionary. "
-                                "Event: %s", str(self.as_json()))
+            ss_logger.warning(
+                "attachment cannot be added. please make sure properties is a dictionary. Event: %s",
+                str(self.as_json()),
+            )
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
@@ -90,7 +107,7 @@ class Event:
             "event": self.event_name,
             "env": config.workspace_identifier(),
             "distinct_id": self.distinct_id,
-            "properties": {**self.properties, **super_props}
+            "properties": {**self.properties, **super_props},
         }
         if self.idempotency_key:
             event_dict["$idempotency_key"] = self.idempotency_key
@@ -103,8 +120,9 @@ class Event:
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"Event size too big - {apparent_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"Event size too big - {apparent_size} Bytes, must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return event_dict, apparent_size
 
@@ -139,7 +157,7 @@ class EventCollector:
 
     def send(self, event: Dict) -> Dict:
         try:
-            resp = self.config.request('POST', self.__url, event)
+            resp = self.config.request("POST", self.__url, event)
         except Exception as ex:
             error_str = ex.__str__()
             return {

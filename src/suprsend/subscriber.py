@@ -1,15 +1,17 @@
 import time
-from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import uuid
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .utils import (get_apparent_identity_event_size, )
-from .subscriber_helper import _SubscriberInternalHelper
 from .logger import ss_logger
+from .subscriber_helper import _SubscriberInternalHelper
+from .utils import (
+    get_apparent_identity_event_size,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -75,8 +77,10 @@ class Subscriber:
     def validate_event_size(self, event_dict: Dict):
         apparent_size = get_apparent_identity_event_size(event_dict)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"User Event size too big - {apparent_size} Bytes, "
-                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"User Event size too big - {apparent_size} Bytes, "
+                f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return event_dict, apparent_size
 
@@ -107,7 +111,7 @@ class Subscriber:
             event = self.get_event()
             # --- validate event size
             ev, size = self.validate_event_size(event)
-            resp = self.config.request('POST', self.__url, event)
+            resp = self.config.request("POST", self.__url, event)
         except Exception as ex:
             error_str = ex.__str__()
             return {

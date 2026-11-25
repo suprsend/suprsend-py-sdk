@@ -1,7 +1,7 @@
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend

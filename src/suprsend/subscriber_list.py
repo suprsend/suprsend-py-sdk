@@ -1,14 +1,20 @@
 import time
-from typing import List, Dict, TYPE_CHECKING
 import uuid
+from typing import TYPE_CHECKING, Dict
 
-from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
-from .constants import (
-    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
-)
-from .utils import (get_apparent_list_broadcast_body_size, validate_list_broadcast_body_schema, urlencode_query, urlencode_path_param)
 from .attachment import get_attachment_json
+from .constants import (
+    BODY_MAX_APPARENT_SIZE_IN_BYTES,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+)
+from .exception import InputValueError, SuprsendAPIException, SuprsendValidationError
 from .logger import ss_logger
+from .utils import (
+    get_apparent_list_broadcast_body_size,
+    urlencode_path_param,
+    urlencode_query,
+    validate_list_broadcast_body_schema,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -28,8 +34,11 @@ class SubscriberListBroadcast:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            ss_logger.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
-                                "SubscriberListBroadcast: %s", str(self.as_json()))
+            ss_logger.warning(
+                "attachment cannot be added. please make sure body['data'] is a dictionary. "
+                "SubscriberListBroadcast: %s",
+                str(self.as_json()),
+            )
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
@@ -55,8 +64,10 @@ class SubscriberListBroadcast:
         # ---- Check body size
         apparent_size = get_apparent_list_broadcast_body_size(self.body)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"SubscriberListBroadcast body too big - {apparent_size} Bytes, "
+                f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return self.body, apparent_size
 
@@ -99,7 +110,7 @@ class SubscriberListsApi:
         #
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(self.subscriber_list_url, (f"?{encoded_options}" if encoded_options else ""))
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -119,7 +130,7 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(params)
         url = "{}{}".format(self.subscriber_list_url, (f"?{encoded_options}" if encoded_options else ""))
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -134,16 +145,18 @@ class SubscriberListsApi:
         list_id = self._validate_list_id(list_id)
         # --------
         encoded_options = urlencode_query(options or {})
-        url = "{}{}".format(self.__subscriber_list_detail_url(list_id), (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}{}".format(
+            self.__subscriber_list_detail_url(list_id), (f"?{encoded_options}" if encoded_options else "")
+        )
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
 
     def add(self, list_id: str, distinct_ids: list, options: Dict = None):
         list_id = self._validate_list_id(list_id)
-        if not isinstance(distinct_ids, (list, )):
+        if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
         if len(distinct_ids) == 0:
             return self.non_error_default_response
@@ -153,7 +166,7 @@ class SubscriberListsApi:
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # ---
         payload = {"distinct_ids": distinct_ids}
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -170,7 +183,7 @@ class SubscriberListsApi:
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # ---
         payload = {"distinct_ids": distinct_ids}
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -181,7 +194,7 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = self.__subscriber_list_detail_url(list_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        resp = self.config.request('DELETE', url, "")
+        resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -192,7 +205,7 @@ class SubscriberListsApi:
 
         broadcast_body, body_size = broadcast_instance.get_final_json()
         try:
-            resp = self.config.request('POST', self.broadcast_url, broadcast_body)
+            resp = self.config.request("POST", self.broadcast_url, broadcast_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {
@@ -226,7 +239,7 @@ class SubscriberListsApi:
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # --
         payload = {}
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -254,7 +267,7 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = self.__subscriber_list_url_with_version(list_id, version_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -272,7 +285,7 @@ class SubscriberListsApi:
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # --
         payload = {"distinct_ids": distinct_ids}
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -290,7 +303,7 @@ class SubscriberListsApi:
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # --
         payload = {"distinct_ids": distinct_ids}
-        resp = self.config.request('POST', url, payload)
+        resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -302,9 +315,9 @@ class SubscriberListsApi:
         encoded_options = urlencode_query(options or {})
         url = "{}finish_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
-        # 
+        #
         payload = {}
-        resp = self.config.request('PATCH', url, payload)
+        resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -317,7 +330,7 @@ class SubscriberListsApi:
         url = self.__subscriber_list_url_with_version(list_id, version_id)
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # --
-        resp = self.config.request('DELETE', url, "")
+        resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}

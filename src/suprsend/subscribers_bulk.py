@@ -1,24 +1,23 @@
 import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
+from .bulk_response import BulkResponse
 from .constants import (
+    BODY_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
-    BODY_MAX_APPARENT_SIZE_IN_BYTES,
     MAX_IDENTITY_EVENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .utils import invalid_record_json
-from .bulk_response import BulkResponse
-from .subscriber import Subscriber
 from .logger import ss_logger
+from .subscriber import Subscriber
+from .utils import invalid_record_json
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class BulkSubscribersFactory:
-
     def __init__(self, config: "Suprsend"):
         self.config: "Suprsend" = config
 
@@ -79,8 +78,10 @@ class _BulkSubscribersChunk:
         self.__running_length += 1
 
     def __check_limit_reached(self):
-        if self.__running_length >= self._max_records_in_chunk or \
-                self.__running_size >= self._chunk_apparent_size_in_bytes:
+        if (
+            self.__running_length >= self._max_records_in_chunk
+            or self.__running_size >= self._chunk_apparent_size_in_bytes
+        ):
             return True
         else:
             return False
@@ -100,8 +101,10 @@ class _BulkSubscribersChunk:
             return False
         # ---
         if event_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"Event too big - {event_size} Bytes, "
-                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"Event too big - {event_size} Bytes, "
+                f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -112,7 +115,7 @@ class _BulkSubscribersChunk:
 
     def trigger(self):
         try:
-            resp = self.config.request('POST', self.__url, self.__chunk)
+            resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -121,7 +124,7 @@ class _BulkSubscribersChunk:
                 "total": len(self.__chunk),
                 "success": 0,
                 "failure": len(self.__chunk),
-                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk]
+                "failed_records": [{"record": c, "error": error_str, "code": 500} for c in self.__chunk],
             }
         else:
             # TODO: handle 500/503 errors
@@ -133,7 +136,7 @@ class _BulkSubscribersChunk:
                     "total": len(self.__chunk),
                     "success": len(self.__chunk),
                     "failure": 0,
-                    "failed_records": []
+                    "failed_records": [],
                 }
             else:
                 error_str = resp.text
@@ -143,8 +146,9 @@ class _BulkSubscribersChunk:
                     "total": len(self.__chunk),
                     "success": 0,
                     "failure": len(self.__chunk),
-                    "failed_records": [{"record": c, "error": error_str, "code": resp.status_code}
-                                       for c in self.__chunk]
+                    "failed_records": [
+                        {"record": c, "error": error_str, "code": resp.status_code} for c in self.__chunk
+                    ],
                 }
 
 

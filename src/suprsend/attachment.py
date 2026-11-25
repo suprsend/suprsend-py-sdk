@@ -1,11 +1,13 @@
-import os
 import base64
 import mimetypes
+import os
 from typing import Dict
+
 from .logger import ss_logger
 
 try:
     import magic
+
     _has_magic = True
 except ImportError:
     _has_magic = False
@@ -49,8 +51,7 @@ def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error
             return attach_data
     except OSError as ex:
         if ignore_if_error:
-            ss_logger.warning("Ignoring error while processing attachment file. "
-                                "%s: %s", type(ex).__name__, ex)
+            ss_logger.warning("Ignoring error while processing attachment file. %s: %s", type(ex).__name__, ex)
             return None
         else:
             raise ex

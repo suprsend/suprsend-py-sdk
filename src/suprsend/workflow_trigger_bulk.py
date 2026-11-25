@@ -1,17 +1,17 @@
 import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
+from .bulk_response import BulkResponse
 from .constants import (
+    ALLOW_ATTACHMENTS_IN_BULK_API,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_WORKFLOWS_IN_BULK_API,
-    ALLOW_ATTACHMENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .utils import invalid_record_json, safe_get
-from .bulk_response import BulkResponse
-from .workflow_request import WorkflowTriggerRequest
 from .logger import ss_logger
+from .utils import invalid_record_json, safe_get
+from .workflow_request import WorkflowTriggerRequest
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -39,8 +39,10 @@ class _BulkWorkflowTriggerChunk:
         self.__running_length += 1
 
     def __check_limit_reached(self):
-        if self.__running_length >= self._max_records_in_chunk or \
-                self.__running_size >= self._chunk_apparent_size_in_bytes:
+        if (
+            self.__running_length >= self._max_records_in_chunk
+            or self.__running_size >= self._chunk_apparent_size_in_bytes
+        ):
             return True
         else:
             return False
@@ -60,8 +62,9 @@ class _BulkWorkflowTriggerChunk:
             return False
         # ---
         if body_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"workflow body too big - {body_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"workflow body too big - {body_size} Bytes, must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # if apparent_size of body crosses limit
         if self.__running_size + body_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -75,7 +78,7 @@ class _BulkWorkflowTriggerChunk:
 
     def trigger(self):
         try:
-            resp = self.config.request('POST', self.__url, self.__chunk)
+            resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -103,9 +106,15 @@ class _BulkWorkflowTriggerChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
-                        for idx, record in enumerate(parsed_resp["records"]) if record["status"] == "error"],
-                    "raw_response": resp_json
+                        {
+                            "record": safe_get(self.__chunk, idx),
+                            "error": record["error"]["message"],
+                            "code": record["status_code"],
+                        }
+                        for idx, record in enumerate(parsed_resp["records"])
+                        if record["status"] == "error"
+                    ],
+                    "raw_response": resp_json,
                 }
             else:
                 self.response = {
@@ -115,9 +124,14 @@ class _BulkWorkflowTriggerChunk:
                     "success": 0,
                     "failure": len(self.__chunk),
                     "failed_records": [
-                        {"record": c, "error": (resp_json.get("error", {}).get("message") if resp_json else resp.text), "code": resp.status_code}
-                        for c in self.__chunk],
-                    "raw_response": resp_json
+                        {
+                            "record": c,
+                            "error": (resp_json.get("error", {}).get("message") if resp_json else resp.text),
+                            "code": resp.status_code,
+                        }
+                        for c in self.__chunk
+                    ],
+                    "raw_response": resp_json,
                 }
 
 

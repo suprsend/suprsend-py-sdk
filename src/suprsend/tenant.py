@@ -1,7 +1,7 @@
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -32,7 +32,7 @@ class TenantsApi:
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -54,7 +54,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -64,7 +64,7 @@ class TenantsApi:
         url = self.detail_url(tenant_id)
         # ---
         tenant_payload = tenant_payload or {}
-        resp = self.config.request('POST', url, tenant_payload)
+        resp = self.config.request("POST", url, tenant_payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -73,7 +73,7 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        resp = self.config.request('DELETE', url, "")
+        resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
@@ -85,9 +85,11 @@ class TenantsApi:
         """
         tenant_id = self._validate_tenant_id(tenant_id)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}".format(self.detail_url(tenant_id), (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}".format(
+            self.detail_url(tenant_id), (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -100,7 +102,9 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
@@ -125,7 +129,9 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)

@@ -11,8 +11,10 @@ class BulkResponse:
         self.warnings: List[str] = []
 
     def __str__(self):
-        return f"BulkResponse<status: {self.status} | total: {self.total} | success: {self.success} | " \
-               f"failure: {self.failure} | warnings: {len(self.warnings)}>"
+        return (
+            f"BulkResponse<status: {self.status} | total: {self.total} | success: {self.success} | "
+            f"failure: {self.failure} | warnings: {len(self.warnings)}>"
+        )
 
     def merge_chunk_response(self, ch_resp):
         if not ch_resp:

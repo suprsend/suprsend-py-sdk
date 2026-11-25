@@ -1,7 +1,7 @@
-from typing import List, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from .exception import SuprsendAPIException
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -32,7 +32,7 @@ class BrandsApi:
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -46,7 +46,7 @@ class BrandsApi:
     def get(self, brand_id: str):
         url = self.detail_url(brand_id)
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()
@@ -55,7 +55,7 @@ class BrandsApi:
         url = self.detail_url(brand_id)
         # ---
         brand_payload = brand_payload or {}
-        resp = self.config.request('POST', url, brand_payload)
+        resp = self.config.request("POST", url, brand_payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return resp.json()

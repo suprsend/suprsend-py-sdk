@@ -1,24 +1,23 @@
 import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
-from .logger import ss_logger
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
+from .bulk_response import BulkResponse
 from .constants import (
+    ALLOW_ATTACHMENTS_IN_BULK_API,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_EVENTS_IN_BULK_API,
-    ALLOW_ATTACHMENTS_IN_BULK_API,
 )
-from .exception import InputValueError
-from .utils import invalid_record_json, safe_get
-from .bulk_response import BulkResponse
 from .event import Event
+from .exception import InputValueError
+from .logger import ss_logger
+from .utils import invalid_record_json, safe_get
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class BulkEventsFactory:
-
     def __init__(self, config: "Suprsend"):
         self.config: "Suprsend" = config
 
@@ -70,8 +69,10 @@ class _BulkEventsChunk:
         self.__running_length += 1
 
     def __check_limit_reached(self):
-        if self.__running_length >= self._max_records_in_chunk or \
-                self.__running_size >= self._chunk_apparent_size_in_bytes:
+        if (
+            self.__running_length >= self._max_records_in_chunk
+            or self.__running_size >= self._chunk_apparent_size_in_bytes
+        ):
             return True
         else:
             return False
@@ -91,8 +92,10 @@ class _BulkEventsChunk:
             return False
         # ---
         if event_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"Event properties too big - {event_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"Event properties too big - {event_size} Bytes, "
+                f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -106,7 +109,7 @@ class _BulkEventsChunk:
 
     def trigger(self):
         try:
-            resp = self.config.request('POST', self.__url, self.__chunk)
+            resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -131,9 +134,15 @@ class _BulkEventsChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
-                        for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
-                    "raw_response": resp_json
+                        {
+                            "record": safe_get(self.__chunk, idx),
+                            "error": record["error"]["message"],
+                            "code": record["status_code"],
+                        }
+                        for idx, record in enumerate(resp_json["records"])
+                        if record["status"] == "error"
+                    ],
+                    "raw_response": resp_json,
                 }
             else:
                 self.response = {
@@ -142,9 +151,11 @@ class _BulkEventsChunk:
                     "total": len(self.__chunk),
                     "success": 0,
                     "failure": len(self.__chunk),
-                    "failed_records": [{"record": c, "error": resp_json["error"]["message"], "code": resp.status_code}
-                                       for c in self.__chunk],
-                    "raw_response": resp_json
+                    "failed_records": [
+                        {"record": c, "error": resp_json["error"]["message"], "code": resp.status_code}
+                        for c in self.__chunk
+                    ],
+                    "raw_response": resp_json,
                 }
 
 

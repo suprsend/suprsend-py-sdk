@@ -1,8 +1,8 @@
-from typing import Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Union
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .object_edit import ObjectEdit
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -61,7 +61,9 @@ class ObjectsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def edit(self, edit_ins_or_object_type: Union[ObjectEdit, str], object_id: str = None, edit_payload: Dict = None) -> Dict:
+    def edit(
+        self, edit_ins_or_object_type: Union[ObjectEdit, str], object_id: str = None, edit_payload: Dict = None
+    ) -> Dict:
         if isinstance(edit_ins_or_object_type, ObjectEdit):
             edit_ins = edit_ins_or_object_type
             edit_ins.validate_body()
@@ -173,7 +175,9 @@ class ObjectsApi:
             raise SuprsendAPIException(resp)
         return resp.json()
 
-    def update_global_channels_preference(self, object_type: str, object_id: str, payload: Dict, options: Dict = None) -> Dict:
+    def update_global_channels_preference(
+        self, object_type: str, object_id: str, payload: Dict, options: Dict = None
+    ) -> Dict:
         """
         PATCH /v1/object/{object_type}/{object_id}/preference/channel_preference/
         payload: {
@@ -186,7 +190,9 @@ class ObjectsApi:
         """
         _detail_url = self.detail_url(object_type, object_id)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/channel_preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/channel_preference/{}".format(
+            _detail_url, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
@@ -203,7 +209,9 @@ class ObjectsApi:
         category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(object_type, object_id)
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
@@ -221,7 +229,9 @@ class ObjectsApi:
         _detail_url = self.detail_url(object_type, object_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
