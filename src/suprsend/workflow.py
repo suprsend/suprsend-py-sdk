@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from .attachment import get_attachment_json
 from .constants import (
@@ -14,7 +14,13 @@ if TYPE_CHECKING:
 
 
 class Workflow:
-    def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+    def __init__(
+        self,
+        body: Dict[str, Any],
+        idempotency_key: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        brand_id: Optional[str] = None,
+    ) -> None:
         # warn(f'{self.__class__.__name__} will be deprecated.', DeprecationWarning, stacklevel=2)
         if not isinstance(body, (dict,)):
             raise InputValueError("workflow body must be a json/dictionary")
@@ -23,7 +29,7 @@ class Workflow:
         self.tenant_id = tenant_id
         self.brand_id = brand_id
 
-    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+    def add_attachment(self, file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False) -> None:
         if self.body.get("data") is None:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
@@ -43,7 +49,7 @@ class Workflow:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> Tuple[Dict[str, Any], int]:
         # add idempotency key in body if present
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key
@@ -63,7 +69,7 @@ class Workflow:
         # ----
         return self.body, apparent_size
 
-    def as_json(self):
+    def as_json(self) -> Dict[str, Any]:
         body_dict = {**self.body}
         if self.idempotency_key:
             body_dict["$idempotency_key"] = self.idempotency_key
@@ -76,19 +82,19 @@ class Workflow:
 
 
 class _WorkflowTrigger:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.url = self.__get_url()
 
-    def __get_url(self):
+    def __get_url(self) -> str:
         url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier())
         return url_formatted
 
-    def trigger(self, workflow: Workflow) -> Dict:
+    def trigger(self, workflow: Workflow) -> Dict[str, Any]:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(workflow_body)
 
-    def send(self, workflow_body: Dict) -> Dict:
+    def send(self, workflow_body: Dict[str, Any]) -> Dict[str, Any]:
         try:
             resp = self.config.request("POST", self.url, workflow_body)
         except Exception as ex:

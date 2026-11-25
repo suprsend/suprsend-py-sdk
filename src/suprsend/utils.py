@@ -2,7 +2,7 @@ import copy
 import json
 import traceback
 import urllib.parse
-from typing import Dict
+from typing import Any, Dict, Sequence
 
 import jsonschema
 
@@ -16,7 +16,7 @@ from .exception import InputValueError, SuprsendValidationError
 from .request_schema import _get_schema_validator
 
 
-def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
+def get_apparent_workflow_body_size(body: Dict[str, Any], is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES
     apparent_body = body
@@ -61,7 +61,7 @@ def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
     return apparent_body_size
 
 
-def get_apparent_event_size(event: Dict, is_part_of_bulk: bool) -> int:
+def get_apparent_event_size(event: Dict[str, Any], is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = 0
     apparent_body = event
@@ -106,17 +106,17 @@ def get_apparent_event_size(event: Dict, is_part_of_bulk: bool) -> int:
     return apparent_size
 
 
-def get_apparent_identity_event_size(event: Dict) -> int:
+def get_apparent_identity_event_size(event: Dict[str, Any]) -> int:
     body_size = len(json.dumps(event, ensure_ascii=False).encode("utf-8"))
     return body_size
 
 
-def get_apparent_list_broadcast_body_size(body: Dict) -> int:
+def get_apparent_list_broadcast_body_size(body: Dict[str, Any]) -> int:
     body_size = len(json.dumps(body, ensure_ascii=False).encode("utf-8"))
     return body_size
 
 
-def validate_workflow_body_schema(body: Dict) -> Dict:
+def validate_workflow_body_schema(body: Dict[str, Any]) -> Dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
@@ -131,7 +131,7 @@ def validate_workflow_body_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_workflow_trigger_body_schema(body: Dict) -> Dict:
+def validate_workflow_trigger_body_schema(body: Dict[str, Any]) -> Dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
@@ -146,7 +146,7 @@ def validate_workflow_trigger_body_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_track_event_schema(body: Dict) -> Dict:
+def validate_track_event_schema(body: Dict[str, Any]) -> Dict[str, Any]:
     # --- In case props is not provided, set it to empty dict
     if body.get("properties") is None:
         body["properties"] = {}
@@ -159,7 +159,7 @@ def validate_track_event_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_list_broadcast_body_schema(body: Dict) -> Dict:
+def validate_list_broadcast_body_schema(body: Dict[str, Any]) -> Dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
@@ -174,7 +174,7 @@ def validate_list_broadcast_body_schema(body: Dict) -> Dict:
     return body
 
 
-def invalid_record_json(failed_record, err):
+def invalid_record_json(failed_record: Any, err: BaseException) -> Dict[str, Any]:
     if isinstance(err, (InputValueError,)):
         err_str = str(err)
     else:
@@ -186,7 +186,7 @@ def invalid_record_json(failed_record, err):
     return rec
 
 
-def safe_get(lst, index, default=None):
+def safe_get(lst: Sequence[Any], index: int, default: Any = None) -> Any:
     """
     method to safely get element from list
     """
@@ -196,7 +196,7 @@ def safe_get(lst, index, default=None):
         return default
 
 
-def urlencode_query(params: Dict, doseq: bool = False) -> str:
+def urlencode_query(params: Dict[str, Any], doseq: bool = False) -> str:
     """
     URL-encode query params with JSON-standard bool serialization.
     Python's urllib.parse.urlencode renders bools via str() as "True"/"False";
@@ -204,7 +204,7 @@ def urlencode_query(params: Dict, doseq: bool = False) -> str:
     """
     if not params:
         return ""
-    normalized = {}
+    normalized: Dict[str, Any] = {}
     for key, val in params.items():
         if val is None:
             continue

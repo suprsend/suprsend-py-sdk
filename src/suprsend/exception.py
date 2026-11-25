@@ -1,9 +1,15 @@
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from requests import Response
+
+
 class SuprsendError(Exception):
     """
     A base class for all Suprsend exceptions.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args)
         self.message = kwargs.get("message")
         if self.message is None and self.args and self.args[0]:
@@ -12,15 +18,15 @@ class SuprsendError(Exception):
             self.message = None
         self.status_code = kwargs.get("status_code", 500)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[code: {self.status_code}] {self.message}"
 
 
 class SuprsendAPIException(SuprsendError):
-    response = None
+    response: Optional["Response"] = None
     message = "unknown error"
 
-    def __init__(self, response):
+    def __init__(self, response: "Response") -> None:
         # -- Get error message
         content_type = response.headers.get("Content-Type")
         if content_type and "application/json" in content_type:
@@ -42,12 +48,12 @@ class InputValueError(ValueError):
 
 
 class SuprsendConfigError(SuprsendError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
 
 class SuprsendMissingSchema(SuprsendError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.status_code = 500
         self.error_type = "SuprsendMissingSchema"
@@ -56,7 +62,7 @@ class SuprsendMissingSchema(SuprsendError):
 
 
 class SuprsendInvalidSchema(SuprsendError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.status_code = 500
         self.error_type = "SuprsendInvalidSchema"
@@ -65,7 +71,7 @@ class SuprsendInvalidSchema(SuprsendError):
 
 
 class SuprsendValidationError(SuprsendError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.status_code = 400
         self.error_type = "SuprsendValidationError"

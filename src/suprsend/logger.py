@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any, Dict, Optional
 
 LIBRARY_LOGGER_NAME = "suprsend"
 ss_logger = logging.getLogger(LIBRARY_LOGGER_NAME)
@@ -29,14 +30,14 @@ def redact_header_value(name: str, value: str) -> str:
     return value
 
 
-def sanitized_headers(headers):
+def sanitized_headers(headers: Optional[Dict[str, Any]]) -> Dict[str, str]:
     if not headers:
         return {}
     return {k: redact_header_value(k, v) for k, v in headers.items()}
 
 
-def _has_usable_handler(logger) -> bool:
-    current = logger
+def _has_usable_handler(logger: logging.Logger) -> bool:
+    current: Optional[logging.Logger] = logger
     while current:
         for handler in current.handlers:
             if not isinstance(handler, logging.NullHandler):
@@ -47,7 +48,7 @@ def _has_usable_handler(logger) -> bool:
     return False
 
 
-def set_logging(debug: bool):
+def set_logging(debug: bool) -> None:
     """When debug=True, set the library logger to DEBUG so HTTP dumps emit."""
     if not debug:
         return
@@ -60,14 +61,21 @@ def set_logging(debug: bool):
     ss_logger.addHandler(handler)
 
 
-def _emit_http_dump(dump: str):
+def _emit_http_dump(dump: str) -> None:
     try:
         ss_logger.debug("%s", dump)
     except Exception:
         pass
 
 
-def log_http_exchange(method: str, url: str, req_headers=None, req_body=None, resp=None, error=None):
+def log_http_exchange(
+    method: str,
+    url: str,
+    req_headers: Optional[Dict[str, Any]] = None,
+    req_body: Optional[Any] = None,
+    resp: Optional[Any] = None,
+    error: Optional[BaseException] = None,
+) -> None:
     if not ss_logger.isEnabledFor(logging.DEBUG):
         return
     try:

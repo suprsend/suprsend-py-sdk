@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from .attachment import get_attachment_json
 from .constants import (
@@ -14,7 +14,13 @@ if TYPE_CHECKING:
 
 
 class WorkflowTriggerRequest:
-    def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, cancellation_key: str = None):
+    def __init__(
+        self,
+        body: Dict[str, Any],
+        idempotency_key: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        cancellation_key: Optional[str] = None,
+    ) -> None:
         if not isinstance(body, (dict,)):
             raise InputValueError("WorkflowTriggerRequest body must be a json/dictionary")
         self.body = body
@@ -22,7 +28,7 @@ class WorkflowTriggerRequest:
         self.tenant_id = tenant_id
         self.cancellation_key = cancellation_key
 
-    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+    def add_attachment(self, file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False) -> None:
         if self.body.get("data") is None:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
@@ -42,7 +48,7 @@ class WorkflowTriggerRequest:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> Tuple[Dict[str, Any], int]:
         # add idempotency key in body if present
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key
@@ -62,7 +68,7 @@ class WorkflowTriggerRequest:
         # ----
         return self.body, apparent_size
 
-    def as_json(self):
+    def as_json(self) -> Dict[str, Any]:
         body_dict = {**self.body}
         if self.idempotency_key:
             body_dict["$idempotency_key"] = self.idempotency_key

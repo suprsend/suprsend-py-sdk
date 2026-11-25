@@ -1,7 +1,7 @@
 import json
 import platform
 from datetime import datetime, timezone
-from typing import Dict, Optional, Tuple, TypedDict
+from typing import Any, Dict, Optional, Tuple, TypedDict, Union, cast
 from warnings import warn
 
 import requests
@@ -32,7 +32,7 @@ class AppInfo(TypedDict):
     version: Optional[str]
 
 
-def _format_app_info(info: AppInfo):
+def _format_app_info(info: Optional[AppInfo]) -> str:
     if not info or not info.get("name"):
         return ""
     str = info["name"]
@@ -61,8 +61,8 @@ class UserAgentBuilder(TypedDict):
     browser: Optional[str]  # chrome/firebox/safari
     browser_version: Optional[str]
 
-    @classmethod
-    def build_user_agent(cls, app_info: AppInfo) -> Tuple[str, str]:
+    @classmethod  # type: ignore[misc]  # runtime classmethod on a TypedDict
+    def build_user_agent(cls, app_info: Optional[AppInfo]) -> Tuple[str, str]:
         try:
             uname = platform.uname()
             _os, _os_version = (uname.system or "").lower(), (uname.release or "").lower()
@@ -104,11 +104,11 @@ class Suprsend:
         self,
         workspace_key: str,
         workspace_secret: str,
-        base_url: str = None,
+        base_url: Optional[str] = None,
         debug: bool = False,
-        app_info: AppInfo = None,
-        **kwargs,
-    ):
+        app_info: Optional[AppInfo] = None,
+        **kwargs: Any,
+    ) -> None:
         self._init(
             "ws_key_secret",
             workspace_key=workspace_key,
@@ -124,11 +124,11 @@ class Suprsend:
         cls,
         workspace_uid: str,
         api_key: str,
-        base_url: str = None,
+        base_url: Optional[str] = None,
         debug: bool = False,
-        app_info: AppInfo = None,
-        **kwargs,
-    ):
+        app_info: Optional[AppInfo] = None,
+        **kwargs: Any,
+    ) -> "Suprsend":
         """
         Authenticate with an HTTP API Key (Bearer token).
 
@@ -151,15 +151,15 @@ class Suprsend:
         self,
         auth_method: str,
         *,
-        workspace_key: str = None,
-        workspace_secret: str = None,
-        workspace_uid: str = None,
-        api_key: str = None,
-        base_url: str = None,
+        workspace_key: Optional[str] = None,
+        workspace_secret: Optional[str] = None,
+        workspace_uid: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         debug: bool = False,
-        app_info: AppInfo = None,
-        **kwargs,
-    ):
+        app_info: Optional[AppInfo] = None,
+        **kwargs: Any,
+    ) -> None:
         self.auth_method = auth_method
         self.workspace_key = workspace_key
         self.workspace_secret = workspace_secret
@@ -167,9 +167,11 @@ class Suprsend:
         self.api_key = api_key
         self.__do_init(base_url=base_url, debug=debug, app_info=app_info, **kwargs)
 
-    def __do_init(self, *, base_url: str, debug: bool, app_info: AppInfo, **kwargs):
+    def __do_init(self, *, base_url: Optional[str], debug: bool, app_info: Optional[AppInfo], **kwargs: Any) -> None:
         #
-        self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(app_info)
+        self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(  # type: ignore[attr-defined]
+            app_info
+        )
         #
         self.base_url = self.__get_base_url(base_url)
         # ---
@@ -196,41 +198,41 @@ class Suprsend:
         self.subscriber_lists = SubscriberListsApi(self)
 
     @property
-    def bulk_workflows(self):
+    def bulk_workflows(self) -> BulkWorkflowsFactory:
         return self._bulk_workflows
 
     @property
-    def bulk_events(self):
+    def bulk_events(self) -> BulkEventsFactory:
         return self._bulk_events
 
     @property
-    def bulk_users(self):
+    def bulk_users(self) -> BulkSubscribersFactory:
         return self._bulk_users
 
     @property
-    def user(self):
+    def user(self) -> SubscriberFactory:
         return self._user
 
     def workspace_identifier(self) -> str:
         if self.auth_method == "ws_key_secret":
-            return self.workspace_key
+            return cast(str, self.workspace_key)
         elif self.auth_method == "api_key":
-            return self.workspace_uid
+            return cast(str, self.workspace_uid)
         else:
             return ""
 
-    def default_headers(self) -> Dict:
+    def default_headers(self) -> Dict[str, Any]:
         return {
             "Content-Type": "application/json; charset=utf-8",
             "User-Agent": self.user_agent,
             "X-Suprsend-Client-User-Agent": self.client_user_agent,
         }
 
-    def prepare_request(self, method: str, url: str, body=None) -> Tuple[Dict, str]:
+    def prepare_request(self, method: str, url: str, body: Any = None) -> Tuple[Dict[str, Any], str]:
         headers = self.default_headers()
         if self.auth_method == "ws_key_secret":
             headers["Date"] = datetime.now(timezone.utc).strftime(HEADER_DATE_FMT)
-            content_txt, sig = get_request_signature(url, method, body, headers, self.workspace_secret)
+            content_txt, sig = get_request_signature(url, method, body, headers, cast(str, self.workspace_secret))
             headers["Authorization"] = "{}:{}".format(self.workspace_key, sig)
         elif self.auth_method == "api_key":
             if method == "GET" or body == "" or body is None:
@@ -242,10 +244,10 @@ class Suprsend:
             raise SuprsendConfigError("Invalid auth_method")
         return headers, content_txt
 
-    def request(self, method: str, url: str, body=None):
+    def request(self, method: str, url: str, body: Any = None) -> requests.Response:
         headers, content_txt = self.prepare_request(method, url, body)
         method_u = method.upper()
-        kwargs = {"headers": headers}
+        kwargs: Dict[str, Any] = {"headers": headers}
         if method_u not in ("GET", "HEAD"):
             kwargs["data"] = content_txt.encode("utf-8")
         # ---
@@ -258,7 +260,7 @@ class Suprsend:
         return resp
 
     @staticmethod
-    def __get_base_url(base_url):
+    def __get_base_url(base_url: Optional[str]) -> str:
         # ---- strip
         if base_url:
             base_url = base_url.strip()
@@ -271,7 +273,7 @@ class Suprsend:
             base_url = base_url + "/"
         return base_url
 
-    def __validate(self):
+    def __validate(self) -> None:
         if self.auth_method == "ws_key_secret":
             if not self.workspace_key:
                 raise SuprsendConfigError("Missing workspace_key")
@@ -287,7 +289,9 @@ class Suprsend:
         if not self.base_url:
             raise SuprsendConfigError("Missing base_url")
 
-    def add_attachment(self, body: Dict, file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
+    def add_attachment(
+        self, body: Dict[str, Any], file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False
+    ) -> Dict[str, Any]:
         warn(
             'This method is deprecated. Use "WorkflowTriggerRequest.add_attachment()" instead',
             DeprecationWarning,
@@ -307,7 +311,7 @@ class Suprsend:
         body["data"]["$attachments"].append(attachment)
         return body
 
-    def trigger_workflow(self, data) -> Dict:
+    def trigger_workflow(self, data: Union[Workflow, Dict[str, Any]]) -> Dict[str, Any]:
         """
         :param data:
         :return: {
@@ -332,11 +336,11 @@ class Suprsend:
         self,
         distinct_id: str,
         event_name: str,
-        properties: Dict = None,
-        idempotency_key: str = None,
-        tenant_id: str = None,
-        brand_id: str = None,
-    ) -> Dict:
+        properties: Optional[Dict[str, Any]] = None,
+        idempotency_key: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        brand_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         :param distinct_id:
         :param event_name:
@@ -361,7 +365,7 @@ class Suprsend:
         event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, tenant_id=tenant_id)
         return self._eventcollector.collect(event)
 
-    def track_event(self, event: Event) -> Dict:
+    def track_event(self, event: Event) -> Dict[str, Any]:
         """
         :param event: suprsend.Event
         :return: {

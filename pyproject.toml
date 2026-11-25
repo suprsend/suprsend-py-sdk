@@ -50,3 +50,8 @@ warn_unused_configs = true
 warn_redundant_casts = true
 strict_equality = true
 cache_dir = ".mypy_cache"
+
+# Whole package is strict (no ignore_errors baseline). Keep new code strict.
+[[tool.mypy.overrides]]
+module = ["suprsend.*"]
+strict = true

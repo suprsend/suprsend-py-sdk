@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # ---------- Identity keys
 IDENT_KEY_EMAIL = "$email"
@@ -33,31 +33,31 @@ class _ObjectEditInternalHelper:
     Internal helper class
     """
 
-    def __init__(self):
-        self.__dict_set = {}
-        self.__dict_set_once = {}
-        self.__dict_increment = {}
-        self.__dict_append = {}
-        self.__dict_remove = {}
-        self.__list_unset = []
+    def __init__(self) -> None:
+        self.__dict_set: Dict[str, Any] = {}
+        self.__dict_set_once: Dict[str, Any] = {}
+        self.__dict_increment: Dict[str, Any] = {}
+        self.__dict_append: Dict[str, Any] = {}
+        self.__dict_remove: Dict[str, Any] = {}
+        self.__list_unset: List[str] = []
         #
-        self.__errors = []
-        self.__info = []
+        self.__errors: List[str] = []
+        self.__info: List[str] = []
 
-    def reset(self):
+    def reset(self) -> None:
         self.__dict_set, self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, {}, []
         self.__dict_set_once, self.__dict_increment = {}, {}
         self.__errors = []
         self.__info = []
 
-    def get_operation_result(self):
+    def get_operation_result(self) -> Dict[str, Any]:
         operation = self.__form_operation()
         ret_val = {"errors": self.__errors, "info": self.__info, "operation": operation}
         self.reset()
         return ret_val
 
-    def __form_operation(self):
-        payload = {}
+    def __form_operation(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {}
         if self.__dict_set:
             payload["$set"] = self.__dict_set
         if self.__dict_set_once:
@@ -73,7 +73,7 @@ class _ObjectEditInternalHelper:
         return payload
 
     # ------------------------
-    def __validate_key_basic(self, key: str, caller: str):
+    def __validate_key_basic(self, key: str, caller: str) -> Tuple[str, bool]:
         if not isinstance(key, (str,)):
             self.__info.append(f"[{caller}] skipping key: {key}. key must be a string")
             return key, False
@@ -84,11 +84,11 @@ class _ObjectEditInternalHelper:
         # -----
         return key, True
 
-    def __is_identity_key(self, key: str):
+    def __is_identity_key(self, key: str) -> bool:
         return key in IDENT_KEYS_ALL
 
     # -------------------------
-    def _append_kv(self, key: str, val: Any, kwargs: Dict, caller: str = "append"):
+    def _append_kv(self, key: str, val: Any, kwargs: Dict[str, Any], caller: str = "append") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
@@ -97,7 +97,7 @@ class _ObjectEditInternalHelper:
         else:
             self.__dict_append[key] = val
 
-    def _remove_kv(self, key: str, val: Any, kwargs: Dict, caller: str = "remove"):
+    def _remove_kv(self, key: str, val: Any, kwargs: Dict[str, Any], caller: str = "remove") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
@@ -106,44 +106,44 @@ class _ObjectEditInternalHelper:
         else:
             self.__dict_remove[key] = val
 
-    def _unset_k(self, key: str, caller: str = "unset"):
+    def _unset_k(self, key: str, caller: str = "unset") -> None:
         k, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
         # ----
         self.__list_unset.append(k)
 
-    def _set_kv(self, key: str, val: Any, caller: str = "set"):
+    def _set_kv(self, key: str, val: Any, caller: str = "set") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
         else:
             self.__dict_set[key] = val
 
-    def _set_once_kv(self, key: str, val: Any, caller: str = "set_once"):
+    def _set_once_kv(self, key: str, val: Any, caller: str = "set_once") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
         else:
             self.__dict_set_once[key] = val
 
-    def _increment_kv(self, key: str, val: Union[int, float], caller: str = "increment"):
+    def _increment_kv(self, key: str, val: Union[int, float], caller: str = "increment") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
         else:
             self.__dict_increment[key] = val
 
-    def _set_preferred_language(self, lang_code: str, caller: str):
+    def _set_preferred_language(self, lang_code: str, caller: str) -> None:
         self.__dict_set[KEY_PREFERRED_LANGUAGE] = lang_code
 
-    def _set_locale(self, locale_code: str, caller: str):
+    def _set_locale(self, locale_code: str, caller: str) -> None:
         self.__dict_set[KEY_LOCALE] = locale_code
 
-    def _set_timezone(self, timezone: str, caller: str):
+    def _set_timezone(self, timezone: str, caller: str) -> None:
         self.__dict_set[KEY_TIMEZONE] = timezone
 
-    def __add_identity(self, key: str, val: Union[str, Any], kwargs: Dict, caller: str):
+    def __add_identity(self, key: str, val: Union[str, Any], kwargs: Dict[str, Any], caller: str) -> None:
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
             self._add_email(val, caller=new_caller)
@@ -169,7 +169,7 @@ class _ObjectEditInternalHelper:
         elif key == IDENT_KEY_MS_TEAMS:
             self._add_ms_teams(val, caller=new_caller)
 
-    def __remove_identity(self, key: str, val: Union[str, Any], kwargs: Dict, caller: str):
+    def __remove_identity(self, key: str, val: Union[str, Any], kwargs: Dict[str, Any], caller: str) -> None:
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
             self._remove_email(val, caller=new_caller)
@@ -196,35 +196,35 @@ class _ObjectEditInternalHelper:
             self._remove_ms_teams(val, caller=new_caller)
 
     # ------------------------ Email
-    def _add_email(self, value: str, caller: str):
+    def _add_email(self, value: str, caller: str) -> None:
         self.__dict_append[IDENT_KEY_EMAIL] = value
 
-    def _remove_email(self, value: str, caller):
+    def _remove_email(self, value: str, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_EMAIL] = value
 
     # ------------------------ SMS
-    def _add_sms(self, value: str, caller: str):
+    def _add_sms(self, value: str, caller: str) -> None:
         self.__dict_append[IDENT_KEY_SMS] = value
 
-    def _remove_sms(self, value: str, caller: str):
+    def _remove_sms(self, value: str, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_SMS] = value
 
     # ------------------------ Whatsapp
-    def _add_whatsapp(self, value: str, caller: str):
+    def _add_whatsapp(self, value: str, caller: str) -> None:
         self.__dict_append[IDENT_KEY_WHATSAPP] = value
 
-    def _remove_whatsapp(self, value: str, caller: str):
+    def _remove_whatsapp(self, value: str, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_WHATSAPP] = value
 
     # ------------------------ Androidpush
 
-    def _add_androidpush(self, value: str, provider: str, bundle_id: str, caller: str):
+    def _add_androidpush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
         self.__dict_append[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
         if bundle_id:
             self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
-    def _remove_androidpush(self, value: str, provider: str, bundle_id: str, caller: str):
+    def _remove_androidpush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
         self.__dict_remove[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
         if bundle_id:
@@ -232,13 +232,13 @@ class _ObjectEditInternalHelper:
 
     # ------------------------ Iospush
 
-    def _add_iospush(self, value: str, provider: str, bundle_id: str, caller: str):
+    def _add_iospush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
         self.__dict_append[IDENT_KEY_IOSPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
         if bundle_id:
             self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
-    def _remove_iospush(self, value: str, provider: str, bundle_id: str, caller: str):
+    def _remove_iospush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
         self.__dict_remove[IDENT_KEY_IOSPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
         if bundle_id:
@@ -246,26 +246,26 @@ class _ObjectEditInternalHelper:
 
     # ------------------------ Webpush
 
-    def _add_webpush(self, value: dict, provider: str, caller: str):
+    def _add_webpush(self, value: Any, provider: Optional[str], caller: str) -> None:
         self.__dict_append[IDENT_KEY_WEBPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
 
-    def _remove_webpush(self, value: dict, provider: str, caller: str):
+    def _remove_webpush(self, value: Any, provider: Optional[str], caller: str) -> None:
         self.__dict_remove[IDENT_KEY_WEBPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
 
     # ------------------------ Slack
 
-    def _add_slack(self, value: dict, caller: str):
+    def _add_slack(self, value: Any, caller: str) -> None:
         self.__dict_append[IDENT_KEY_SLACK] = value
 
-    def _remove_slack(self, value: dict, caller: str):
+    def _remove_slack(self, value: Any, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_SLACK] = value
 
     # ------------------------ MS Teams
 
-    def _add_ms_teams(self, value: dict, caller: str):
+    def _add_ms_teams(self, value: Any, caller: str) -> None:
         self.__dict_append[IDENT_KEY_MS_TEAMS] = value
 
-    def _remove_ms_teams(self, value: dict, caller: str):
+    def _remove_ms_teams(self, value: Any, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_MS_TEAMS] = value

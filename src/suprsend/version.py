@@ -7,3 +7,5 @@ except ImportError:
         __version__ = _pkg_version("suprsend-py-sdk")
     except PackageNotFoundError:
         __version__ = "0.0.0+unknown"
+
+__all__ = ["__version__"]

@@ -1,7 +1,7 @@
 import base64
 import mimetypes
 import os
-from typing import Dict
+from typing import Any, Dict, Optional, cast
 
 from .logger import ss_logger
 
@@ -15,19 +15,21 @@ except ImportError:
 
 def _detect_mime_type(file_path: str) -> str:
     if _has_magic:
-        return magic.from_file(file_path, mime=True)
+        return cast(str, magic.from_file(file_path, mime=True))
     mime_type, _ = mimetypes.guess_type(file_path)
     return mime_type or "application/octet-stream"
 
 
-def check_is_web_url(file_path: str):
+def check_is_web_url(file_path: str) -> bool:
     for url_scheme in ["https://", "http://"]:
         if file_path.startswith(url_scheme):
             return True
     return False
 
 
-def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error: bool) -> Dict:
+def get_attachment_json_for_file(
+    file_path: str, file_name: Optional[str], ignore_if_error: bool
+) -> Optional[Dict[str, Any]]:
     # Ensure that path is expanded and absolute
     abs_path = os.path.abspath(os.path.expanduser(file_path))
     # Get attachment json
@@ -57,7 +59,7 @@ def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error
             raise ex
 
 
-def get_attachment_json_for_url(file_url: str, file_name: str, ignore_if_error: bool) -> Dict:
+def get_attachment_json_for_url(file_url: str, file_name: Optional[str], ignore_if_error: bool) -> Dict[str, Any]:
     return {
         "filename": file_name,
         "contentType": None,
@@ -67,7 +69,9 @@ def get_attachment_json_for_url(file_url: str, file_name: str, ignore_if_error: 
     }
 
 
-def get_attachment_json(file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
+def get_attachment_json(
+    file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False
+) -> Optional[Dict[str, Any]]:
     if check_is_web_url(file_path):
         return get_attachment_json_for_url(file_path, file_name, ignore_if_error)
     else:

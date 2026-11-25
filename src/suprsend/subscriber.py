@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 
 
 class SubscriberFactory:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
 
-    def new(self, distinct_id: str = None):
+    def new(self, distinct_id: Optional[str] = None) -> "Subscriber":
         return self.get_instance(distinct_id)
 
-    def get_instance(self, distinct_id: str = None):
+    def get_instance(self, distinct_id: Optional[str] = None) -> "Subscriber":
         if not isinstance(distinct_id, (str,)):
             raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = distinct_id.strip()
@@ -35,26 +35,26 @@ class SubscriberFactory:
 
 
 class Subscriber:
-    def __init__(self, config: "Suprsend", distinct_id: str):
+    def __init__(self, config: "Suprsend", distinct_id: str) -> None:
         self.config = config
         self.distinct_id = distinct_id
         self.__url = "{}event/".format(self.config.base_url)
         #
-        self.__errors = []
-        self.__info = []
-        self.user_operations = []
+        self.__errors: List[str] = []
+        self.__info: List[str] = []
+        self.user_operations: List[Dict[str, Any]] = []
         self._helper = _SubscriberInternalHelper()
-        self.__warnings_list = []
+        self.__warnings_list: List[str] = []
 
     @property
-    def warnings(self):
+    def warnings(self) -> List[str]:
         return self.__info
 
     @property
-    def errors(self):
+    def errors(self) -> List[str]:
         return self.__errors
 
-    def get_event(self):
+    def get_event(self) -> Dict[str, Any]:
         return {
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
@@ -65,7 +65,7 @@ class Subscriber:
             "properties": {"$ss_sdk_version": self.config.user_agent},
         }
 
-    def as_json(self):
+    def as_json(self) -> Dict[str, Any]:
         event_dict = {
             "distinct_id": self.distinct_id,
             "$user_operations": self.user_operations,
@@ -74,7 +74,7 @@ class Subscriber:
         # -----
         return event_dict
 
-    def validate_event_size(self, event_dict: Dict):
+    def validate_event_size(self, event_dict: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
         apparent_size = get_apparent_identity_event_size(event_dict)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
             raise InputValueError(
@@ -84,7 +84,7 @@ class Subscriber:
         # ----
         return event_dict, apparent_size
 
-    def validate_body(self, is_part_of_bulk=False):
+    def validate_body(self, is_part_of_bulk: bool = False) -> List[str]:
         self.__warnings_list = []
         if self.__info:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
@@ -105,7 +105,7 @@ class Subscriber:
         # ------
         return self.__warnings_list
 
-    def save(self):
+    def save(self) -> Dict[str, Any]:
         try:
             self.validate_body(is_part_of_bulk=False)
             event = self.get_event()
@@ -137,7 +137,7 @@ class Subscriber:
                     "message": resp.text,
                 }
 
-    def _collect_event(self):
+    def _collect_event(self) -> None:
         resp = self._helper.get_identity_event()
         if resp["errors"]:
             self.__errors.extend(resp["errors"])
@@ -146,7 +146,7 @@ class Subscriber:
         if resp["event"]:
             self.user_operations.append(resp["event"])
 
-    def append(self, arg1: Union[str, Dict], arg2: Any = None):
+    def append(self, arg1: Union[str, Dict[str, Any]], arg2: Any = None) -> None:
         """
         Usage:
         1. append(k, v)
@@ -173,7 +173,7 @@ class Subscriber:
             # --
             self._collect_event()
 
-    def set(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set(self, arg1: Union[str, Dict[str, Any]], arg2: Any = None) -> None:
         """
         1. set(k, v)
         2. set({k1: v1, k2, v2})
@@ -199,7 +199,7 @@ class Subscriber:
             # --
             self._collect_event()
 
-    def set_once(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set_once(self, arg1: Union[str, Dict[str, Any]], arg2: Any = None) -> None:
         """
         1. set_once(k, v)
         2. set_once({k1: v1, k2, v2})
@@ -225,7 +225,7 @@ class Subscriber:
             # --
             self._collect_event()
 
-    def increment(self, arg1: Union[str, Dict], arg2: Any = None):
+    def increment(self, arg1: Union[str, Dict[str, Any]], arg2: Any = None) -> None:
         """
         1. increment(k, v)
         2. increment({k1: v1, k2, v2})
@@ -251,7 +251,7 @@ class Subscriber:
             # --
             self._collect_event()
 
-    def remove(self, arg1: Union[str, Dict], arg2: Any = None):
+    def remove(self, arg1: Union[str, Dict[str, Any]], arg2: Any = None) -> None:
         """
         Usage:
         1. remove(k, v)
@@ -278,7 +278,7 @@ class Subscriber:
             # --
             self._collect_event()
 
-    def unset(self, key: Union[str, Iterable[str]]):
+    def unset(self, key: Union[str, Iterable[str]]) -> None:
         """
         Usage:
         1. unset(k)
@@ -301,7 +301,7 @@ class Subscriber:
             self._collect_event()
 
     # ------------------------ Preferred language
-    def set_preferred_language(self, lang_code: str):
+    def set_preferred_language(self, lang_code: str) -> None:
         """
         :param lang_code:
         :return:
@@ -311,7 +311,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Locale
-    def set_locale(self, locale_code: str):
+    def set_locale(self, locale_code: str) -> None:
         """
         :param locale_code:
         :return:
@@ -321,7 +321,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Timezone
-    def set_timezone(self, timezone: str):
+    def set_timezone(self, timezone: str) -> None:
         """
         :param timezone:
         :return:
@@ -331,7 +331,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Email
-    def add_email(self, value: str):
+    def add_email(self, value: str) -> None:
         """
 
         :param value:
@@ -341,7 +341,7 @@ class Subscriber:
         self._helper._add_email(value, caller=caller)
         self._collect_event()
 
-    def remove_email(self, value: str):
+    def remove_email(self, value: str) -> None:
         """
 
         :param value:
@@ -352,7 +352,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ SMS
-    def add_sms(self, value: str):
+    def add_sms(self, value: str) -> None:
         """
 
         :param value:
@@ -362,7 +362,7 @@ class Subscriber:
         self._helper._add_sms(value, caller=caller)
         self._collect_event()
 
-    def remove_sms(self, value: str):
+    def remove_sms(self, value: str) -> None:
         """
 
         :param value:
@@ -373,7 +373,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Whatsapp
-    def add_whatsapp(self, value: str):
+    def add_whatsapp(self, value: str) -> None:
         """
 
         :param value:
@@ -383,7 +383,7 @@ class Subscriber:
         self._helper._add_whatsapp(value, caller=caller)
         self._collect_event()
 
-    def remove_whatsapp(self, value: str):
+    def remove_whatsapp(self, value: str) -> None:
         """
 
         :param value:
@@ -394,7 +394,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Androidpush
-    def add_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_androidpush(self, value: str, provider: Optional[str] = None, bundle_id: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -406,7 +406,7 @@ class Subscriber:
         self._helper._add_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_event()
 
-    def remove_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_androidpush(self, value: str, provider: Optional[str] = None, bundle_id: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -419,7 +419,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Iospush [providers: apns]
-    def add_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_iospush(self, value: str, provider: Optional[str] = None, bundle_id: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -431,7 +431,7 @@ class Subscriber:
         self._helper._add_iospush(value, provider, bundle_id, caller=caller)
         self._collect_event()
 
-    def remove_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_iospush(self, value: str, provider: Optional[str] = None, bundle_id: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -444,7 +444,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Webpush [providers: vapid]
-    def add_webpush(self, value: dict, provider: str = None):
+    def add_webpush(self, value: Dict[str, Any], provider: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -455,7 +455,7 @@ class Subscriber:
         self._helper._add_webpush(value, provider, caller=caller)
         self._collect_event()
 
-    def remove_webpush(self, value: dict, provider: str = None):
+    def remove_webpush(self, value: Dict[str, Any], provider: Optional[str] = None) -> None:
         """
 
         :param value:
@@ -467,7 +467,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ Slack
-    def add_slack(self, value: dict):
+    def add_slack(self, value: Dict[str, Any]) -> None:
         """
 
         :param value:
@@ -477,7 +477,7 @@ class Subscriber:
         self._helper._add_slack(value, caller=caller)
         self._collect_event()
 
-    def remove_slack(self, value: dict):
+    def remove_slack(self, value: Dict[str, Any]) -> None:
         """
 
         :param value:
@@ -488,7 +488,7 @@ class Subscriber:
         self._collect_event()
 
     # ------------------------ MS Teams
-    def add_ms_teams(self, value: dict):
+    def add_ms_teams(self, value: Dict[str, Any]) -> None:
         """
 
         :param value:
@@ -498,7 +498,7 @@ class Subscriber:
         self._helper._add_ms_teams(value, caller=caller)
         self._collect_event()
 
-    def remove_ms_teams(self, value: dict):
+    def remove_ms_teams(self, value: Dict[str, Any]) -> None:
         """
 
         :param value:

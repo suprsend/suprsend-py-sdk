@@ -1,15 +1,16 @@
 import json
 import os
+from typing import Any, Dict
 
 import jsonschema
 
 from .exception import SuprsendInvalidSchema, SuprsendMissingSchema
 
 # Cached json schema
-__JSON_SCHEMAS = dict()
+__JSON_SCHEMAS: Dict[str, Any] = dict()
 
 
-def _get_schema_validator(schema_name: str):
+def _get_schema_validator(schema_name: str) -> Any:
     schema_body = __JSON_SCHEMAS.get(schema_name)
     if not schema_body:
         schema_body = __load_json_schema(schema_name)
@@ -17,7 +18,7 @@ def _get_schema_validator(schema_name: str):
     return schema_body
 
 
-def __load_json_schema(schema_name: str):
+def __load_json_schema(schema_name: str) -> Any:
     here = os.path.dirname(os.path.abspath(__file__))
     rel_path = "request_json/{}.json".format(schema_name)
     file_path = os.path.join(here, rel_path)

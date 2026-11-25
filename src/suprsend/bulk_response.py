@@ -1,22 +1,22 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class BulkResponse:
-    def __init__(self):
+    def __init__(self) -> None:
         self.status: Optional[str] = None
-        self.failed_records: List[Dict] = []
+        self.failed_records: List[Dict[str, Any]] = []
         self.total: int = 0
         self.success: int = 0
         self.failure: int = 0
         self.warnings: List[str] = []
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"BulkResponse<status: {self.status} | total: {self.total} | success: {self.success} | "
             f"failure: {self.failure} | warnings: {len(self.warnings)}>"
         )
 
-    def merge_chunk_response(self, ch_resp):
+    def merge_chunk_response(self, ch_resp: Optional[Dict[str, Any]]) -> None:
         if not ch_resp:
             return
         # possible status: success/partial/fail
@@ -38,7 +38,7 @@ class BulkResponse:
         self.failed_records.extend(failed_recs)
 
     @classmethod
-    def empty_chunk_success_response(cls):
+    def empty_chunk_success_response(cls) -> Dict[str, Any]:
         return {
             "status": "success",
             "status_code": 200,
@@ -50,7 +50,7 @@ class BulkResponse:
         }
 
     @classmethod
-    def invalid_records_chunk_response(cls, invalid_records):
+    def invalid_records_chunk_response(cls, invalid_records: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {
             "status": "fail",
             "status_code": 500,
@@ -62,7 +62,7 @@ class BulkResponse:
         }
 
     @classmethod
-    def parse_bulk_api_v2_response(cls, resp_json: dict):
+    def parse_bulk_api_v2_response(cls, resp_json: Dict[str, Any]) -> Dict[str, Any]:
         total_count = len(resp_json["records"])
         success_count = sum([1 for _ in resp_json["records"] if _["status"] == "success"])
         failure_count = total_count - success_count

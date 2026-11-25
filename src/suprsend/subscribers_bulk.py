@@ -1,5 +1,5 @@
 import copy
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from .bulk_response import BulkResponse
 from .constants import (
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 
 
 class BulkSubscribersFactory:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config: "Suprsend" = config
 
-    def new_instance(self):
+    def new_instance(self) -> "BulkSubscribers":
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
@@ -58,26 +58,26 @@ class _BulkSubscribersChunk:
     _chunk_apparent_size_in_bytes = BODY_MAX_APPARENT_SIZE_IN_BYTES
     _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config: "Suprsend" = config
-        self.__chunk: List[Dict] = []
+        self.__chunk: List[Dict[str, Any]] = []
         self.__url: str = self.__get_url()
         #
         self.__running_size: int = 0
         self.__running_length: int = 0
-        self.response: Optional[Dict] = None
+        self.response: Optional[Dict[str, Any]] = None
 
-    def __get_url(self):
+    def __get_url(self) -> str:
         url_formatted = "{}event/".format(self.config.base_url)
         return url_formatted
 
-    def __add_event_to_chunk(self, event, event_size):
+    def __add_event_to_chunk(self, event: Dict[str, Any], event_size: int) -> None:
         # First add size, then event to reduce effects of race condition
         self.__running_size += event_size
         self.__chunk.append(event)
         self.__running_length += 1
 
-    def __check_limit_reached(self):
+    def __check_limit_reached(self) -> bool:
         if (
             self.__running_length >= self._max_records_in_chunk
             or self.__running_size >= self._chunk_apparent_size_in_bytes
@@ -86,7 +86,7 @@ class _BulkSubscribersChunk:
         else:
             return False
 
-    def try_to_add_into_chunk(self, event: Dict, event_size: int) -> bool:
+    def try_to_add_into_chunk(self, event: Dict[str, Any], event_size: int) -> bool:
         """
         returns whether passed event was able to get added to this chunk or not,
         if true, event gets added to chunk
@@ -113,7 +113,7 @@ class _BulkSubscribersChunk:
         self.__add_event_to_chunk(event, event_size)
         return True
 
-    def trigger(self):
+    def trigger(self) -> None:
         try:
             resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
@@ -153,16 +153,16 @@ class _BulkSubscribersChunk:
 
 
 class BulkSubscribers:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config: "Suprsend" = config
         self.__subscribers: List[Subscriber] = []
-        self.__pending_records: List[Tuple[Dict, int]] = []
+        self.__pending_records: List[Tuple[Dict[str, Any], int]] = []
         self.chunks: List[_BulkSubscribersChunk] = []
         self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
-        self.__invalid_records: List[Dict] = []
+        self.__invalid_records: List[Dict[str, Any]] = []
 
-    def __validate_subscriber_events(self):
+    def __validate_subscriber_events(self) -> None:
         for sub in self.__subscribers:
             try:
                 # -- check if there is any error/warning, if so add it to warnings list of BulkResponse
@@ -177,7 +177,7 @@ class BulkSubscribers:
                 inv_rec = invalid_record_json(sub.as_json(), ex)
                 self.__invalid_records.append(inv_rec)
 
-    def __chunkify(self, start_idx=0):
+    def __chunkify(self, start_idx: int = 0) -> None:
         curr_chunk = _BulkSubscribersChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
@@ -188,7 +188,7 @@ class BulkSubscribers:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *subscribers):
+    def append(self, *subscribers: Any) -> None:
         if not subscribers:
             return
         for sub in subscribers:
@@ -196,10 +196,10 @@ class BulkSubscribers:
                 sub_copy = copy.deepcopy(sub)
                 self.__subscribers.append(sub_copy)
 
-    def trigger(self):
+    def trigger(self) -> BulkResponse:
         return self.save()
 
-    def save(self):
+    def save(self) -> BulkResponse:
         self.__validate_subscriber_events()
         # --------
         if len(self.__invalid_records) > 0:

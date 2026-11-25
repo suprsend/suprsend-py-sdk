@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 from .attachment import get_attachment_json
 from .constants import (
@@ -21,7 +21,13 @@ if TYPE_CHECKING:
 
 
 class SubscriberListBroadcast:
-    def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+    def __init__(
+        self,
+        body: Dict[str, Any],
+        idempotency_key: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        brand_id: Optional[str] = None,
+    ) -> None:
         if not isinstance(body, (dict,)):
             raise InputValueError("broadcast body must be a json/dictionary")
         self.body = body
@@ -29,7 +35,7 @@ class SubscriberListBroadcast:
         self.tenant_id = tenant_id
         self.brand_id = brand_id
 
-    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+    def add_attachment(self, file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False) -> None:
         if self.body.get("data") is None:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
@@ -50,7 +56,7 @@ class SubscriberListBroadcast:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self):
+    def get_final_json(self) -> Tuple[Dict[str, Any], int]:
         self.body["$insert_id"] = str(uuid.uuid4())
         self.body["$time"] = int(time.time() * 1000)
         if self.idempotency_key:
@@ -71,7 +77,7 @@ class SubscriberListBroadcast:
         # ----
         return self.body, apparent_size
 
-    def as_json(self):
+    def as_json(self) -> Dict[str, Any]:
         body_dict = {**self.body}
         if self.idempotency_key:
             body_dict["$idempotency_key"] = self.idempotency_key
@@ -84,21 +90,21 @@ class SubscriberListBroadcast:
 
 
 class SubscriberListsApi:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.subscriber_list_url = "{}v1/subscriber_list/".format(self.config.base_url)
         self.broadcast_url = "{}{}/broadcast/".format(self.config.base_url, self.config.workspace_identifier())
-        self.non_error_default_response = {"success": True}
+        self.non_error_default_response: Dict[str, Any] = {"success": True}
 
-    def _validate_list_id(self, list_id):
+    def _validate_list_id(self, list_id: Any) -> str:
         if not isinstance(list_id, (str,)):
             raise SuprsendValidationError("list_id must be a string")
         list_id = list_id.strip()
         if not list_id:
             raise SuprsendValidationError("missing list_id")
-        return list_id
+        return cast(str, list_id)
 
-    def create(self, payload: Dict, options: Dict = None):
+    def create(self, payload: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not payload:
             raise SuprsendValidationError("missing payload")
         list_id = payload.get("list_id")
@@ -113,9 +119,9 @@ class SubscriberListsApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def cleaned_limit_offset(self, limit: int, offset: int):
+    def cleaned_limit_offset(self, limit: int, offset: int) -> Tuple[int, int]:
         # limit must be 0 < x <= 1000
         limit = limit if (isinstance(limit, int) and 0 < limit <= 1000) else 20
         # offset must be >=0
@@ -123,7 +129,7 @@ class SubscriberListsApi:
         #
         return limit, offset
 
-    def get_all(self, limit: int = 20, offset: int = 0, options: Dict = None):
+    def get_all(self, limit: int = 20, offset: int = 0, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
         params.update((options or {}))
@@ -133,15 +139,15 @@ class SubscriberListsApi:
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def __subscriber_list_detail_url(self, list_id: str):
+    def __subscriber_list_detail_url(self, list_id: str) -> str:
         list_id = str(list_id).strip()
         list_id_encoded = urlencode_path_param(list_id)
         url = f"{self.subscriber_list_url}{list_id_encoded}/"
         return url
 
-    def get(self, list_id: str, options: Dict = None):
+    def get(self, list_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         # --------
         encoded_options = urlencode_query(options or {})
@@ -152,9 +158,9 @@ class SubscriberListsApi:
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def add(self, list_id: str, distinct_ids: list, options: Dict = None):
+    def add(self, list_id: str, distinct_ids: List[Any], options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -169,9 +175,9 @@ class SubscriberListsApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def remove(self, list_id: str, distinct_ids: list, options: Dict = None):
+    def remove(self, list_id: str, distinct_ids: List[Any], options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -186,9 +192,9 @@ class SubscriberListsApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def delete(self, list_id: str, options: Dict = None):
+    def delete(self, list_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         # --
         encoded_options = urlencode_query(options or {})
@@ -199,7 +205,7 @@ class SubscriberListsApi:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
 
-    def broadcast(self, broadcast_instance: SubscriberListBroadcast) -> Dict:
+    def broadcast(self, broadcast_instance: SubscriberListBroadcast) -> Dict[str, Any]:
         if not isinstance(broadcast_instance, SubscriberListBroadcast):
             raise InputValueError("argument must be an instance of suprsend.SubscriberListBroadcast")
 
@@ -231,28 +237,28 @@ class SubscriberListsApi:
                     "message": resp.text,
                 }
 
-    def start_sync(self, list_id: str, options: Dict = None):
+    def start_sync(self, list_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         # --
         encoded_options = urlencode_query(options or {})
         url = "{}start_sync/".format(self.__subscriber_list_detail_url(list_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         # --
-        payload = {}
+        payload: Dict[str, Any] = {}
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def _validate_version_id(self, version_id):
+    def _validate_version_id(self, version_id: Any) -> str:
         if not isinstance(version_id, (str,)):
             raise SuprsendValidationError("version_id must be a string")
         version_id = version_id.strip()
         if not version_id:
             raise SuprsendValidationError("missing version_id")
-        return version_id
+        return cast(str, version_id)
 
-    def __subscriber_list_url_with_version(self, list_id: str, version_id: str):
+    def __subscriber_list_url_with_version(self, list_id: str, version_id: str) -> str:
         list_id = str(list_id).strip()
         list_id_encoded = urlencode_path_param(list_id)
         version_id = str(version_id).strip()
@@ -260,7 +266,7 @@ class SubscriberListsApi:
         url = f"{self.subscriber_list_url}{list_id_encoded}/version/{version_id_encoded}/"
         return url
 
-    def get_version(self, list_id: str, version_id: str, options: Dict = None):
+    def get_version(self, list_id: str, version_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
         # --------
@@ -270,9 +276,11 @@ class SubscriberListsApi:
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def add_to_version(self, list_id: str, version_id: str, distinct_ids: list, options: Dict = None):
+    def add_to_version(
+        self, list_id: str, version_id: str, distinct_ids: List[Any], options: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -288,9 +296,11 @@ class SubscriberListsApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def remove_from_version(self, list_id: str, version_id: str, distinct_ids: list, options: Dict = None):
+    def remove_from_version(
+        self, list_id: str, version_id: str, distinct_ids: List[Any], options: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         if not isinstance(distinct_ids, (list,)):
             raise SuprsendValidationError("distinct_ids must be list of strings")
@@ -306,9 +316,9 @@ class SubscriberListsApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def finish_sync(self, list_id: str, version_id: str, options: Dict = None):
+    def finish_sync(self, list_id: str, version_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
         # --
@@ -316,13 +326,13 @@ class SubscriberListsApi:
         url = "{}finish_sync/".format(self.__subscriber_list_url_with_version(list_id, version_id))
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         #
-        payload = {}
+        payload: Dict[str, Any] = {}
         resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(Dict[str, Any], resp.json())
 
-    def delete_version(self, list_id: str, version_id: str, options: Dict = None):
+    def delete_version(self, list_id: str, version_id: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         list_id = self._validate_list_id(list_id)
         version_id = self._validate_version_id(version_id)
         # --
