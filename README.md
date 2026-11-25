@@ -3,7 +3,7 @@ This package can be included in a python3 project to easily integrate
 with `SuprSend` platform.
 
 ### Installation
-`suprsend-py-sdk` is available on PyPI. You can install using pip.
+`suprsend-py-sdk` is available on PyPI and requires Python 3.11 or later. You can install using pip.
 ```bash
 pip install suprsend-py-sdk
 ```

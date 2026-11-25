@@ -46,5 +46,5 @@ python3 -m venv .venv
 .venv/bin/pip install -e . -r requirements-dev.txt
 make lint        # ruff check + ruff format --check
 make fmt         # ruff safe fixes + format
-make typecheck   # mypy, targets Python 3.9
+make typecheck   # mypy, targets Python 3.11
 ```

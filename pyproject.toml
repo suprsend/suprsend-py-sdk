@@ -11,7 +11,7 @@ version_file = "src/suprsend/_version.py"
 
 [tool.ruff]
 required-version = ">=0.17.2"
-target-version = "py39"           # python_requires = >=3.9 in setup.cfg
+target-version = "py311"          # python_requires = >=3.11 in setup.cfg
 line-length = 120                 # AGENT.md
 src = ["src"]
 
@@ -24,7 +24,6 @@ docstring-code-format = false
 
 [tool.ruff.lint]
 # Minimal, behaviour-neutral set (syntax/runtime errors, pyflakes, import sorting, implicit Optional).
-# No pyupgrade (UP): the code must keep running on 3.9.
 select = ["E4", "E7", "E9", "F", "I", "RUF013"]  # RUF013: implicit Optional
 ignore = [
     # Baseline debt with no safe autofix; remove one entry per follow-up PR.
@@ -41,7 +40,7 @@ known-first-party = ["suprsend"]
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 files = ["src/suprsend"]
 mypy_path = "src"
 ignore_missing_imports = true     # python-magic (optional extra) ships no types
