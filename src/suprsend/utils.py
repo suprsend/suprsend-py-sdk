@@ -1,20 +1,23 @@
-from typing import Dict
 import copy
 import json
-import jsonschema
 import traceback
 import urllib.parse
+from collections.abc import Sequence
+from typing import Any
+
+import jsonschema
 
 from .constants import (
-    WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES,
+    ALLOW_ATTACHMENTS_IN_BULK_API,
+    ATTACHMENT_UPLOAD_ENABLED,
     ATTACHMENT_URL_POTENTIAL_SIZE_IN_BYTES,
-    ATTACHMENT_UPLOAD_ENABLED, ALLOW_ATTACHMENTS_IN_BULK_API,
+    WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES,
 )
-from .exception import SuprsendValidationError, InputValueError
+from .exception import InputValueError, SuprsendValidationError
 from .request_schema import _get_schema_validator
 
 
-def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
+def get_apparent_workflow_body_size(body: dict[str, Any], is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = WORKFLOW_RUNTIME_KEYS_POTENTIAL_SIZE_IN_BYTES
     apparent_body = body
@@ -53,13 +56,13 @@ def get_apparent_workflow_body_size(body: Dict, is_part_of_bulk: bool) -> int:
                 pass
 
     # ---
-    body_size = len(json.dumps(apparent_body, ensure_ascii=False).encode('utf-8'))
+    body_size = len(json.dumps(apparent_body, ensure_ascii=False).encode("utf-8"))
     apparent_body_size = body_size + extra_bytes
     # --
     return apparent_body_size
 
 
-def get_apparent_event_size(event: Dict, is_part_of_bulk: bool) -> int:
+def get_apparent_event_size(event: dict[str, Any], is_part_of_bulk: bool) -> int:
     # ---
     extra_bytes = 0
     apparent_body = event
@@ -98,30 +101,30 @@ def get_apparent_event_size(event: Dict, is_part_of_bulk: bool) -> int:
                 pass
 
     # ---
-    body_size = len(json.dumps(apparent_body, ensure_ascii=False).encode('utf-8'))
+    body_size = len(json.dumps(apparent_body, ensure_ascii=False).encode("utf-8"))
     apparent_size = body_size + extra_bytes
     # --
     return apparent_size
 
 
-def get_apparent_identity_event_size(event: Dict) -> int:
-    body_size = len(json.dumps(event, ensure_ascii=False).encode('utf-8'))
+def get_apparent_identity_event_size(event: dict[str, Any]) -> int:
+    body_size = len(json.dumps(event, ensure_ascii=False).encode("utf-8"))
     return body_size
 
 
-def get_apparent_list_broadcast_body_size(body: Dict) -> int:
-    body_size = len(json.dumps(body, ensure_ascii=False).encode('utf-8'))
+def get_apparent_list_broadcast_body_size(body: dict[str, Any]) -> int:
+    body_size = len(json.dumps(body, ensure_ascii=False).encode("utf-8"))
     return body_size
 
 
-def validate_workflow_body_schema(body: Dict) -> Dict:
+def validate_workflow_body_schema(body: dict[str, Any]) -> dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
     if not isinstance(body["data"], dict):
         raise InputValueError("data must be a dictionary")
     # --------------------------------
-    schema_validator = _get_schema_validator('workflow')
+    schema_validator = _get_schema_validator("workflow")
     try:
         schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
@@ -129,7 +132,7 @@ def validate_workflow_body_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_workflow_trigger_body_schema(body: Dict) -> Dict:
+def validate_workflow_trigger_body_schema(body: dict[str, Any]) -> dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
@@ -144,12 +147,12 @@ def validate_workflow_trigger_body_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_track_event_schema(body: Dict) -> Dict:
+def validate_track_event_schema(body: dict[str, Any]) -> dict[str, Any]:
     # --- In case props is not provided, set it to empty dict
     if body.get("properties") is None:
         body["properties"] = {}
     # --------------------------------
-    schema_validator = _get_schema_validator('event')
+    schema_validator = _get_schema_validator("event")
     try:
         schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
@@ -157,14 +160,14 @@ def validate_track_event_schema(body: Dict) -> Dict:
     return body
 
 
-def validate_list_broadcast_body_schema(body: Dict) -> Dict:
+def validate_list_broadcast_body_schema(body: dict[str, Any]) -> dict[str, Any]:
     # --- In case data is not provided, set it to empty dict
     if body.get("data") is None:
         body["data"] = {}
     if not isinstance(body["data"], dict):
         raise InputValueError("data must be a dictionary")
     # --------------------------------
-    schema_validator = _get_schema_validator('list_broadcast')
+    schema_validator = _get_schema_validator("list_broadcast")
     try:
         schema_validator.validate(body)
     except jsonschema.exceptions.ValidationError as ve:
@@ -172,7 +175,7 @@ def validate_list_broadcast_body_schema(body: Dict) -> Dict:
     return body
 
 
-def invalid_record_json(failed_record, err):
+def invalid_record_json(failed_record: Any, err: BaseException) -> dict[str, Any]:
     if isinstance(err, (InputValueError,)):
         err_str = str(err)
     else:
@@ -184,7 +187,7 @@ def invalid_record_json(failed_record, err):
     return rec
 
 
-def safe_get(lst, index, default=None):
+def safe_get(lst: Sequence[Any], index: int, default: Any = None) -> Any:
     """
     method to safely get element from list
     """
@@ -194,7 +197,7 @@ def safe_get(lst, index, default=None):
         return default
 
 
-def urlencode_query(params: Dict, doseq: bool = False) -> str:
+def urlencode_query(params: dict[str, Any], doseq: bool = False) -> str:
     """
     URL-encode query params with JSON-standard bool serialization.
     Python's urllib.parse.urlencode renders bools via str() as "True"/"False";
@@ -202,7 +205,7 @@ def urlencode_query(params: Dict, doseq: bool = False) -> str:
     """
     if not params:
         return ""
-    normalized = {}
+    normalized: dict[str, Any] = {}
     for key, val in params.items():
         if val is None:
             continue
@@ -212,10 +215,7 @@ def urlencode_query(params: Dict, doseq: bool = False) -> str:
             filtered = [v for v in val if v is not None]
             if not filtered:
                 continue
-            normalized[key] = [
-                ("true" if v else "false") if isinstance(v, bool) else v
-                for v in filtered
-            ]
+            normalized[key] = [("true" if v else "false") if isinstance(v, bool) else v for v in filtered]
         else:
             normalized[key] = val
     return urllib.parse.urlencode(normalized, doseq=doseq)

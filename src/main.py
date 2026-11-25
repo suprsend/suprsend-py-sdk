@@ -16,24 +16,11 @@ def test_request():
                 "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": None}],
             }
         ],
-        "delivery": {
-            "smart": False,
-            "mandatory_channels": ["email"]
-        },
+        "delivery": {"smart": False, "mandatory_channels": ["email"]},
         "data": {
-            "event": {
-                "location": {
-                    "city": 'mumbai'
-                },
-                "city": 'mumbai',
-                "amount": "$10",
-                "product_name": "Product A"
-            },
-            "template": {
-                "first_name": "User",
-                "spend_amount": "$10"
-            }
-        }
+            "event": {"location": {"city": "mumbai"}, "city": "mumbai", "amount": "$10", "product_name": "Product A"},
+            "template": {"first_name": "User", "spend_amount": "$10"},
+        },
     }
     wf = Workflow(body=workflow_body)
     resp = supr_client.trigger_workflow(wf)

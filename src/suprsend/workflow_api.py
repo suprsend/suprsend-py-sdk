@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
@@ -8,15 +8,15 @@ if TYPE_CHECKING:
 
 
 class WorkflowsApi:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.metadata = {"User-Agent": self.config.user_agent}
 
-    def trigger(self, workflow: WorkflowTriggerRequest) -> Dict:
+    def trigger(self, workflow: WorkflowTriggerRequest) -> dict[str, Any]:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
             url = "{}trigger/".format(self.config.base_url)
-            resp = self.config.request('POST', url, workflow_body)
+            resp = self.config.request("POST", url, workflow_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {
@@ -49,7 +49,7 @@ class WorkflowsApi:
                     "raw_response": resp_json,
                 }
 
-    def bulk_trigger_instance(self):
+    def bulk_trigger_instance(self) -> BulkWorkflowTrigger:
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")

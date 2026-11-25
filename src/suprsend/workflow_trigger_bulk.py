@@ -1,17 +1,17 @@
 import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from .bulk_response import BulkResponse
 from .constants import (
+    ALLOW_ATTACHMENTS_IN_BULK_API,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_WORKFLOWS_IN_BULK_API,
-    ALLOW_ATTACHMENTS_IN_BULK_API,
 )
 from .exception import InputValueError
-from .utils import invalid_record_json, safe_get
-from .bulk_response import BulkResponse
-from .workflow_request import WorkflowTriggerRequest
 from .logger import ss_logger
+from .utils import invalid_record_json, safe_get
+from .workflow_request import WorkflowTriggerRequest
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -22,30 +22,32 @@ class _BulkWorkflowTriggerChunk:
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
     _max_records_in_chunk = MAX_WORKFLOWS_IN_BULK_API
 
-    def __init__(self, config: "Suprsend"):
-        self.config: "Suprsend" = config
+    def __init__(self, config: "Suprsend") -> None:
+        self.config: Suprsend = config
         self.__url: str = "{}trigger/".format(self.config.base_url)
         self.url: str = self.__url
-        self.__chunk: List[Dict] = []
+        self.__chunk: list[dict[str, Any]] = []
         #
         self.__running_size: int = 0
         self.__running_length: int = 0
-        self.response: Optional[Dict] = None
+        self.response: dict[str, Any] | None = None
 
-    def __add_body_to_chunk(self, body, body_size):
+    def __add_body_to_chunk(self, body: dict[str, Any], body_size: int) -> None:
         # First add size, then body to reduce effects of race condition
         self.__running_size += body_size
         self.__chunk.append(body)
         self.__running_length += 1
 
-    def __check_limit_reached(self):
-        if self.__running_length >= self._max_records_in_chunk or \
-                self.__running_size >= self._chunk_apparent_size_in_bytes:
+    def __check_limit_reached(self) -> bool:
+        if (
+            self.__running_length >= self._max_records_in_chunk
+            or self.__running_size >= self._chunk_apparent_size_in_bytes
+        ):
             return True
         else:
             return False
 
-    def try_to_add_into_chunk(self, body: Dict, body_size: int) -> bool:
+    def try_to_add_into_chunk(self, body: dict[str, Any], body_size: int) -> bool:
         """
         returns whether passed body was able to get added to this chunk or not,
         if true, body gets added to chunk
@@ -60,8 +62,9 @@ class _BulkWorkflowTriggerChunk:
             return False
         # ---
         if body_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"workflow body too big - {body_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"workflow body too big - {body_size} Bytes, must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # if apparent_size of body crosses limit
         if self.__running_size + body_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -73,9 +76,9 @@ class _BulkWorkflowTriggerChunk:
         self.__add_body_to_chunk(body, body_size)
         return True
 
-    def trigger(self):
+    def trigger(self) -> None:
         try:
-            resp = self.config.request('POST', self.__url, self.__chunk)
+            resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -103,9 +106,15 @@ class _BulkWorkflowTriggerChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
-                        for idx, record in enumerate(parsed_resp["records"]) if record["status"] == "error"],
-                    "raw_response": resp_json
+                        {
+                            "record": safe_get(self.__chunk, idx),
+                            "error": record["error"]["message"],
+                            "code": record["status_code"],
+                        }
+                        for idx, record in enumerate(parsed_resp["records"])
+                        if record["status"] == "error"
+                    ],
+                    "raw_response": resp_json,
                 }
             else:
                 self.response = {
@@ -115,23 +124,28 @@ class _BulkWorkflowTriggerChunk:
                     "success": 0,
                     "failure": len(self.__chunk),
                     "failed_records": [
-                        {"record": c, "error": (resp_json.get("error", {}).get("message") if resp_json else resp.text), "code": resp.status_code}
-                        for c in self.__chunk],
-                    "raw_response": resp_json
+                        {
+                            "record": c,
+                            "error": (resp_json.get("error", {}).get("message") if resp_json else resp.text),
+                            "code": resp.status_code,
+                        }
+                        for c in self.__chunk
+                    ],
+                    "raw_response": resp_json,
                 }
 
 
 class BulkWorkflowTrigger:
-    def __init__(self, config: "Suprsend"):
-        self.config: "Suprsend" = config
-        self.__workflows: List[WorkflowTriggerRequest] = []
-        self.__pending_records: List[Tuple[Dict, int]] = []
-        self.chunks: List[_BulkWorkflowTriggerChunk] = []
+    def __init__(self, config: "Suprsend") -> None:
+        self.config: Suprsend = config
+        self.__workflows: list[WorkflowTriggerRequest] = []
+        self.__pending_records: list[tuple[dict[str, Any], int]] = []
+        self.chunks: list[_BulkWorkflowTriggerChunk] = []
         self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": workflow-json, "error": error_str, "code": 500}
-        self.__invalid_records: List[Dict] = []
+        self.__invalid_records: list[dict[str, Any]] = []
 
-    def __validate_workflows(self):
+    def __validate_workflows(self) -> None:
         for wf in self.__workflows:
             try:
                 wf_body, body_size = wf.get_final_json(self.config, is_part_of_bulk=True)
@@ -140,7 +154,7 @@ class BulkWorkflowTrigger:
                 inv_rec = invalid_record_json(wf.as_json(), ex)
                 self.__invalid_records.append(inv_rec)
 
-    def __chunkify(self, start_idx=0):
+    def __chunkify(self, start_idx: int = 0) -> None:
         curr_chunk = _BulkWorkflowTriggerChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
@@ -151,7 +165,7 @@ class BulkWorkflowTrigger:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *workflows):
+    def append(self, *workflows: Any) -> None:
         if not workflows:
             return
         for wf in workflows:
@@ -159,7 +173,7 @@ class BulkWorkflowTrigger:
                 wf_copy = copy.deepcopy(wf)
                 self.__workflows.append(wf_copy)
 
-    def trigger(self):
+    def trigger(self) -> BulkResponse:
         self.__validate_workflows()
         # --------
         if len(self.__invalid_records) > 0:

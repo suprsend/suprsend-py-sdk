@@ -1,12 +1,14 @@
+import base64
 import hashlib
 import hmac
-import base64
 import json
-from typing import Dict, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 
-def get_request_signature(url: str, http_verb: str, content, headers: Dict, secret: str) -> Tuple[str, str]:
+def get_request_signature(
+    url: str, http_verb: str, content: Any, headers: dict[str, Any], secret: str
+) -> tuple[str, str]:
     if http_verb == "GET":  # POST/GET/PUT
         content_txt, content_md5 = "", ""
     else:
@@ -19,11 +21,7 @@ def get_request_signature(url: str, http_verb: str, content, headers: Dict, secr
     request_uri = get_uri(url)
     # ----- Create string to sign
     string_to_sign = "{}\n{}\n{}\n{}\n{}".format(
-        http_verb,
-        content_md5,
-        headers["Content-Type"],
-        headers["Date"],
-        request_uri
+        http_verb, content_md5, headers["Content-Type"], headers["Date"], request_uri
     )
     # print("string_to_sign", string_to_sign)
     # ----- HMAC-SHA-256

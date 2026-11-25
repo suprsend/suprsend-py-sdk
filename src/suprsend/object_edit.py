@@ -1,36 +1,37 @@
-from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
 
-from .object_edit_internal_helper import _ObjectEditInternalHelper
 from .logger import ss_logger
+from .object_edit_internal_helper import _ObjectEditInternalHelper
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class ObjectEdit:
-    def __init__(self, config: "Suprsend", object_type: str, object_id: str):
+    def __init__(self, config: "Suprsend", object_type: str, object_id: str) -> None:
         self.config = config
         self.object_type = object_type
         self.object_id = object_id
         #
-        self.__errors = []
-        self.__info = []
+        self.__errors: list[str] = []
+        self.__info: list[str] = []
         #
-        self.operations = []
+        self.operations: list[dict[str, Any]] = []
         self._helper = _ObjectEditInternalHelper()
 
     @property
-    def warnings(self):
+    def warnings(self) -> list[str]:
         return self.__info
 
     @property
-    def errors(self):
+    def errors(self) -> list[str]:
         return self.__errors
 
-    def get_payload(self):
+    def get_payload(self) -> dict[str, Any]:
         return {"operations": self.operations}
 
-    def validate_body(self):
+    def validate_body(self) -> None:
         if self.__info:
             msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__info)
             ss_logger.warning("validate_body object: %s", msg)
@@ -38,7 +39,7 @@ class ObjectEdit:
             msg = f"[Object: {self.object_type}/{self.object_id}]" + "\n".join(self.__errors)
             ss_logger.error("validate_body object error: %s", msg)
 
-    def _collect_operation(self):
+    def _collect_operation(self) -> None:
         resp = self._helper.get_operation_result()
         if resp["errors"]:
             self.__errors.extend(resp["errors"])
@@ -47,7 +48,7 @@ class ObjectEdit:
         if resp["operation"]:
             self.operations.append(resp["operation"])
 
-    def append(self, arg1: Union[str, Dict], arg2: Any = None):
+    def append(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         Usage:
         1. append(k, v)
@@ -74,7 +75,7 @@ class ObjectEdit:
             # --
             self._collect_operation()
 
-    def set(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. set(k, v)
         2. set({k1: v1, k2, v2})
@@ -100,7 +101,7 @@ class ObjectEdit:
             # --
             self._collect_operation()
 
-    def set_once(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set_once(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. set_once(k, v)
         2. set_once({k1: v1, k2, v2})
@@ -126,7 +127,7 @@ class ObjectEdit:
             # --
             self._collect_operation()
 
-    def increment(self, arg1: Union[str, Dict], arg2: Any = None):
+    def increment(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. increment(k, v)
         2. increment({k1: v1, k2, v2})
@@ -152,7 +153,7 @@ class ObjectEdit:
             # --
             self._collect_operation()
 
-    def remove(self, arg1: Union[str, Dict], arg2: Any = None):
+    def remove(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         Usage:
         1. remove(k, v)
@@ -179,7 +180,7 @@ class ObjectEdit:
             # --
             self._collect_operation()
 
-    def unset(self, key: Union[str, Iterable[str]]):
+    def unset(self, key: str | Iterable[str]) -> None:
         """
         Usage:
         1. unset(k)
@@ -202,7 +203,7 @@ class ObjectEdit:
             self._collect_operation()
 
     # ------------------------ Preferred language
-    def set_preferred_language(self, lang_code: str):
+    def set_preferred_language(self, lang_code: str) -> None:
         """
         :param lang_code:
         :return:
@@ -212,7 +213,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Locale
-    def set_locale(self, locale_code: str):
+    def set_locale(self, locale_code: str) -> None:
         """
         :param locale_code:
         :return:
@@ -222,7 +223,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Timezone
-    def set_timezone(self, timezone: str):
+    def set_timezone(self, timezone: str) -> None:
         """
         :param timezone:
         :return:
@@ -232,7 +233,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Email
-    def add_email(self, value: str):
+    def add_email(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -241,7 +242,7 @@ class ObjectEdit:
         self._helper._add_email(value, caller=caller)
         self._collect_operation()
 
-    def remove_email(self, value: str):
+    def remove_email(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -251,7 +252,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ SMS
-    def add_sms(self, value: str):
+    def add_sms(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -260,7 +261,7 @@ class ObjectEdit:
         self._helper._add_sms(value, caller=caller)
         self._collect_operation()
 
-    def remove_sms(self, value: str):
+    def remove_sms(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -270,7 +271,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Whatsapp
-    def add_whatsapp(self, value: str):
+    def add_whatsapp(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -279,7 +280,7 @@ class ObjectEdit:
         self._helper._add_whatsapp(value, caller=caller)
         self._collect_operation()
 
-    def remove_whatsapp(self, value: str):
+    def remove_whatsapp(self, value: str) -> None:
         """
         :param value:
         :return:
@@ -289,7 +290,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Androidpush
-    def add_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_androidpush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -300,7 +301,7 @@ class ObjectEdit:
         self._helper._add_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_androidpush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -312,7 +313,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Iospush [providers: apns]
-    def add_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_iospush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -323,7 +324,7 @@ class ObjectEdit:
         self._helper._add_iospush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_iospush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -335,7 +336,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Webpush [providers: vapid]
-    def add_webpush(self, value: dict, provider: str = None):
+    def add_webpush(self, value: dict[str, Any], provider: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -345,7 +346,7 @@ class ObjectEdit:
         self._helper._add_webpush(value, provider, caller=caller)
         self._collect_operation()
 
-    def remove_webpush(self, value: dict, provider: str = None):
+    def remove_webpush(self, value: dict[str, Any], provider: str | None = None) -> None:
         """
         :param value:
         :param provider:
@@ -356,7 +357,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ Slack
-    def add_slack(self, value: dict):
+    def add_slack(self, value: dict[str, Any]) -> None:
         """
         :param value:
         :return:
@@ -365,7 +366,7 @@ class ObjectEdit:
         self._helper._add_slack(value, caller=caller)
         self._collect_operation()
 
-    def remove_slack(self, value: dict):
+    def remove_slack(self, value: dict[str, Any]) -> None:
         """
         :param value:
         :return:
@@ -375,7 +376,7 @@ class ObjectEdit:
         self._collect_operation()
 
     # ------------------------ MS Teams
-    def add_ms_teams(self, value: dict):
+    def add_ms_teams(self, value: dict[str, Any]) -> None:
         """
         :param value:
         :return:
@@ -384,7 +385,7 @@ class ObjectEdit:
         self._helper._add_ms_teams(value, caller=caller)
         self._collect_operation()
 
-    def remove_ms_teams(self, value: dict):
+    def remove_ms_teams(self, value: dict[str, Any]) -> None:
         """
         :param value:
         :return:

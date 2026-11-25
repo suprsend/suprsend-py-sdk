@@ -38,3 +38,13 @@ Installing newly uploaded package
 ```bash
 python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps suprsend-py-sdk
 ```
+
+### Lint and type check
+Dev tools are pinned in `requirements-dev.txt` (not installed with the package).
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e . -r requirements-dev.txt
+make lint        # ruff check + ruff format --check
+make fmt         # ruff safe fixes + format
+make typecheck   # mypy, targets Python 3.11
+```

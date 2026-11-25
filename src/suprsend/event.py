@@ -1,14 +1,18 @@
 import time
-from typing import List, Dict, TYPE_CHECKING
 import uuid
-from .logger import ss_logger
+from typing import TYPE_CHECKING, Any, cast
 
+from .attachment import get_attachment_json
 from .constants import (
-    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .attachment import get_attachment_json
-from .utils import (validate_track_event_schema, get_apparent_event_size, )
+from .logger import ss_logger
+from .utils import (
+    get_apparent_event_size,
+    validate_track_event_schema,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
@@ -16,14 +20,25 @@ if TYPE_CHECKING:
 
 RESERVED_EVENT_NAMES = [
     "$identify",
-    "$notification_delivered", "$notification_dismiss", "$notification_clicked",
-    "$app_launched", "$user_login", "$user_logout",
+    "$notification_delivered",
+    "$notification_dismiss",
+    "$notification_clicked",
+    "$app_launched",
+    "$user_login",
+    "$user_logout",
 ]
 
 
 class Event:
-    def __init__(self, distinct_id: str, event_name: str, properties: Dict = None,
-                 idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+    def __init__(
+        self,
+        distinct_id: str,
+        event_name: str,
+        properties: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        tenant_id: str | None = None,
+        brand_id: str | None = None,
+    ) -> None:
         self.distinct_id = distinct_id
         self.event_name = event_name
         self.properties = properties
@@ -34,7 +49,7 @@ class Event:
         if self.properties is None:
             self.properties = {}
 
-    def __validate_distinct_id(self):
+    def __validate_distinct_id(self) -> None:
         if not isinstance(self.distinct_id, (str,)):
             raise InputValueError("distinct_id must be a string. an Id which uniquely identify a user in your app")
         distinct_id = self.distinct_id.strip()
@@ -42,17 +57,17 @@ class Event:
             raise InputValueError("distinct_id missing")
         self.distinct_id = distinct_id
 
-    def __validate_properties(self):
+    def __validate_properties(self) -> None:
         if not isinstance(self.properties, (dict,)):
             raise InputValueError("properties must be a dictionary")
 
-    def __check_event_prefix(self, event_name: str):
+    def __check_event_prefix(self, event_name: str) -> None:
         if event_name not in RESERVED_EVENT_NAMES:
             prefix_3_chars = event_name[:3].lower()
             if prefix_3_chars.startswith("$") or prefix_3_chars == "ss_":
                 raise InputValueError("event_names starting with [$,ss_] are reserved by SuprSend")
 
-    def __validate_event_name(self):
+    def __validate_event_name(self) -> None:
         if not isinstance(self.event_name, (str,)):
             raise InputValueError("event_name must be a string")
         event_name = self.event_name.strip()
@@ -61,11 +76,13 @@ class Event:
         self.__check_event_prefix(event_name)
         self.event_name = event_name
 
-    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+    def add_attachment(self, file_path: str, file_name: str | None = None, ignore_if_error: bool = False) -> None:
         # if properties is not a dict, not raising error while adding attachment.
         if not isinstance(self.properties, (dict,)):
-            ss_logger.warning("attachment cannot be added. please make sure properties is a dictionary. "
-                                "Event: %s", str(self.as_json()))
+            ss_logger.warning(
+                "attachment cannot be added. please make sure properties is a dictionary. Event: %s",
+                str(self.as_json()),
+            )
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
@@ -77,7 +94,7 @@ class Event:
         # -----
         self.properties["$attachments"].append(attachment)
 
-    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> tuple[dict[str, Any], int]:
         # --- validate
         self.__validate_distinct_id()
         self.__validate_event_name()
@@ -90,7 +107,7 @@ class Event:
             "event": self.event_name,
             "env": config.workspace_identifier(),
             "distinct_id": self.distinct_id,
-            "properties": {**self.properties, **super_props}
+            "properties": {**cast(dict[str, Any], self.properties), **super_props},
         }
         if self.idempotency_key:
             event_dict["$idempotency_key"] = self.idempotency_key
@@ -103,12 +120,13 @@ class Event:
         # ---- Check size
         apparent_size = get_apparent_event_size(event_dict, is_part_of_bulk)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"Event size too big - {apparent_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"Event size too big - {apparent_size} Bytes, must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return event_dict, apparent_size
 
-    def as_json(self):
+    def as_json(self) -> dict[str, Any]:
         event_dict = {
             "event": self.event_name,
             "distinct_id": self.distinct_id,
@@ -125,21 +143,21 @@ class Event:
 
 
 class EventCollector:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.__url = self.__get_url()
 
-    def __get_url(self):
+    def __get_url(self) -> str:
         url_formatted = "{}v2/event/".format(self.config.base_url)
         return url_formatted
 
-    def collect(self, event: Event) -> Dict:
+    def collect(self, event: Event) -> dict[str, Any]:
         event_dict, event_size = event.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(event_dict)
 
-    def send(self, event: Dict) -> Dict:
+    def send(self, event: dict[str, Any]) -> dict[str, Any]:
         try:
-            resp = self.config.request('POST', self.__url, event)
+            resp = self.config.request("POST", self.__url, event)
         except Exception as ex:
             error_str = ex.__str__()
             return {

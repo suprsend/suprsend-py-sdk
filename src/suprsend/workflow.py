@@ -1,20 +1,26 @@
-from typing import Dict, TYPE_CHECKING
-from warnings import warn
+from typing import TYPE_CHECKING, Any
 
+from .attachment import get_attachment_json
 from .constants import (
-    BODY_MAX_APPARENT_SIZE_IN_BYTES, BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES,
+    BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .utils import (get_apparent_workflow_body_size, validate_workflow_body_schema)
-from .attachment import get_attachment_json
 from .logger import ss_logger
+from .utils import get_apparent_workflow_body_size, validate_workflow_body_schema
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class Workflow:
-    def __init__(self, body, idempotency_key: str = None, tenant_id: str = None, brand_id: str = None):
+    def __init__(
+        self,
+        body: dict[str, Any],
+        idempotency_key: str | None = None,
+        tenant_id: str | None = None,
+        brand_id: str | None = None,
+    ) -> None:
         # warn(f'{self.__class__.__name__} will be deprecated.', DeprecationWarning, stacklevel=2)
         if not isinstance(body, (dict,)):
             raise InputValueError("workflow body must be a json/dictionary")
@@ -23,13 +29,15 @@ class Workflow:
         self.tenant_id = tenant_id
         self.brand_id = brand_id
 
-    def add_attachment(self, file_path: str, file_name: str = None, ignore_if_error: bool = False):
+    def add_attachment(self, file_path: str, file_name: str | None = None, ignore_if_error: bool = False) -> None:
         if self.body.get("data") is None:
             self.body["data"] = {}
         # if body["data"] is not a dict, not raising error while adding attachment.
         if not isinstance(self.body["data"], (dict,)):
-            ss_logger.warning("attachment cannot be added. please make sure body['data'] is a dictionary. "
-                                "Workflow: %s", str(self.as_json()))
+            ss_logger.warning(
+                "attachment cannot be added. please make sure body['data'] is a dictionary. Workflow: %s",
+                str(self.as_json()),
+            )
             return
         # ---
         attachment = get_attachment_json(file_path, file_name, ignore_if_error)
@@ -41,7 +49,7 @@ class Workflow:
         # -----
         self.body["data"]["$attachments"].append(attachment)
 
-    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False):
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> tuple[dict[str, Any], int]:
         # add idempotency key in body if present
         if self.idempotency_key:
             self.body["$idempotency_key"] = self.idempotency_key
@@ -54,12 +62,14 @@ class Workflow:
         # ---- Check body size
         apparent_size = get_apparent_workflow_body_size(self.body, is_part_of_bulk)
         if apparent_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"workflow body too big - {apparent_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"workflow body too big - {apparent_size} Bytes, "
+                f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return self.body, apparent_size
 
-    def as_json(self):
+    def as_json(self) -> dict[str, Any]:
         body_dict = {**self.body}
         if self.idempotency_key:
             body_dict["$idempotency_key"] = self.idempotency_key
@@ -72,21 +82,21 @@ class Workflow:
 
 
 class _WorkflowTrigger:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.url = self.__get_url()
 
-    def __get_url(self):
+    def __get_url(self) -> str:
         url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier())
         return url_formatted
 
-    def trigger(self, workflow: Workflow) -> Dict:
+    def trigger(self, workflow: Workflow) -> dict[str, Any]:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(workflow_body)
 
-    def send(self, workflow_body: Dict) -> Dict:
+    def send(self, workflow_body: dict[str, Any]) -> dict[str, Any]:
         try:
-            resp = self.config.request('POST', self.url, workflow_body)
+            resp = self.config.request("POST", self.url, workflow_body)
         except Exception as ex:
             error_str = ex.__str__()
             return {

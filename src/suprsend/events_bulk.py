@@ -1,28 +1,27 @@
 import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
-from .logger import ss_logger
+from typing import TYPE_CHECKING, Any
 
+from .bulk_response import BulkResponse
 from .constants import (
+    ALLOW_ATTACHMENTS_IN_BULK_API,
     BODY_MAX_APPARENT_SIZE_IN_BYTES,
     BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
     MAX_EVENTS_IN_BULK_API,
-    ALLOW_ATTACHMENTS_IN_BULK_API,
 )
-from .exception import InputValueError
-from .utils import invalid_record_json, safe_get
-from .bulk_response import BulkResponse
 from .event import Event
+from .exception import InputValueError
+from .logger import ss_logger
+from .utils import invalid_record_json, safe_get
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class BulkEventsFactory:
+    def __init__(self, config: "Suprsend") -> None:
+        self.config: Suprsend = config
 
-    def __init__(self, config: "Suprsend"):
-        self.config: "Suprsend" = config
-
-    def new_instance(self):
+    def new_instance(self) -> "BulkEvents":
         """
         USAGE:
         supr_client = Suprsend("__workspace_key__", "__workspace_secret__")
@@ -50,33 +49,35 @@ class _BulkEventsChunk:
     _chunk_apparent_size_in_bytes_readable = BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE
     _max_records_in_chunk = MAX_EVENTS_IN_BULK_API
 
-    def __init__(self, config: "Suprsend"):
-        self.config: "Suprsend" = config
-        self.__chunk: List[Dict] = []
+    def __init__(self, config: "Suprsend") -> None:
+        self.config: Suprsend = config
+        self.__chunk: list[dict[str, Any]] = []
         self.__url: str = self.__get_url()
         #
         self.__running_size: int = 0
         self.__running_length: int = 0
-        self.response: Optional[Dict] = None
+        self.response: dict[str, Any] | None = None
 
-    def __get_url(self):
+    def __get_url(self) -> str:
         url_formatted = "{}v2/bulk/event/".format(self.config.base_url)
         return url_formatted
 
-    def __add_event_to_chunk(self, event, event_size):
+    def __add_event_to_chunk(self, event: dict[str, Any], event_size: int) -> None:
         # First add size, then event to reduce effects of race condition
         self.__running_size += event_size
         self.__chunk.append(event)
         self.__running_length += 1
 
-    def __check_limit_reached(self):
-        if self.__running_length >= self._max_records_in_chunk or \
-                self.__running_size >= self._chunk_apparent_size_in_bytes:
+    def __check_limit_reached(self) -> bool:
+        if (
+            self.__running_length >= self._max_records_in_chunk
+            or self.__running_size >= self._chunk_apparent_size_in_bytes
+        ):
             return True
         else:
             return False
 
-    def try_to_add_into_chunk(self, event: Dict, event_size: int) -> bool:
+    def try_to_add_into_chunk(self, event: dict[str, Any], event_size: int) -> bool:
         """
         returns whether passed event was able to get added to this chunk or not,
         if true, event gets added to chunk
@@ -91,8 +92,10 @@ class _BulkEventsChunk:
             return False
         # ---
         if event_size > BODY_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"Event properties too big - {event_size} Bytes, "
-                                  f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"Event properties too big - {event_size} Bytes, "
+                f"must not cross {BODY_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # if apparent_size of event crosses limit
         if self.__running_size + event_size > self._chunk_apparent_size_in_bytes:
             return False
@@ -104,9 +107,9 @@ class _BulkEventsChunk:
         self.__add_event_to_chunk(event, event_size)
         return True
 
-    def trigger(self):
+    def trigger(self) -> None:
         try:
-            resp = self.config.request('POST', self.__url, self.__chunk)
+            resp = self.config.request("POST", self.__url, self.__chunk)
         except Exception as ex:
             error_str = ex.__str__()
             self.response = {
@@ -131,9 +134,15 @@ class _BulkEventsChunk:
                     "success": parsed_resp["success"],
                     "failure": parsed_resp["failure"],
                     "failed_records": [
-                        {"record": safe_get(self.__chunk, idx), "error": record["error"]["message"], "code": record["status_code"]}
-                        for idx, record in enumerate(resp_json["records"]) if record["status"] == "error"],
-                    "raw_response": resp_json
+                        {
+                            "record": safe_get(self.__chunk, idx),
+                            "error": record["error"]["message"],
+                            "code": record["status_code"],
+                        }
+                        for idx, record in enumerate(resp_json["records"])
+                        if record["status"] == "error"
+                    ],
+                    "raw_response": resp_json,
                 }
             else:
                 self.response = {
@@ -142,23 +151,25 @@ class _BulkEventsChunk:
                     "total": len(self.__chunk),
                     "success": 0,
                     "failure": len(self.__chunk),
-                    "failed_records": [{"record": c, "error": resp_json["error"]["message"], "code": resp.status_code}
-                                       for c in self.__chunk],
-                    "raw_response": resp_json
+                    "failed_records": [
+                        {"record": c, "error": resp_json["error"]["message"], "code": resp.status_code}
+                        for c in self.__chunk
+                    ],
+                    "raw_response": resp_json,
                 }
 
 
 class BulkEvents:
-    def __init__(self, config: "Suprsend"):
-        self.config: "Suprsend" = config
-        self.__events: List[Event] = []
-        self.__pending_records: List[Tuple[Dict, int]] = []
-        self.chunks: List[_BulkEventsChunk] = []
+    def __init__(self, config: "Suprsend") -> None:
+        self.config: Suprsend = config
+        self.__events: list[Event] = []
+        self.__pending_records: list[tuple[dict[str, Any], int]] = []
+        self.chunks: list[_BulkEventsChunk] = []
         self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
-        self.__invalid_records: List[Dict] = []
+        self.__invalid_records: list[dict[str, Any]] = []
 
-    def __validate_events(self):
+    def __validate_events(self) -> None:
         for ev in self.__events:
             try:
                 ev_json, body_size = ev.get_final_json(self.config, is_part_of_bulk=True)
@@ -167,7 +178,7 @@ class BulkEvents:
                 inv_rec = invalid_record_json(ev.as_json(), ex)
                 self.__invalid_records.append(inv_rec)
 
-    def __chunkify(self, start_idx=0):
+    def __chunkify(self, start_idx: int = 0) -> None:
         curr_chunk = _BulkEventsChunk(self.config)
         self.chunks.append(curr_chunk)
         for rel_idx, rec in enumerate(self.__pending_records[start_idx:]):
@@ -178,7 +189,7 @@ class BulkEvents:
                 # Don't forget to break. As current loop must not continue further
                 break
 
-    def append(self, *events):
+    def append(self, *events: Any) -> None:
         if not events:
             return
         for ev in events:
@@ -186,7 +197,7 @@ class BulkEvents:
                 ev_copy = copy.deepcopy(ev)
                 self.__events.append(ev_copy)
 
-    def trigger(self):
+    def trigger(self) -> BulkResponse:
         self.__validate_events()
         # --------
         if len(self.__invalid_records) > 0:

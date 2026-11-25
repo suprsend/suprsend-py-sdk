@@ -1,46 +1,49 @@
-from typing import Any, Dict, Iterable, Union, TYPE_CHECKING
 import time
 import uuid
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
 
 from .constants import (
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES,
     IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE,
 )
 from .exception import InputValueError
-from .utils import (get_apparent_identity_event_size, )
-from .user_edit_internal_helper import _UserEditInternalHelper
 from .logger import ss_logger
+from .user_edit_internal_helper import _UserEditInternalHelper
+from .utils import (
+    get_apparent_identity_event_size,
+)
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class UserEdit:
-    def __init__(self, config: "Suprsend", distinct_id: str, tenant_id: str = None):
+    def __init__(self, config: "Suprsend", distinct_id: str, tenant_id: str | None = None) -> None:
         self.config = config
         self.distinct_id = distinct_id
         self.tenant_id = tenant_id
         #
-        self.__errors = []
-        self.__info = []
+        self.__errors: list[str] = []
+        self.__info: list[str] = []
         #
-        self.operations = []
+        self.operations: list[dict[str, Any]] = []
         self._helper = _UserEditInternalHelper()
         #
-        self.__warnings_list = []
+        self.__warnings_list: list[str] = []
 
     @property
-    def warnings(self):
+    def warnings(self) -> list[str]:
         return self.__info
 
     @property
-    def errors(self):
+    def errors(self) -> list[str]:
         return self.__errors
 
-    def get_payload(self):
+    def get_payload(self) -> dict[str, Any]:
         return {"operations": self.operations}
 
-    def get_async_payload(self):
+    def get_async_payload(self) -> dict[str, Any]:
         ev = {
             "$schema": "2",
             "$insert_id": str(uuid.uuid4()),
@@ -54,7 +57,7 @@ class UserEdit:
             ev["tenant_id"] = self.tenant_id
         return ev
 
-    def as_json_async(self):
+    def as_json_async(self) -> dict[str, Any]:
         ev = {
             "distinct_id": self.distinct_id,
             "$user_operations": self.operations,
@@ -64,15 +67,17 @@ class UserEdit:
             ev["tenant_id"] = self.tenant_id
         return ev
 
-    def validate_payload_size(self, payload: Dict):
+    def validate_payload_size(self, payload: dict[str, Any]) -> tuple[dict[str, Any], int]:
         apparent_size = get_apparent_identity_event_size(payload)
         if apparent_size > IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES:
-            raise InputValueError(f"User Payload size too big - {apparent_size} Bytes, "
-                                  f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}")
+            raise InputValueError(
+                f"User Payload size too big - {apparent_size} Bytes, "
+                f"must not cross {IDENTITY_SINGLE_EVENT_MAX_APPARENT_SIZE_IN_BYTES_READABLE}"
+            )
         # ----
         return payload, apparent_size
 
-    def validate_body(self):
+    def validate_body(self) -> list[str]:
         self.__warnings_list = []
         if self.__info:
             msg = f"[distinct_id: {self.distinct_id}]" + "\n".join(self.__info)
@@ -86,7 +91,7 @@ class UserEdit:
         # ------
         return self.__warnings_list
 
-    def _collect_operation(self):
+    def _collect_operation(self) -> None:
         resp = self._helper.get_operation_result()
         if resp["errors"]:
             self.__errors.extend(resp["errors"])
@@ -95,7 +100,7 @@ class UserEdit:
         if resp["operation"]:
             self.operations.append(resp["operation"])
 
-    def append(self, arg1: Union[str, Dict], arg2: Any = None):
+    def append(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         Usage:
         1. append(k, v)
@@ -122,7 +127,7 @@ class UserEdit:
             # --
             self._collect_operation()
 
-    def set(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. set(k, v)
         2. set({k1: v1, k2, v2})
@@ -148,7 +153,7 @@ class UserEdit:
             # --
             self._collect_operation()
 
-    def set_once(self, arg1: Union[str, Dict], arg2: Any = None):
+    def set_once(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. set_once(k, v)
         2. set_once({k1: v1, k2, v2})
@@ -174,7 +179,7 @@ class UserEdit:
             # --
             self._collect_operation()
 
-    def increment(self, arg1: Union[str, Dict], arg2: Any = None):
+    def increment(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         1. increment(k, v)
         2. increment({k1: v1, k2, v2})
@@ -200,7 +205,7 @@ class UserEdit:
             # --
             self._collect_operation()
 
-    def remove(self, arg1: Union[str, Dict], arg2: Any = None):
+    def remove(self, arg1: str | dict[str, Any], arg2: Any = None) -> None:
         """
         Usage:
         1. remove(k, v)
@@ -227,7 +232,7 @@ class UserEdit:
             # --
             self._collect_operation()
 
-    def unset(self, key: Union[str, Iterable[str]]):
+    def unset(self, key: str | Iterable[str]) -> None:
         """
         Usage:
         1. unset(k)
@@ -250,7 +255,7 @@ class UserEdit:
             self._collect_operation()
 
     # ------------------------ Preferred language
-    def set_preferred_language(self, lang_code: str):
+    def set_preferred_language(self, lang_code: str) -> None:
         """
         :param lang_code:
         :return:
@@ -260,7 +265,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Locale
-    def set_locale(self, locale_code: str):
+    def set_locale(self, locale_code: str) -> None:
         """
         :param locale_code:
         :return:
@@ -270,7 +275,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Timezone
-    def set_timezone(self, timezone: str):
+    def set_timezone(self, timezone: str) -> None:
         """
         :param timezone:
         :return:
@@ -280,7 +285,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Email
-    def add_email(self, value: str):
+    def add_email(self, value: str) -> None:
         """
 
         :param value:
@@ -290,7 +295,7 @@ class UserEdit:
         self._helper._add_email(value, caller=caller)
         self._collect_operation()
 
-    def remove_email(self, value: str):
+    def remove_email(self, value: str) -> None:
         """
 
         :param value:
@@ -301,7 +306,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ SMS
-    def add_sms(self, value: str):
+    def add_sms(self, value: str) -> None:
         """
 
         :param value:
@@ -311,7 +316,7 @@ class UserEdit:
         self._helper._add_sms(value, caller=caller)
         self._collect_operation()
 
-    def remove_sms(self, value: str):
+    def remove_sms(self, value: str) -> None:
         """
 
         :param value:
@@ -322,7 +327,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Whatsapp
-    def add_whatsapp(self, value: str):
+    def add_whatsapp(self, value: str) -> None:
         """
 
         :param value:
@@ -332,7 +337,7 @@ class UserEdit:
         self._helper._add_whatsapp(value, caller=caller)
         self._collect_operation()
 
-    def remove_whatsapp(self, value: str):
+    def remove_whatsapp(self, value: str) -> None:
         """
 
         :param value:
@@ -343,7 +348,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Androidpush
-    def add_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_androidpush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
 
         :param value:
@@ -355,7 +360,7 @@ class UserEdit:
         self._helper._add_androidpush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_androidpush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_androidpush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
 
         :param value:
@@ -368,7 +373,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Iospush [providers: apns]
-    def add_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def add_iospush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
 
         :param value:
@@ -380,7 +385,7 @@ class UserEdit:
         self._helper._add_iospush(value, provider, bundle_id, caller=caller)
         self._collect_operation()
 
-    def remove_iospush(self, value: str, provider: str = None, bundle_id: str = None):
+    def remove_iospush(self, value: str, provider: str | None = None, bundle_id: str | None = None) -> None:
         """
 
         :param value:
@@ -393,7 +398,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Webpush [providers: vapid]
-    def add_webpush(self, value: dict, provider: str = None):
+    def add_webpush(self, value: dict[str, Any], provider: str | None = None) -> None:
         """
 
         :param value:
@@ -404,7 +409,7 @@ class UserEdit:
         self._helper._add_webpush(value, provider, caller=caller)
         self._collect_operation()
 
-    def remove_webpush(self, value: dict, provider: str = None):
+    def remove_webpush(self, value: dict[str, Any], provider: str | None = None) -> None:
         """
 
         :param value:
@@ -416,7 +421,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ Slack
-    def add_slack(self, value: dict):
+    def add_slack(self, value: dict[str, Any]) -> None:
         """
 
         :param value:
@@ -426,7 +431,7 @@ class UserEdit:
         self._helper._add_slack(value, caller=caller)
         self._collect_operation()
 
-    def remove_slack(self, value: dict):
+    def remove_slack(self, value: dict[str, Any]) -> None:
         """
 
         :param value:
@@ -437,7 +442,7 @@ class UserEdit:
         self._collect_operation()
 
     # ------------------------ MS Teams
-    def add_ms_teams(self, value: dict):
+    def add_ms_teams(self, value: dict[str, Any]) -> None:
         """
 
         :param value:
@@ -447,7 +452,7 @@ class UserEdit:
         self._helper._add_ms_teams(value, caller=caller)
         self._collect_operation()
 
-    def remove_ms_teams(self, value: dict):
+    def remove_ms_teams(self, value: dict[str, Any]) -> None:
         """
 
         :param value:

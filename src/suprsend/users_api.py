@@ -1,28 +1,28 @@
-from typing import Dict, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from .exception import SuprsendAPIException, SuprsendValidationError
 from .user_edit import UserEdit
 from .users_edit_bulk import BulkUsersEdit
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class UsersApi:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.list_url = "{}v1/user/".format(self.config.base_url)
         self.bulk_url = "{}v1/bulk/user/".format(self.config.base_url)
 
-    def list(self, options: Dict = None) -> Dict:
+    def list(self, options: dict[str, Any] | None = None) -> dict[str, Any]:
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(self.list_url, (f"?{encoded_options}" if encoded_options else ""))
         # ---
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
     def _validate_distinct_id(self, distinct_id: str) -> str:
         if not distinct_id or not isinstance(distinct_id, (str,)) or not distinct_id.strip():
@@ -34,16 +34,18 @@ class UsersApi:
         distinct_id_encoded = urlencode_path_param(distinct_id)
         return f"{self.list_url}{distinct_id_encoded}/"
 
-    def get(self, distinct_id: str, options: Dict = None) -> Dict:
+    def get(self, distinct_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         url = self.detail_url(distinct_id)
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def upsert(self, distinct_id: str, payload: Dict = None, options: Dict = None) -> Dict:
+    def upsert(
+        self, distinct_id: str, payload: dict[str, Any] | None = None, options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         url = self.detail_url(distinct_id)
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
@@ -52,9 +54,9 @@ class UsersApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def async_edit(self, edit_instance: UserEdit) -> Dict:
+    def async_edit(self, edit_instance: UserEdit) -> dict[str, Any]:
         if not edit_instance:
             raise SuprsendValidationError("instance is required")
         edit_instance.validate_body()
@@ -68,7 +70,13 @@ class UsersApi:
         # if no error, return success response
         return {"success": True, "status": "success", "status_code": resp.status_code, "message": resp.text}
 
-    def edit(self, edit_ins_or_distinct_id: Union[UserEdit, str], edit_payload: Dict = None, tenant_id: str = None, options: Dict = None) -> Dict:
+    def edit(
+        self,
+        edit_ins_or_distinct_id: UserEdit | str,
+        edit_payload: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         if isinstance(edit_ins_or_distinct_id, UserEdit):
             edit_ins = edit_ins_or_distinct_id
             edit_ins.validate_body()
@@ -91,18 +99,18 @@ class UsersApi:
         resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def merge(self, distinct_id: str, from_user_id: str) -> Dict:
+    def merge(self, distinct_id: str, from_user_id: str) -> dict[str, Any]:
         url = "{}merge/".format(self.detail_url(distinct_id))
         payload = {"from_user_id": from_user_id}
         # ---
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def delete(self, distinct_id: str) -> Dict:
+    def delete(self, distinct_id: str) -> dict[str, Any]:
         url = self.detail_url(distinct_id)
         # ---
         resp = self.config.request("DELETE", url, "")
@@ -110,7 +118,7 @@ class UsersApi:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
 
-    def bulk_delete(self, payload: Dict) -> Dict:
+    def bulk_delete(self, payload: dict[str, Any]) -> dict[str, Any]:
         """
         payload: {"distinct_ids": ["id1", "id2"]}
         :param payload:
@@ -125,13 +133,15 @@ class UsersApi:
 
     # ----------- Linked Tenant APIs ----------
 
-    def list_associated_tenants(self, distinct_id: str, options: Dict = None) -> Dict:
+    def list_associated_tenants(self, distinct_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         encoded_options = urlencode_query(options or {})
-        url = "{}associated_tenant/{}".format(self.detail_url(distinct_id), (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}associated_tenant/{}".format(
+            self.detail_url(distinct_id), (f"?{encoded_options}" if encoded_options else "")
+        )
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
     def _validate_tenant_id(self, tenant_id: str) -> str:
         if not tenant_id or not isinstance(tenant_id, (str,)) or not tenant_id.strip():
@@ -143,16 +153,22 @@ class UsersApi:
         tenant_id_encoded = urlencode_path_param(tenant_id)
         return "{}tenant/{}/".format(self.detail_url(distinct_id), tenant_id_encoded)
 
-    def get_for_tenant(self, distinct_id: str, tenant_id: str, options: Dict = None) -> Dict:
+    def get_for_tenant(self, distinct_id: str, tenant_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         url = self.detail_url_for_tenant(distinct_id, tenant_id)
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def upsert_for_tenant(self, distinct_id: str, tenant_id: str, payload: Dict = None, options: Dict = None) -> Dict:
+    def upsert_for_tenant(
+        self,
+        distinct_id: str,
+        tenant_id: str,
+        payload: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         url = self.detail_url_for_tenant(distinct_id, tenant_id)
         encoded_options = urlencode_query(options or {})
         url = "{}{}".format(url, (f"?{encoded_options}" if encoded_options else ""))
@@ -161,9 +177,9 @@ class UsersApi:
         resp = self.config.request("POST", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def unlink_tenant(self, distinct_id: str, tenant_id: str) -> Dict:
+    def unlink_tenant(self, distinct_id: str, tenant_id: str) -> dict[str, Any]:
         url = self.detail_url_for_tenant(distinct_id, tenant_id)
         resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
@@ -171,26 +187,26 @@ class UsersApi:
         return {"success": True, "status_code": resp.status_code}
 
     # ---------------------
-    
-    def get_objects_subscribed_to(self, distinct_id: str, options: Dict = None) -> Dict:
+
+    def get_objects_subscribed_to(self, distinct_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
         url = "{}subscribed_to/object/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def get_lists_subscribed_to(self, distinct_id: str, options: Dict = None) -> Dict:
+    def get_lists_subscribed_to(self, distinct_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
         url = "{}subscribed_to/list/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def get_edit_instance(self, distinct_id: str, tenant_id: str = None) -> UserEdit:
+    def get_edit_instance(self, distinct_id: str, tenant_id: str | None = None) -> UserEdit:
         distinct_id = self._validate_distinct_id(distinct_id)
         if tenant_id:
             tenant_id = self._validate_tenant_id(tenant_id)
@@ -199,7 +215,7 @@ class UsersApi:
     def get_bulk_edit_instance(self) -> BulkUsersEdit:
         return BulkUsersEdit(self.config)
 
-    def get_full_preference(self, distinct_id: str, options: Dict = None) -> Dict:
+    def get_full_preference(self, distinct_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         options: {"tenant_id": "", "show_opt_out_channels": false, "tags": "", "locale": ""}
         """
@@ -210,9 +226,11 @@ class UsersApi:
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def update_global_channels_preference(self, distinct_id: str, payload: Dict, options: Dict = None) -> Dict:
+    def update_global_channels_preference(
+        self, distinct_id: str, payload: dict[str, Any], options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         PATCH /v1/user/{distinct_id}/preference/channel_preference/
         payload: {
@@ -225,15 +243,19 @@ class UsersApi:
         """
         _detail_url = self.detail_url(distinct_id)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/channel_preference/{}".format(_detail_url, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/channel_preference/{}".format(
+            _detail_url, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def get_category_preference(self, distinct_id: str, category: str, options: Dict = None) -> Dict:
+    def get_category_preference(
+        self, distinct_id: str, category: str, options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         options: {"tenant_id": "", "show_opt_out_channels": false, "locale": ""}
         """
@@ -242,16 +264,18 @@ class UsersApi:
         category_encoded = urlencode_path_param(category.strip())
         encoded_options = urlencode_query(options or {})
         _detail_url = self.detail_url(distinct_id)
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
     def update_category_preference(
-        self, distinct_id: str, category: str, payload: Dict, options: Dict = None
-    ) -> Dict:
+        self, distinct_id: str, category: str, payload: dict[str, Any], options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         PATCH /v1/user/{distinct_id}/preference/category/{category}/
         payload: {"preference": "", "opt_out_channels": [], "digest_schedule": null, "properties": null/[]}
@@ -260,10 +284,12 @@ class UsersApi:
         _detail_url = self.detail_url(distinct_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(_detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            _detail_url, category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # ----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())

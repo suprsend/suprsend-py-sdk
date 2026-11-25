@@ -3,7 +3,7 @@ This package can be included in a python3 project to easily integrate
 with `SuprSend` platform.
 
 ### Installation
-`suprsend-py-sdk` is available on PyPI. You can install using pip.
+`suprsend-py-sdk` is available on PyPI and requires Python 3.11 or later. You can install using pip.
 ```bash
 pip install suprsend-py-sdk
 ```
@@ -30,6 +30,7 @@ Initialize the SuprSend SDK with workspace key and secret (HMAC). You can get bo
 SuprSend dashboard -> Developers -> API Keys.
 ```python3
 from suprsend import Suprsend
+
 # Initialize SDK
 supr_client = Suprsend("workspace_key", "workspace_secret")
 ```
@@ -39,6 +40,7 @@ SuprSend dashboard -> Settings -> General -> Workspace UID, and the API Key from
 SuprSend dashboard -> Developers -> API Keys.
 ```python3
 from suprsend import Suprsend
+
 supr_client = Suprsend.with_workspace_api_key("workspace_uid", "api_key")
 ```
 Both constructors accept the same optional kwargs (`base_url`, `debug`, `app_info`). After
@@ -51,31 +53,32 @@ email: `user@example.com` & androidpush(fcm-token): `__android_push_fcm_token__`
 
 ```python3
 from suprsend import WorkflowTriggerRequest
+
 # Prepare Workflow body
 wf = WorkflowTriggerRequest(
-  body={
-    "workflow": "purchase-made",
-    "recipients": [
-        {
-          "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
-          # if $channels is present, communication will be tried on mentioned channels only (for this request).
-          # "$channels": ["email"],
-          "$email": ["user@example.com"],
-          "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": ""}],
-        }
-    ],
-    # data can be any json / serializable python-dictionary
-    "data": {
-        "first_name": "User",
-        "spend_amount": "$10",
-        "nested_key_example": {
-            "nested_key1": "some_value_1",
-            "nested_key2": {
-              "nested_key3": "some_value_3",
+    body={
+        "workflow": "purchase-made",
+        "recipients": [
+            {
+                "distinct_id": "0f988f74-6982-41c5-8752-facb6911fb08",
+                # if $channels is present, communication will be tried on mentioned channels only (for this request).
+                # "$channels": ["email"],
+                "$email": ["user@example.com"],
+                "$androidpush": [{"token": "__android_push_token__", "provider": "fcm", "device_id": ""}],
+            }
+        ],
+        # data can be any json / serializable python-dictionary
+        "data": {
+            "first_name": "User",
+            "spend_amount": "$10",
+            "nested_key_example": {
+                "nested_key1": "some_value_1",
+                "nested_key2": {
+                    "nested_key3": "some_value_3",
+                },
             },
-        }
+        },
     }
-  }
 )
 # Trigger workflow
 response = supr_client.workflows.trigger(wf)
@@ -118,7 +121,7 @@ Note: The actual processing/execution of workflow happens asynchronously.
 {
     "success": False,
     "status": "fail",
-    "status_code": 400/500,
+    "status_code": 400 / 500,
     "message": "error message",
 }
 ```
@@ -130,6 +133,7 @@ call `WorkflowTriggerRequest.add_attachment(file_path)`.
 If providing a local path, ensure that it is proper, otherwise it will raise FileNotFoundError.
 ```python
 from suprsend import WorkflowTriggerRequest
+
 workflow_body = {...}
 wf_instance = WorkflowTriggerRequest(body=workflow_body)
 
@@ -166,8 +170,8 @@ from suprsend import WorkflowTriggerRequest
 bulk_ins = supr_client.workflows.bulk_trigger_instance()
 
 # one or more workflow instances
-workflow1 = WorkflowTriggerRequest(body={...}) # body must be a proper workflow request json/dict
-workflow2 = WorkflowTriggerRequest(body={...}) # body must be a proper workflow request json/dict
+workflow1 = WorkflowTriggerRequest(body={...})  # body must be a proper workflow request json/dict
+workflow2 = WorkflowTriggerRequest(body={...})  # body must be a proper workflow request json/dict
 
 # --- use .append on bulk instance to add one or more records
 bulk_ins.append(workflow1)
@@ -203,13 +207,13 @@ user = supr_client.users.get_edit_instance(distinct_id=distinct_id)
 ```python
 # Add channel details to user-instance. Call relevant add_* methods
 
-user.add_email("user@example.com") # - To add Email
+user.add_email("user@example.com")  # - To add Email
 
-user.add_sms("+919999999999") # - To add SMS
+user.add_sms("+919999999999")  # - To add SMS
 
-user.add_whatsapp("+919999999999") # - To add Whatsapp
+user.add_whatsapp("+919999999999")  # - To add Whatsapp
 
-user.add_androidpush("__android_push_fcm_token__") # - by default, token is assumed to be fcm-token
+user.add_androidpush("__android_push_fcm_token__")  # - by default, token is assumed to be fcm-token
 
 # You can set the optional provider value [fcm/xiaomi/oppo] if its not a fcm-token
 user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
@@ -217,13 +221,31 @@ user.add_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 user.add_iospush("__iospush_token__")
 
 user.add_slack({"email": "user@example.com", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using email
-user.add_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using slack member_id if known
+user.add_slack(
+    {"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"}
+)  # - DM user using slack member_id if known
 user.add_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
-user.add_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
+user.add_slack(
+    {"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}}
+)  # - Use incoming webhook
 
-user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "conversation_id": "XXXXXXXXXXXX"})  # - DM on Team's channel using conversation id
-user.add_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"})  # - DM user using team user id
-user.add_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
+user.add_ms_teams(
+    {
+        "tenant_id": "XXXXXXX",
+        "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX",
+        "conversation_id": "XXXXXXXXXXXX",
+    }
+)  # - DM on Team's channel using conversation id
+user.add_ms_teams(
+    {"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"}
+)  # - DM user using team user id
+user.add_ms_teams(
+    {
+        "incoming_webhook": {
+            "url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"
+        }
+    }
+)  # - Use incoming webhook
 
 # After setting the channel details on user-instance, call edit()/async_edit()
 response = supr_client.users.edit(user)
@@ -232,25 +254,23 @@ print(response)
 ```python
 # Response structure
 {
-    "success": True, # if true, request was accepted.
+    "success": True,  # if true, request was accepted.
     "status": "success",
-    "status_code": 202, # http status code
+    "status_code": 202,  # http status code
     "message": "OK",
 }
 
 {
-    "success": False, # error will be present in message
+    "success": False,  # error will be present in message
     "status": "fail",
-    "status_code": 500, # http status code
+    "status_code": 500,  # http status code
     "message": "error message",
 }
-
 ```
 - Similarly, If you want to remove certain channel details from user,
 you can call `user.remove_*` method as shown in the example below.
 
 ```python
-
 # Remove channel helper methods
 user.remove_email("user@example.com")
 user.remove_sms("+919999999999")
@@ -260,13 +280,31 @@ user.remove_androidpush("__android_push_xiaomi_token__", provider="xiaomi")
 user.remove_iospush("__iospush_token__")
 
 user.remove_slack({"email": "user@example.com", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using email
-user.remove_slack({"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - DM user using slack member_id if known
+user.remove_slack(
+    {"user_id": "U03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"}
+)  # - DM user using slack member_id if known
 user.remove_slack({"channel_id": "C03XXXXXXXX", "access_token": "xoxb-XXXXXXXXXXXX"})  # - Use channel id
-user.remove_slack({"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}})  # - Use incoming webhook
+user.remove_slack(
+    {"incoming_webhook": {"url": "https://hooks.slack.com/services/TXXXXXXXXX/BXXXXXX/XXXXXXX"}}
+)  # - Use incoming webhook
 
-user.remove_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "conversation_id": "XXXXXXXXXXXX"})  # - DM on Team's channel using conversation id
-user.remove_ms_teams({"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"})  # - DM user using team user id
-user.remove_ms_teams({"incoming_webhook": {"url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"}})  # - Use incoming webhook
+user.remove_ms_teams(
+    {
+        "tenant_id": "XXXXXXX",
+        "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX",
+        "conversation_id": "XXXXXXXXXXXX",
+    }
+)  # - DM on Team's channel using conversation id
+user.remove_ms_teams(
+    {"tenant_id": "XXXXXXX", "service_url": "https://smba.trafficmanager.net/XXXXXXXXXX", "user_id": "XXXXXXXXXXXX"}
+)  # - DM user using team user id
+user.remove_ms_teams(
+    {
+        "incoming_webhook": {
+            "url": "https://XXXXX.webhook.office.com/webhookb2/XXXXXXXXXX@XXXXXXXXXX/IncomingWebhook/XXXXXXXXXX/XXXXXXXXXX"
+        }
+    }
+)  # - Use incoming webhook
 
 # save
 response = supr_client.users.edit(user)
@@ -342,10 +380,10 @@ request_body = {
         "nested_key_example": {
             "nested_key1": "some_value_1",
             "nested_key2": {
-              "nested_key3": "some_value_3",
+                "nested_key3": "some_value_3",
             },
-        }
-    }
+        },
+    },
 }
 wf = WorkflowTriggerRequest(body=request_body)
 # Trigger workflow
@@ -358,10 +396,10 @@ to add however-many-records to call in bulk.
 ```python3
 bulk_ins = supr_client.users.get_bulk_edit_instance()
 # Prepare multiple users
-u1 = supr_client.users.get_edit_instance("distinct_id_1") # User 1
+u1 = supr_client.users.get_edit_instance("distinct_id_1")  # User 1
 u1.add_email("u1@example.com")
 
-u2 = supr_client.users.get_edit_instance("distinct_id_2") # User 2
+u2 = supr_client.users.get_edit_instance("distinct_id_2")  # User 2
 u2.add_email("u2@example.com")
 
 # --- use .append on bulk instance to add one or more records
@@ -373,7 +411,6 @@ bulk_ins.append(u1, u2)
 # -------
 response = bulk_ins.save()
 print(response)
-
 ```
 
 ### Track and Send Event
@@ -384,17 +421,23 @@ An event is composed of an `event_name`, tracked wrt a user: `distinct_id`, with
 from suprsend import Event
 
 # Example
-distinct_id = "__uniq_user_id__" # Mandatory, Unique id of user in your application
-event_name = "__event_name__"   # Mandatory, name of the event you're tracking
-properties = {} # Optional, default=None, a dict representing event-attributes
+distinct_id = "__uniq_user_id__"  # Mandatory, Unique id of user in your application
+event_name = "__event_name__"  # Mandatory, name of the event you're tracking
+properties = {}  # Optional, default=None, a dict representing event-attributes
 
 event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties)
 # You can also add Idempotency-key
-event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties,
-              idempotency_key="__uniq_request_id__")
+event = Event(
+    distinct_id=distinct_id, event_name=event_name, properties=properties, idempotency_key="__uniq_request_id__"
+)
 # You can also pass the tenant_id to be used for templates/notifications
-event = Event(distinct_id=distinct_id, event_name=event_name, properties=properties,
-              idempotency_key="__uniq_request_id__", tenant_id="default")
+event = Event(
+    distinct_id=distinct_id,
+    event_name=event_name,
+    properties=properties,
+    idempotency_key="__uniq_request_id__",
+    tenant_id="default",
+)
 # Send event
 response = supr_client.track_event(event)
 print(response)
@@ -403,19 +446,18 @@ print(response)
 ```python
 # Response structure
 {
-    "success": True, # if true, request was accepted.
+    "success": True,  # if true, request was accepted.
     "status": "success",
-    "status_code": 202, # http status code
+    "status_code": 202,  # http status code
     "message": "OK",
 }
 
 {
-    "success": False, # error will be present in message
+    "success": False,  # error will be present in message
     "status": "fail",
-    "status_code": 500, # http status code
+    "status_code": 500,  # http status code
     "message": "error message",
 }
-
 ```
 
 #### Bulk API for events
@@ -426,8 +468,8 @@ from suprsend import Event
 
 bulk_ins = supr_client.bulk_events.new_instance()
 # Example
-e1 = Event("distinct_id1", "event_name1", {"k1": "v1"}) # Event 1
-e2 = Event("distinct_id2", "event_name2", {"k2": "v2"}) # Event 2
+e1 = Event("distinct_id1", "event_name1", {"k1": "v1"})  # Event 1
+e2 = Event("distinct_id2", "event_name2", {"k2": "v2"})  # Event 2
 
 # --- use .append on bulk instance to add one or more records
 bulk_ins.append(e1)
@@ -438,7 +480,6 @@ bulk_ins.append(e1, e2)
 # -------
 response = bulk_ins.trigger()
 print(response)
-
 ```
 
 ### Messages API
@@ -451,45 +492,38 @@ Fetch a paginated list of messages for your workspace. All filter parameters are
 response = supr_client.messages.list()
 
 # With filters
-response = supr_client.messages.list({
-    # Pagination
-    "limit": 20,                            # records per page (default: 1000, max: 1000)
-    "after": "__cursor__",                  # cursor for next page (from meta.after)
-    "before": "__cursor__",                 # cursor for previous page (from meta.before)
-
-    # Message filters
-    "message_id": "__message_id__",         # filter by a specific message id
-    "idempotency_key": "__idempotency_key__",
-
-    # Recipient filters
-    "recipient_id": ["user1", "user2"],     # recipient_id[] — filter by one or more recipient ids
-    "tenant_id": "default",
-
-    # Object recipient filters (both required together)
-    "object_type": "__object_type__",
-    "object_id": "__object_id__",
-
-    # Workflow / execution filters
-    "workflow_slug": "purchase-made",
-    "execution_id": "__execution_id__",
-
-    # Channel filter
-    # valid: email, sms, whatsapp, androidpush, iospush, webpush, slack, ms_teams
-    "channel": "email",
-
-    # status[] — valid: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
-    "status": ["delivered", "seen"],
-
-    # category[] filter
-    "category": ["transactional"],
-
-    # Campaign filter
-    "is_campaign": False,
-
-    # Date range filters (RFC3339 format)
-    "created_at_gte": "2026-01-01T00:00:00Z",
-    "created_at_lte": "2026-12-31T23:59:59Z",
-})
+response = supr_client.messages.list(
+    {
+        # Pagination
+        "limit": 20,  # records per page (default: 1000, max: 1000)
+        "after": "__cursor__",  # cursor for next page (from meta.after)
+        "before": "__cursor__",  # cursor for previous page (from meta.before)
+        # Message filters
+        "message_id": "__message_id__",  # filter by a specific message id
+        "idempotency_key": "__idempotency_key__",
+        # Recipient filters
+        "recipient_id": ["user1", "user2"],  # recipient_id[] — filter by one or more recipient ids
+        "tenant_id": "default",
+        # Object recipient filters (both required together)
+        "object_type": "__object_type__",
+        "object_id": "__object_id__",
+        # Workflow / execution filters
+        "workflow_slug": "purchase-made",
+        "execution_id": "__execution_id__",
+        # Channel filter
+        # valid: email, sms, whatsapp, androidpush, iospush, webpush, slack, ms_teams
+        "channel": "email",
+        # status[] — valid: triggered, delivered, delivery_failed, seen, clicked, dismissed, read, archived, unread
+        "status": ["delivered", "seen"],
+        # category[] filter
+        "category": ["transactional"],
+        # Campaign filter
+        "is_campaign": False,
+        # Date range filters (RFC3339 format)
+        "created_at_gte": "2026-01-01T00:00:00Z",
+        "created_at_lte": "2026-12-31T23:59:59Z",
+    }
+)
 print(response)
 ```
 
@@ -497,12 +531,12 @@ print(response)
 # Response structure
 {
     "meta": {
-        "count": 150,       # total matching messages
-        "limit": 20,        # limit used for this request
-        "has_prev": True,   # whether a previous page exists
-        "has_next": True,   # whether a next page exists
-        "before": None,     # cursor for previous page, null if none
-        "after": None,      # cursor for next page, null if none
+        "count": 150,  # total matching messages
+        "limit": 20,  # limit used for this request
+        "has_prev": True,  # whether a previous page exists
+        "has_next": True,  # whether a next page exists
+        "before": None,  # cursor for previous page, null if none
+        "after": None,  # cursor for next page, null if none
     },
     "results": [
         {
@@ -525,16 +559,10 @@ print(response)
             "category": "transactional",
             "idempotency_key": "8087c3e7-6612-4d16-9660-xxxxxxxx",
             "failure_reason": "",
-            "recipient": {
-                "$type": "user",
-                "distinct_id": "user_123"
-            },
+            "recipient": {"$type": "user", "distinct_id": "user_123"},
             "parent_entity_id": "__object:TEAMS:teams_1",
             "parent_entity_type": "object",
-            "vendor": {
-                "name": "amazon_ses",
-                "nickname": "AWS SES"
-            },
+            "vendor": {"name": "amazon_ses", "nickname": "AWS SES"},
             "execution_id": "dsl_w1_id3741_xxxxxxxx_0_1",
             "parent_execution_id": "dsl_w1_id3741_xxxxxxxx_0",
             "is_campaign": False,
@@ -543,18 +571,12 @@ print(response)
                 "slug": "purchase-made",
                 "version_id": "wf_v_01KQVGxxxxxxx_chkp",
                 "name": "Purchase Workflow",
-                "node_ref": ""
+                "node_ref": "",
             },
-            "template": {
-                "name": "Purchase Template",
-                "slug": "amazon_ses",
-                "version_no": 1
-            },
-            "channel_identity": {
-                "email": "user@example.com"
-            },
+            "template": {"name": "Purchase Template", "slug": "amazon_ses", "version_no": 1},
+            "channel_identity": {"email": "user@example.com"},
         }
-    ]
+    ],
 }
 ```
 
@@ -578,13 +600,13 @@ print(response)
     "records": [
         {
             "message_id": "__message_id_1__",
-            "status_code": 202,     # 202 success, 404 not found, 422 action not supported, 500 error
-            "error": {              # present only on failure
+            "status_code": 202,  # 202 success, 404 not found, 422 action not supported, 500 error
+            "error": {  # present only on failure
                 "type": "not_found",
-                "message": "message not found"
-            }
+                "message": "message not found",
+            },
         },
-        ...
+        ...,
     ]
 }
 ```

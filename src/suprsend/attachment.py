@@ -1,11 +1,13 @@
-import os
 import base64
 import mimetypes
-from typing import Dict
+import os
+from typing import Any, cast
+
 from .logger import ss_logger
 
 try:
     import magic
+
     _has_magic = True
 except ImportError:
     _has_magic = False
@@ -13,19 +15,19 @@ except ImportError:
 
 def _detect_mime_type(file_path: str) -> str:
     if _has_magic:
-        return magic.from_file(file_path, mime=True)
+        return cast(str, magic.from_file(file_path, mime=True))
     mime_type, _ = mimetypes.guess_type(file_path)
     return mime_type or "application/octet-stream"
 
 
-def check_is_web_url(file_path: str):
+def check_is_web_url(file_path: str) -> bool:
     for url_scheme in ["https://", "http://"]:
         if file_path.startswith(url_scheme):
             return True
     return False
 
 
-def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error: bool) -> Dict:
+def get_attachment_json_for_file(file_path: str, file_name: str | None, ignore_if_error: bool) -> dict[str, Any] | None:
     # Ensure that path is expanded and absolute
     abs_path = os.path.abspath(os.path.expanduser(file_path))
     # Get attachment json
@@ -49,14 +51,13 @@ def get_attachment_json_for_file(file_path: str, file_name: str, ignore_if_error
             return attach_data
     except OSError as ex:
         if ignore_if_error:
-            ss_logger.warning("Ignoring error while processing attachment file. "
-                                "%s: %s", type(ex).__name__, ex)
+            ss_logger.warning("Ignoring error while processing attachment file. %s: %s", type(ex).__name__, ex)
             return None
         else:
             raise ex
 
 
-def get_attachment_json_for_url(file_url: str, file_name: str, ignore_if_error: bool) -> Dict:
+def get_attachment_json_for_url(file_url: str, file_name: str | None, ignore_if_error: bool) -> dict[str, Any]:
     return {
         "filename": file_name,
         "contentType": None,
@@ -66,7 +67,9 @@ def get_attachment_json_for_url(file_url: str, file_name: str, ignore_if_error: 
     }
 
 
-def get_attachment_json(file_path: str, file_name: str = None, ignore_if_error: bool = False) -> Dict:
+def get_attachment_json(
+    file_path: str, file_name: str | None = None, ignore_if_error: bool = False
+) -> dict[str, Any] | None:
     if check_is_web_url(file_path):
         return get_attachment_json_for_url(file_path, file_name, ignore_if_error)
     else:

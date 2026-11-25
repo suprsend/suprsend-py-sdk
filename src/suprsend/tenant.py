@@ -1,23 +1,23 @@
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from .exception import SuprsendAPIException, SuprsendValidationError
-from .utils import urlencode_query, urlencode_path_param
+from .utils import urlencode_path_param, urlencode_query
 
 if TYPE_CHECKING:
     from .sdkinstance import Suprsend
 
 
 class TenantsApi:
-    def __init__(self, config: "Suprsend"):
+    def __init__(self, config: "Suprsend") -> None:
         self.config = config
         self.list_url = self.__list_url()
 
-    def __list_url(self):
+    def __list_url(self) -> str:
         list_uri_template = "{}v1/tenant/"
         list_uri_template = list_uri_template.format(self.config.base_url)
         return list_uri_template
 
-    def cleaned_limit_offset(self, limit: int, offset: int):
+    def cleaned_limit_offset(self, limit: int, offset: int) -> tuple[int, int]:
         # limit must be 0 < x <= 1000
         limit = limit if (isinstance(limit, int) and 0 < limit <= 1000) else 20
         # offset must be >=0
@@ -25,74 +25,78 @@ class TenantsApi:
         #
         return limit, offset
 
-    def list(self, limit: int = 20, offset: int = 0):
+    def list(self, limit: int = 20, offset: int = 0) -> dict[str, Any]:
         limit, offset = self.cleaned_limit_offset(limit, offset)
         params = {"limit": limit, "offset": offset}
         encoded_params = urlencode_query(params)
         #
         url = f"{self.list_url}?{encoded_params}"
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def _validate_tenant_id(self, tenant_id):
+    def _validate_tenant_id(self, tenant_id: Any) -> str:
         if not isinstance(tenant_id, (str,)):
             raise SuprsendValidationError("tenant_id must be a string")
         tenant_id = tenant_id.strip()
         if not tenant_id:
             raise SuprsendValidationError("missing tenant_id")
-        return tenant_id
+        return cast(str, tenant_id)
 
-    def detail_url(self, tenant_id: str):
+    def detail_url(self, tenant_id: str) -> str:
         tenant_id_encoded = urlencode_path_param(tenant_id)
         url = f"{self.list_url}{tenant_id_encoded}/"
         return url
 
-    def get(self, tenant_id: str):
+    def get(self, tenant_id: str) -> dict[str, Any]:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def upsert(self, tenant_id: str, tenant_payload: Dict):
+    def upsert(self, tenant_id: str, tenant_payload: dict[str, Any]) -> dict[str, Any]:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
         tenant_payload = tenant_payload or {}
-        resp = self.config.request('POST', url, tenant_payload)
+        resp = self.config.request("POST", url, tenant_payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def delete(self, tenant_id: str):
+    def delete(self, tenant_id: str) -> dict[str, Any]:
         tenant_id = self._validate_tenant_id(tenant_id)
         url = self.detail_url(tenant_id)
         # ---
-        resp = self.config.request('DELETE', url, "")
+        resp = self.config.request("DELETE", url, "")
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
         return {"success": True, "status_code": resp.status_code}
 
-    def list_preference_categories(self, tenant_id: str, options: Dict = None) -> Dict:
+    def list_preference_categories(self, tenant_id: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         GET /v1/tenant/{tenant_id}/preference/category/ - returns all category preferences for a tenant.
         options: {"limit": 10, "offset": 0, tags: "", "locale": "", "include_disabled": false}
         """
         tenant_id = self._validate_tenant_id(tenant_id)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}".format(self.detail_url(tenant_id), (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}".format(
+            self.detail_url(tenant_id), (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
-        resp = self.config.request('GET', url, None)
+        resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def get_preference_category(self, tenant_id: str, category: str, options: Dict = None) -> Dict:
+    def get_preference_category(
+        self, tenant_id: str, category: str, options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         GET /v1/tenant/{tenant_id}/preference/category/{category}/?locale=xx
         options: {"locale": ""}
@@ -100,14 +104,18 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
         resp = self.config.request("GET", url, None)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    def update_preference_category(self, tenant_id: str, category: str, payload: Dict, options: Dict = None) -> Dict:
+    def update_preference_category(
+        self, tenant_id: str, category: str, payload: dict[str, Any], options: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         PATCH /v1/tenant/{tenant_id}/preference/category/{category}/?locale=xx
         options: {"locale": ""}
@@ -125,10 +133,12 @@ class TenantsApi:
         tenant_id = self._validate_tenant_id(tenant_id)
         category_encoded = urlencode_path_param(category)
         encoded_options = urlencode_query(options or {})
-        url = "{}preference/category/{}/{}".format(self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else ""))
+        url = "{}preference/category/{}/{}".format(
+            self.detail_url(tenant_id), category_encoded, (f"?{encoded_options}" if encoded_options else "")
+        )
         # -----
         payload = payload or {}
         resp = self.config.request("PATCH", url, payload)
         if resp.status_code >= 400:
             raise SuprsendAPIException(resp)
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
