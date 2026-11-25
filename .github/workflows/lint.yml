@@ -31,7 +31,8 @@ jobs:
           RUFF: ruff
 
   mypy:
-    runs-on: ubuntu-latest
+    # actions/python-versions has no 3.9 build for ubuntu-latest (26.04); 24.04 has 3.9 and 3.14.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
