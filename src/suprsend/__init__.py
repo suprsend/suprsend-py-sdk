@@ -7,27 +7,27 @@ For the user guide, examples and more, visit the docs page at:
     https://docs.suprsend.com/docs
 """
 
-from .version import __version__
+from .version import __version__ as __version__
 
 __author__ = "SuprSend Developers"
 __credits__ = "SuprSend"
 
-from .sdkinstance import Suprsend, AppInfo  # noqa
-from .bulk_response import BulkResponse  # noqa
-from .event import Event  # noqa
-from .workflow import Workflow  # noqa
-from .workflow_request import WorkflowTriggerRequest  # noqa
-from .subscriber_list import SubscriberListBroadcast  # noqa
-from .object_edit import ObjectEdit
-from .user_edit import UserEdit
-from .users_edit_bulk import BulkUsersEdit
+from .sdkinstance import AppInfo as AppInfo, Suprsend as Suprsend  # noqa
+from .bulk_response import BulkResponse as BulkResponse  # noqa
+from .event import Event as Event  # noqa
+from .workflow import Workflow as Workflow  # noqa
+from .workflow_request import WorkflowTriggerRequest as WorkflowTriggerRequest  # noqa
+from .subscriber_list import SubscriberListBroadcast as SubscriberListBroadcast  # noqa
+from .object_edit import ObjectEdit as ObjectEdit
+from .user_edit import UserEdit as UserEdit
+from .users_edit_bulk import BulkUsersEdit as BulkUsersEdit
 
 from .exception import (
-    SuprsendError,
-    SuprsendConfigError,
-    SuprsendAPIException,
-    SuprsendValidationError,
-    InputValueError,
+    InputValueError as InputValueError,
+    SuprsendAPIException as SuprsendAPIException,
+    SuprsendConfigError as SuprsendConfigError,
+    SuprsendError as SuprsendError,
+    SuprsendValidationError as SuprsendValidationError,
 )
 
 # preventing leaks to rootLogger, so that the library user can decide what should happen.
