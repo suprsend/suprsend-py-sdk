@@ -1,5 +1,5 @@
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 from .bulk_response import BulkResponse
 from .constants import (
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class BulkWorkflowsFactory:
     def __init__(self, config: "Suprsend") -> None:
-        self.config: "Suprsend" = config
+        self.config: Suprsend = config
 
     def new_instance(self) -> "BulkWorkflows":
         """
@@ -50,19 +50,19 @@ class _BulkWorkflowsChunk:
     _max_records_in_chunk = MAX_WORKFLOWS_IN_BULK_API
 
     def __init__(self, config: "Suprsend") -> None:
-        self.config: "Suprsend" = config
-        self.__chunk: List[Dict[str, Any]] = []
+        self.config: Suprsend = config
+        self.__chunk: list[dict[str, Any]] = []
         self.__url: str = self.__get_url()
         #
         self.__running_size: int = 0
         self.__running_length: int = 0
-        self.response: Optional[Dict[str, Any]] = None
+        self.response: dict[str, Any] | None = None
 
     def __get_url(self) -> str:
         url_formatted = "{}{}/trigger/".format(self.config.base_url, self.config.workspace_identifier())
         return url_formatted
 
-    def __add_body_to_chunk(self, body: Dict[str, Any], body_size: int) -> None:
+    def __add_body_to_chunk(self, body: dict[str, Any], body_size: int) -> None:
         # First add size, then body to reduce effects of race condition
         self.__running_size += body_size
         self.__chunk.append(body)
@@ -77,7 +77,7 @@ class _BulkWorkflowsChunk:
         else:
             return False
 
-    def try_to_add_into_chunk(self, body: Dict[str, Any], body_size: int) -> bool:
+    def try_to_add_into_chunk(self, body: dict[str, Any], body_size: int) -> bool:
         """
         returns whether passed body was able to get added to this chunk or not,
         if true, body gets added to chunk
@@ -147,13 +147,13 @@ class _BulkWorkflowsChunk:
 
 class BulkWorkflows:
     def __init__(self, config: "Suprsend") -> None:
-        self.config: "Suprsend" = config
-        self.__workflows: List[Workflow] = []
-        self.__pending_records: List[Tuple[Dict[str, Any], int]] = []
-        self.chunks: List[_BulkWorkflowsChunk] = []
+        self.config: Suprsend = config
+        self.__workflows: list[Workflow] = []
+        self.__pending_records: list[tuple[dict[str, Any], int]] = []
+        self.chunks: list[_BulkWorkflowsChunk] = []
         self.response: BulkResponse = BulkResponse()
         # invalid_record json: {"record": workflow-json, "error": error_str, "code": 500}
-        self.__invalid_records: List[Dict[str, Any]] = []
+        self.__invalid_records: list[dict[str, Any]] = []
 
     def __validate_workflows(self) -> None:
         for wf in self.__workflows:

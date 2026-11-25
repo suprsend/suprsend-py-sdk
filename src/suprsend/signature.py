@@ -2,13 +2,13 @@ import base64
 import hashlib
 import hmac
 import json
-from typing import Any, Dict, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 
 def get_request_signature(
-    url: str, http_verb: str, content: Any, headers: Dict[str, Any], secret: str
-) -> Tuple[str, str]:
+    url: str, http_verb: str, content: Any, headers: dict[str, Any], secret: str
+) -> tuple[str, str]:
     if http_verb == "GET":  # POST/GET/PUT
         content_txt, content_md5 = "", ""
     else:

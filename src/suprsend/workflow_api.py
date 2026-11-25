@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from .workflow_request import WorkflowTriggerRequest
 from .workflow_trigger_bulk import BulkWorkflowTrigger
@@ -12,7 +12,7 @@ class WorkflowsApi:
         self.config = config
         self.metadata = {"User-Agent": self.config.user_agent}
 
-    def trigger(self, workflow: WorkflowTriggerRequest) -> Dict[str, Any]:
+    def trigger(self, workflow: WorkflowTriggerRequest) -> dict[str, Any]:
         workflow_body, body_size = workflow.get_final_json(self.config, is_part_of_bulk=False)
         try:
             url = "{}trigger/".format(self.config.base_url)

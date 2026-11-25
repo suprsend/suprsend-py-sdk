@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any, Dict, Optional
+from typing import Any
 
 LIBRARY_LOGGER_NAME = "suprsend"
 ss_logger = logging.getLogger(LIBRARY_LOGGER_NAME)
@@ -30,14 +30,14 @@ def redact_header_value(name: str, value: str) -> str:
     return value
 
 
-def sanitized_headers(headers: Optional[Dict[str, Any]]) -> Dict[str, str]:
+def sanitized_headers(headers: dict[str, Any] | None) -> dict[str, str]:
     if not headers:
         return {}
     return {k: redact_header_value(k, v) for k, v in headers.items()}
 
 
 def _has_usable_handler(logger: logging.Logger) -> bool:
-    current: Optional[logging.Logger] = logger
+    current: logging.Logger | None = logger
     while current:
         for handler in current.handlers:
             if not isinstance(handler, logging.NullHandler):
@@ -71,10 +71,10 @@ def _emit_http_dump(dump: str) -> None:
 def log_http_exchange(
     method: str,
     url: str,
-    req_headers: Optional[Dict[str, Any]] = None,
-    req_body: Optional[Any] = None,
-    resp: Optional[Any] = None,
-    error: Optional[BaseException] = None,
+    req_headers: dict[str, Any] | None = None,
+    req_body: Any | None = None,
+    resp: Any | None = None,
+    error: BaseException | None = None,
 ) -> None:
     if not ss_logger.isEnabledFor(logging.DEBUG):
         return

@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from .attachment import get_attachment_json
 from .constants import (
@@ -34,10 +34,10 @@ class Event:
         self,
         distinct_id: str,
         event_name: str,
-        properties: Optional[Dict[str, Any]] = None,
-        idempotency_key: Optional[str] = None,
-        tenant_id: Optional[str] = None,
-        brand_id: Optional[str] = None,
+        properties: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        tenant_id: str | None = None,
+        brand_id: str | None = None,
     ) -> None:
         self.distinct_id = distinct_id
         self.event_name = event_name
@@ -76,7 +76,7 @@ class Event:
         self.__check_event_prefix(event_name)
         self.event_name = event_name
 
-    def add_attachment(self, file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False) -> None:
+    def add_attachment(self, file_path: str, file_name: str | None = None, ignore_if_error: bool = False) -> None:
         # if properties is not a dict, not raising error while adding attachment.
         if not isinstance(self.properties, (dict,)):
             ss_logger.warning(
@@ -94,7 +94,7 @@ class Event:
         # -----
         self.properties["$attachments"].append(attachment)
 
-    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> Tuple[Dict[str, Any], int]:
+    def get_final_json(self, config: "Suprsend", is_part_of_bulk: bool = False) -> tuple[dict[str, Any], int]:
         # --- validate
         self.__validate_distinct_id()
         self.__validate_event_name()
@@ -107,7 +107,7 @@ class Event:
             "event": self.event_name,
             "env": config.workspace_identifier(),
             "distinct_id": self.distinct_id,
-            "properties": {**cast(Dict[str, Any], self.properties), **super_props},
+            "properties": {**cast(dict[str, Any], self.properties), **super_props},
         }
         if self.idempotency_key:
             event_dict["$idempotency_key"] = self.idempotency_key
@@ -126,7 +126,7 @@ class Event:
         # ----
         return event_dict, apparent_size
 
-    def as_json(self) -> Dict[str, Any]:
+    def as_json(self) -> dict[str, Any]:
         event_dict = {
             "event": self.event_name,
             "distinct_id": self.distinct_id,
@@ -151,11 +151,11 @@ class EventCollector:
         url_formatted = "{}v2/event/".format(self.config.base_url)
         return url_formatted
 
-    def collect(self, event: Event) -> Dict[str, Any]:
+    def collect(self, event: Event) -> dict[str, Any]:
         event_dict, event_size = event.get_final_json(self.config, is_part_of_bulk=False)
         return self.send(event_dict)
 
-    def send(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def send(self, event: dict[str, Any]) -> dict[str, Any]:
         try:
             resp = self.config.request("POST", self.__url, event)
         except Exception as ex:

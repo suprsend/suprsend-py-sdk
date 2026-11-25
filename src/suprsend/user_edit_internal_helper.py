@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 # ---------- Identity keys
 IDENT_KEY_EMAIL = "$email"
@@ -30,15 +30,15 @@ KEY_TIMEZONE = "$timezone"
 
 class _UserEditInternalHelper:
     def __init__(self) -> None:
-        self.__dict_set: Dict[str, Any] = {}
-        self.__dict_set_once: Dict[str, Any] = {}
-        self.__dict_increment: Dict[str, Any] = {}
-        self.__dict_append: Dict[str, Any] = {}
-        self.__dict_remove: Dict[str, Any] = {}
-        self.__list_unset: List[str] = []
+        self.__dict_set: dict[str, Any] = {}
+        self.__dict_set_once: dict[str, Any] = {}
+        self.__dict_increment: dict[str, Any] = {}
+        self.__dict_append: dict[str, Any] = {}
+        self.__dict_remove: dict[str, Any] = {}
+        self.__list_unset: list[str] = []
         #
-        self.__errors: List[str] = []
-        self.__info: List[str] = []
+        self.__errors: list[str] = []
+        self.__info: list[str] = []
 
     def reset(self) -> None:
         self.__dict_set, self.__dict_append, self.__dict_remove, self.__list_unset = {}, {}, {}, []
@@ -46,7 +46,7 @@ class _UserEditInternalHelper:
         self.__errors = []
         self.__info = []
 
-    def get_operation_result(self) -> Dict[str, Any]:
+    def get_operation_result(self) -> dict[str, Any]:
         operation = self.__form_operation()
         ret_val = {
             "errors": self.__errors,
@@ -56,8 +56,8 @@ class _UserEditInternalHelper:
         self.reset()
         return ret_val
 
-    def __form_operation(self) -> Dict[str, Any]:
-        event: Dict[str, Any] = {}
+    def __form_operation(self) -> dict[str, Any]:
+        event: dict[str, Any] = {}
         if self.__dict_set:
             event["$set"] = self.__dict_set
         if self.__dict_set_once:
@@ -73,7 +73,7 @@ class _UserEditInternalHelper:
         return event
 
     # ------------------------
-    def __validate_key_basic(self, key: str, caller: str) -> Tuple[str, bool]:
+    def __validate_key_basic(self, key: str, caller: str) -> tuple[str, bool]:
         if not isinstance(key, (str,)):
             self.__info.append(f"[{caller}] skipping key: {key}. key must be a string")
             return key, False
@@ -88,7 +88,7 @@ class _UserEditInternalHelper:
         return key in IDENT_KEYS_ALL
 
     # -------------------------
-    def _append_kv(self, key: str, val: Any, kwargs: Dict[str, Any], caller: str = "append") -> None:
+    def _append_kv(self, key: str, val: Any, kwargs: dict[str, Any], caller: str = "append") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
@@ -97,7 +97,7 @@ class _UserEditInternalHelper:
         else:
             self.__dict_append[key] = val
 
-    def _remove_kv(self, key: str, val: Any, kwargs: Dict[str, Any], caller: str = "remove") -> None:
+    def _remove_kv(self, key: str, val: Any, kwargs: dict[str, Any], caller: str = "remove") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
@@ -127,7 +127,7 @@ class _UserEditInternalHelper:
         else:
             self.__dict_set_once[key] = val
 
-    def _increment_kv(self, key: str, val: Union[int, float], caller: str = "increment") -> None:
+    def _increment_kv(self, key: str, val: int | float, caller: str = "increment") -> None:
         key, is_k_valid = self.__validate_key_basic(key, caller)
         if not is_k_valid:
             return
@@ -143,7 +143,7 @@ class _UserEditInternalHelper:
     def _set_timezone(self, timezone: str, caller: str) -> None:
         self.__dict_set[KEY_TIMEZONE] = timezone
 
-    def __add_identity(self, key: str, val: Union[str, Any], kwargs: Dict[str, Any], caller: str) -> None:
+    def __add_identity(self, key: str, val: str | Any, kwargs: dict[str, Any], caller: str) -> None:
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
             self._add_email(val, caller=new_caller)
@@ -169,7 +169,7 @@ class _UserEditInternalHelper:
         elif key == IDENT_KEY_MS_TEAMS:
             self._add_ms_teams(val, caller=new_caller)
 
-    def __remove_identity(self, key: str, val: Union[str, Any], kwargs: Dict[str, Any], caller: str) -> None:
+    def __remove_identity(self, key: str, val: str | Any, kwargs: dict[str, Any], caller: str) -> None:
         new_caller = f"{caller}:{key}"
         if key == IDENT_KEY_EMAIL:
             self._remove_email(val, caller=new_caller)
@@ -220,13 +220,13 @@ class _UserEditInternalHelper:
 
     # ------------------------ Androidpush
 
-    def _add_androidpush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
+    def _add_androidpush(self, value: str, provider: str | None, bundle_id: str | None, caller: str) -> None:
         self.__dict_append[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
         if bundle_id:
             self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
-    def _remove_androidpush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
+    def _remove_androidpush(self, value: str, provider: str | None, bundle_id: str | None, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_ANDROIDPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
         if bundle_id:
@@ -234,13 +234,13 @@ class _UserEditInternalHelper:
 
     # ------------------------ Iospush
 
-    def _add_iospush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
+    def _add_iospush(self, value: str, provider: str | None, bundle_id: str | None, caller: str) -> None:
         self.__dict_append[IDENT_KEY_IOSPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
         if bundle_id:
             self.__dict_append[KEY_BUNDLE_ID] = bundle_id
 
-    def _remove_iospush(self, value: str, provider: Optional[str], bundle_id: Optional[str], caller: str) -> None:
+    def _remove_iospush(self, value: str, provider: str | None, bundle_id: str | None, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_IOSPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
         if bundle_id:
@@ -248,11 +248,11 @@ class _UserEditInternalHelper:
 
     # ------------------------ Webpush
 
-    def _add_webpush(self, value: Any, provider: Optional[str], caller: str) -> None:
+    def _add_webpush(self, value: Any, provider: str | None, caller: str) -> None:
         self.__dict_append[IDENT_KEY_WEBPUSH] = value
         self.__dict_append[KEY_ID_PROVIDER] = provider
 
-    def _remove_webpush(self, value: Any, provider: Optional[str], caller: str) -> None:
+    def _remove_webpush(self, value: Any, provider: str | None, caller: str) -> None:
         self.__dict_remove[IDENT_KEY_WEBPUSH] = value
         self.__dict_remove[KEY_ID_PROVIDER] = provider
 

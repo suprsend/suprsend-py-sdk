@@ -1,5 +1,5 @@
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 from .bulk_response import BulkResponse
 from .constants import (
@@ -22,15 +22,15 @@ class _BulkUsersEditChunk:
     _max_records_in_chunk = MAX_IDENTITY_EVENTS_IN_BULK_API
 
     def __init__(self, config: "Suprsend") -> None:
-        self.config: "Suprsend" = config
-        self.__chunk: List[Dict[str, Any]] = []
+        self.config: Suprsend = config
+        self.__chunk: list[dict[str, Any]] = []
         self.__url: str = "{}event/".format(self.config.base_url)
         #
         self.__running_size: int = 0
         self.__running_length: int = 0
-        self.response: Optional[Dict[str, Any]] = None
+        self.response: dict[str, Any] | None = None
 
-    def __add_event_to_chunk(self, event: Dict[str, Any], event_size: int) -> None:
+    def __add_event_to_chunk(self, event: dict[str, Any], event_size: int) -> None:
         # First add size, then event to reduce effects of race condition
         self.__running_size += event_size
         self.__chunk.append(event)
@@ -45,7 +45,7 @@ class _BulkUsersEditChunk:
         else:
             return False
 
-    def try_to_add_into_chunk(self, event: Dict[str, Any], event_size: int) -> bool:
+    def try_to_add_into_chunk(self, event: dict[str, Any], event_size: int) -> bool:
         """
         returns whether passed event was able to get added to this chunk or not,
         if true, event gets added to chunk
@@ -113,12 +113,12 @@ class _BulkUsersEditChunk:
 
 class BulkUsersEdit:
     def __init__(self, config: "Suprsend") -> None:
-        self.config: "Suprsend" = config
-        self.__users: List[UserEdit] = []
-        self.__pending_records: List[Tuple[Dict[str, Any], int]] = []
+        self.config: Suprsend = config
+        self.__users: list[UserEdit] = []
+        self.__pending_records: list[tuple[dict[str, Any], int]] = []
         # invalid_record json: {"record": event-json, "error": error_str, "code": 500}
-        self.__invalid_records: List[Dict[str, Any]] = []
-        self.chunks: List[_BulkUsersEditChunk] = []
+        self.__invalid_records: list[dict[str, Any]] = []
+        self.chunks: list[_BulkUsersEditChunk] = []
         self.response: BulkResponse = BulkResponse()
 
     def __validate_users(self) -> None:

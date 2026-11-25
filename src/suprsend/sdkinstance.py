@@ -1,7 +1,7 @@
 import json
 import platform
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Tuple, TypedDict, Union, cast
+from typing import Any, TypedDict, cast
 from warnings import warn
 
 import requests
@@ -29,10 +29,10 @@ from .workflows_bulk import BulkWorkflowsFactory
 
 class AppInfo(TypedDict):
     name: str
-    version: Optional[str]
+    version: str | None
 
 
-def _format_app_info(info: Optional[AppInfo]) -> str:
+def _format_app_info(info: AppInfo | None) -> str:
     if not info or not info.get("name"):
         return ""
     str = info["name"]
@@ -45,24 +45,24 @@ class UserAgentBuilder(TypedDict):
     sdk: str
     sdk_version: str
     lang: str
-    lang_version: Optional[str]
+    lang_version: str | None
     # server, android, ios, react-native, flutter, browser, macos
     platform: str
     # environment: web/mobile/desktop
-    environment: Optional[str]
+    environment: str | None
     # linux / darwin / windows / android / ios
-    os: Optional[str]
-    os_version: Optional[str]
+    os: str | None
+    os_version: str | None
     # app_info: optional, can be set by user
-    app_info: Optional[AppInfo]
+    app_info: AppInfo | None
     # for mobile only (e.g "Pixel 8")
-    device_model: Optional[str]
+    device_model: str | None
     # For browser (js-sdk only)
-    browser: Optional[str]  # chrome/firebox/safari
-    browser_version: Optional[str]
+    browser: str | None  # chrome/firebox/safari
+    browser_version: str | None
 
     @classmethod  # type: ignore[misc]  # runtime classmethod on a TypedDict
-    def build_user_agent(cls, app_info: Optional[AppInfo]) -> Tuple[str, str]:
+    def build_user_agent(cls, app_info: AppInfo | None) -> tuple[str, str]:
         try:
             uname = platform.uname()
             _os, _os_version = (uname.system or "").lower(), (uname.release or "").lower()
@@ -104,9 +104,9 @@ class Suprsend:
         self,
         workspace_key: str,
         workspace_secret: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         debug: bool = False,
-        app_info: Optional[AppInfo] = None,
+        app_info: AppInfo | None = None,
         **kwargs: Any,
     ) -> None:
         self._init(
@@ -124,9 +124,9 @@ class Suprsend:
         cls,
         workspace_uid: str,
         api_key: str,
-        base_url: Optional[str] = None,
+        base_url: str | None = None,
         debug: bool = False,
-        app_info: Optional[AppInfo] = None,
+        app_info: AppInfo | None = None,
         **kwargs: Any,
     ) -> "Suprsend":
         """
@@ -151,13 +151,13 @@ class Suprsend:
         self,
         auth_method: str,
         *,
-        workspace_key: Optional[str] = None,
-        workspace_secret: Optional[str] = None,
-        workspace_uid: Optional[str] = None,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        workspace_key: str | None = None,
+        workspace_secret: str | None = None,
+        workspace_uid: str | None = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
         debug: bool = False,
-        app_info: Optional[AppInfo] = None,
+        app_info: AppInfo | None = None,
         **kwargs: Any,
     ) -> None:
         self.auth_method = auth_method
@@ -167,7 +167,7 @@ class Suprsend:
         self.api_key = api_key
         self.__do_init(base_url=base_url, debug=debug, app_info=app_info, **kwargs)
 
-    def __do_init(self, *, base_url: Optional[str], debug: bool, app_info: Optional[AppInfo], **kwargs: Any) -> None:
+    def __do_init(self, *, base_url: str | None, debug: bool, app_info: AppInfo | None, **kwargs: Any) -> None:
         #
         self.user_agent, self.client_user_agent = UserAgentBuilder.build_user_agent(  # type: ignore[attr-defined]
             app_info
@@ -221,14 +221,14 @@ class Suprsend:
         else:
             return ""
 
-    def default_headers(self) -> Dict[str, Any]:
+    def default_headers(self) -> dict[str, Any]:
         return {
             "Content-Type": "application/json; charset=utf-8",
             "User-Agent": self.user_agent,
             "X-Suprsend-Client-User-Agent": self.client_user_agent,
         }
 
-    def prepare_request(self, method: str, url: str, body: Any = None) -> Tuple[Dict[str, Any], str]:
+    def prepare_request(self, method: str, url: str, body: Any = None) -> tuple[dict[str, Any], str]:
         headers = self.default_headers()
         if self.auth_method == "ws_key_secret":
             headers["Date"] = datetime.now(timezone.utc).strftime(HEADER_DATE_FMT)
@@ -247,7 +247,7 @@ class Suprsend:
     def request(self, method: str, url: str, body: Any = None) -> requests.Response:
         headers, content_txt = self.prepare_request(method, url, body)
         method_u = method.upper()
-        kwargs: Dict[str, Any] = {"headers": headers}
+        kwargs: dict[str, Any] = {"headers": headers}
         if method_u not in ("GET", "HEAD"):
             kwargs["data"] = content_txt.encode("utf-8")
         # ---
@@ -260,7 +260,7 @@ class Suprsend:
         return resp
 
     @staticmethod
-    def __get_base_url(base_url: Optional[str]) -> str:
+    def __get_base_url(base_url: str | None) -> str:
         # ---- strip
         if base_url:
             base_url = base_url.strip()
@@ -290,8 +290,8 @@ class Suprsend:
             raise SuprsendConfigError("Missing base_url")
 
     def add_attachment(
-        self, body: Dict[str, Any], file_path: str, file_name: Optional[str] = None, ignore_if_error: bool = False
-    ) -> Dict[str, Any]:
+        self, body: dict[str, Any], file_path: str, file_name: str | None = None, ignore_if_error: bool = False
+    ) -> dict[str, Any]:
         warn(
             'This method is deprecated. Use "WorkflowTriggerRequest.add_attachment()" instead',
             DeprecationWarning,
@@ -311,7 +311,7 @@ class Suprsend:
         body["data"]["$attachments"].append(attachment)
         return body
 
-    def trigger_workflow(self, data: Union[Workflow, Dict[str, Any]]) -> Dict[str, Any]:
+    def trigger_workflow(self, data: Workflow | dict[str, Any]) -> dict[str, Any]:
         """
         :param data:
         :return: {
@@ -336,11 +336,11 @@ class Suprsend:
         self,
         distinct_id: str,
         event_name: str,
-        properties: Optional[Dict[str, Any]] = None,
-        idempotency_key: Optional[str] = None,
-        tenant_id: Optional[str] = None,
-        brand_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        properties: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        tenant_id: str | None = None,
+        brand_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         :param distinct_id:
         :param event_name:
@@ -365,7 +365,7 @@ class Suprsend:
         event = Event(distinct_id, event_name, properties, idempotency_key=idempotency_key, tenant_id=tenant_id)
         return self._eventcollector.collect(event)
 
-    def track_event(self, event: Event) -> Dict[str, Any]:
+    def track_event(self, event: Event) -> dict[str, Any]:
         """
         :param event: suprsend.Event
         :return: {

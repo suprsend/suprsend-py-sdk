@@ -1,13 +1,13 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any
 
 import jsonschema
 
 from .exception import SuprsendInvalidSchema, SuprsendMissingSchema
 
 # Cached json schema
-__JSON_SCHEMAS: Dict[str, Any] = dict()
+__JSON_SCHEMAS: dict[str, Any] = dict()
 
 
 def _get_schema_validator(schema_name: str) -> Any:
