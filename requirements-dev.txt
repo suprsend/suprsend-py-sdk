@@ -1,0 +1,5 @@
+ruff==0.17.2
+# Last mypy and stubs that run on and target Python 3.9 (mypy 2.x requires >=3.10).
+mypy==1.19.1
+types-requests==2.32.4.20260107
+types-jsonschema==4.26.0.20260202
